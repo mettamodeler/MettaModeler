@@ -51,19 +51,26 @@ function modelToReactFlow(model: FCMModel): { nodes: Node[], edges: Edge[] } {
     },
   }));
   
-  const edges = model.edges.map((edge) => ({
-    id: edge.id,
-    source: edge.source,
-    target: edge.target,
-    type: 'custom',
-    data: { weight: edge.weight },
-    markerEnd: {
-      type: MarkerType.ArrowClosed,
-      width: 20,
-      height: 20,
-      color: '#00C4FF',
-    },
-  }));
+  const edges = model.edges.map((edge) => {
+    // Determine edge color based on weight
+    const edgeColor = edge.weight >= 0 
+      ? 'rgba(239, 68, 68, 0.8)' // red for positive
+      : 'rgba(59, 130, 246, 0.8)'; // blue for negative
+      
+    return {
+      id: edge.id,
+      source: edge.source,
+      target: edge.target,
+      type: 'custom',
+      data: { weight: edge.weight },
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        width: 20,
+        height: 20,
+        color: edgeColor,
+      },
+    };
+  });
   
   return { nodes, edges };
 }
@@ -157,17 +164,23 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
   // Handle new connections
   const onConnect = useCallback(
     (connection: Connection) => {
+      // Default weight for new connections
+      const defaultWeight = 0.5;
+      
+      // Determine color based on weight (positive by default)
+      const edgeColor = 'rgba(239, 68, 68, 0.8)'; // red for positive
+      
       // Create a new edge with default weight
       const newEdge = {
         ...connection,
         id: `edge-${Date.now()}`,
         type: 'custom',
-        data: { weight: 0.5 },
+        data: { weight: defaultWeight },
         markerEnd: {
           type: MarkerType.ArrowClosed,
           width: 20,
           height: 20,
-          color: '#00C4FF',
+          color: edgeColor,
         },
       };
       
@@ -231,12 +244,25 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
       setEdges((eds) =>
         eds.map((edge) => {
           if (edge.id === id) {
+            // Determine color based on updated weight
+            const edgeColor = weight >= 0 
+              ? 'rgba(239, 68, 68, 0.8)' // red for positive
+              : 'rgba(59, 130, 246, 0.8)'; // blue for negative
+            
             return {
               ...edge,
               data: {
                 ...edge.data,
                 weight,
               },
+              // Update marker color
+              // @ts-ignore
+              markerEnd: {
+                type: MarkerType.ArrowClosed,
+                color: edgeColor,
+                width: 20,
+                height: 20,
+              }
             };
           }
           return edge;

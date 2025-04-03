@@ -4,7 +4,9 @@ import {
   EdgeLabelRenderer,
   EdgeProps,
   getBezierPath,
+  MarkerType,
 } from 'reactflow';
+import { Slider } from '@/components/ui/slider';
 
 interface CustomEdgeData {
   weight: number;
@@ -23,6 +25,7 @@ export default function CustomEdge({
   targetPosition,
   data,
   selected,
+  markerEnd,
 }: EdgeProps<CustomEdgeData>) {
   const { weight, onChange } = data || { weight: 0 };
   
@@ -36,13 +39,26 @@ export default function CustomEdge({
     targetPosition,
   });
   
+  // Determine edge color based on weight value
+  const isPositive = weight >= 0;
+  const edgeColor = isPositive 
+    ? 'rgba(239, 68, 68, 0.8)' // red for positive
+    : 'rgba(59, 130, 246, 0.8)'; // blue for negative
+  
+  const edgeStyle = {
+    stroke: edgeColor,
+    strokeWidth: 2,
+    filter: selected 
+      ? `drop-shadow(0 0 5px ${edgeColor})` 
+      : `drop-shadow(0 0 3px ${edgeColor})`,
+  };
+  
   const handleWeightChange = useCallback(
-    (evt: React.ChangeEvent<HTMLInputElement>) => {
+    (value: number[]) => {
       if (onChange) {
-        const newWeight = parseFloat(evt.target.value);
-        // Clamp weight between -1 and 1
-        const clampedWeight = Math.max(-1, Math.min(1, newWeight));
-        onChange(id, clampedWeight);
+        // Get the first value from the slider array
+        const newWeight = value[0];
+        onChange(id, newWeight);
       }
     },
     [id, onChange]
@@ -53,30 +69,36 @@ export default function CustomEdge({
       <BaseEdge
         id={id}
         path={edgePath}
-        className={selected ? 'stroke-secondary/80' : 'stroke-secondary/50'}
-        style={{
-          filter: selected 
-            ? 'drop-shadow(0 0 5px rgba(0, 196, 255, 0.8))' 
-            : 'drop-shadow(0 0 3px rgba(0, 196, 255, 0.6))',
+        style={edgeStyle}
+        // @ts-ignore
+        markerEnd={{
+          type: MarkerType.ArrowClosed,
+          color: edgeColor,
+          width: 20,
+          height: 20,
         }}
       />
       <EdgeLabelRenderer>
         <div
-          className="dark-glass px-1 text-xs shadow-glow-sm absolute transform -translate-x-1/2 -translate-y-1/2"
+          className="dark-glass p-2 rounded-md shadow-glow-sm absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col min-w-[120px]"
           style={{
             left: labelX,
             top: labelY,
           }}
         >
-          <input
-            type="number"
-            step="0.1"
-            min="-1"
-            max="1"
-            value={weight.toFixed(1)}
-            onChange={handleWeightChange}
-            className="bg-transparent border-none text-center w-16 focus:outline-none"
-            onFocus={(e) => e.target.select()}
+          <div className="flex justify-between items-center mb-1 px-1">
+            <span className="text-xs">{weight.toFixed(1)}</span>
+            <span className={`text-xs ${isPositive ? 'text-red-500' : 'text-blue-500'}`}>
+              {isPositive ? 'Positive' : 'Negative'}
+            </span>
+          </div>
+          <Slider
+            value={[weight]}
+            min={-1}
+            max={1}
+            step={0.1}
+            onValueChange={handleWeightChange}
+            className={`${isPositive ? 'bg-red-950/30' : 'bg-blue-950/30'}`}
           />
         </div>
       </EdgeLabelRenderer>
