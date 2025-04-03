@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { FCMModel, SimulationParams, SimulationResult } from '@/lib/types';
-import { runSimulation } from '@/lib/simulation';
+import { FCMModel, SimulationParams, SimulationResult, FCMNode, FCMEdge } from '@/lib/types';
+import { runSimulation } from '@/lib/simulation'; // Keep this for fallback
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
@@ -49,9 +49,67 @@ export function useSimulation(model: FCMModel) {
   const runSimulationFn = useCallback(async () => {
     setIsRunning(true);
     try {
-      const result = runSimulation(model, simulationParams);
-      setSimulationResult(result);
-      return result;
+      // Prepare data for Python simulation API
+      const reactFlowNodes = model.nodes.map(node => ({
+        id: node.id,
+        data: {
+          label: node.label,
+          value: simulationParams.initialValues?.[node.id] ?? node.value,
+          type: node.type
+        }
+      }));
+      
+      const reactFlowEdges = model.edges.map(edge => ({
+        source: edge.source,
+        target: edge.target,
+        data: {
+          weight: edge.weight
+        }
+      }));
+
+      // Prepare payload
+      const payload = {
+        nodes: reactFlowNodes,
+        edges: reactFlowEdges,
+        activation: 'sigmoid',
+        threshold: simulationParams.threshold,
+        maxIterations: simulationParams.iterations
+      };
+      
+      // Try to use Python API first
+      try {
+        const response = await fetch('/api/simulate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Python API error: ${response.statusText}`);
+        }
+        
+        const pythonResult = await response.json();
+        
+        // Convert Python API response format to our app's format
+        const result: SimulationResult = {
+          finalValues: pythonResult.finalState,
+          timeSeriesData: pythonResult.timeSeries,
+          iterations: pythonResult.iterations,
+          converged: pythonResult.converged
+        };
+        
+        setSimulationResult(result);
+        return result;
+      } catch (pythonError) {
+        console.warn('Python simulation failed, falling back to JS implementation:', pythonError);
+        
+        // Fallback to JavaScript implementation
+        const result = runSimulation(model, simulationParams);
+        setSimulationResult(result);
+        return result;
+      }
     } catch (error) {
       toast({
         variant: "destructive",

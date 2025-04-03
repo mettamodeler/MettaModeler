@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import ConvergencePlot from './ConvergencePlot';
+import ModelAnalysis from './ModelAnalysis';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
@@ -96,102 +97,108 @@ export default function SimulationPanel({ model }: SimulationPanelProps) {
   
   return (
     <div className="relative h-full overflow-auto">
-      <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Simulation Configuration */}
-        <Card>
-          <CardHeader>
-            <CardTitle>simulation parameters</CardTitle>
-            <CardDescription>Configure initial values and run settings</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="drivers">
-              <TabsList className="mb-4">
-                <TabsTrigger value="drivers">driver nodes</TabsTrigger>
-                <TabsTrigger value="all">all nodes</TabsTrigger>
-                <TabsTrigger value="settings">settings</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="drivers">
-                <div className="space-y-4">
-                  {driverNodes.map((node) => (
-                    <NodeValueControl
-                      key={node.id}
-                      node={node}
-                      value={simulationParams.initialValues?.[node.id] ?? node.value}
-                      onChange={handleInitialValueChange}
-                    />
-                  ))}
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="all">
-                <div className="space-y-4">
-                  {model.nodes.map((node) => (
-                    <NodeValueControl
-                      key={node.id}
-                      node={node}
-                      value={simulationParams.initialValues?.[node.id] ?? node.value}
-                      onChange={handleInitialValueChange}
-                    />
-                  ))}
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="settings">
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="iterations">Max Iterations</Label>
-                    <Input
-                      id="iterations"
-                      type="number"
-                      value={simulationParams.iterations}
-                      onChange={(e) => 
-                        setSimulationParams(prev => ({
-                          ...prev,
-                          iterations: parseInt(e.target.value) || 20,
-                        }))
-                      }
-                      min={1}
-                      max={100}
-                      className="mt-1"
-                    />
+      <div className="p-6 grid grid-cols-1 gap-6">
+        {/* Main Simulation Configuration and Analysis Area */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Simulation Configuration */}
+          <Card>
+            <CardHeader>
+              <CardTitle>simulation parameters</CardTitle>
+              <CardDescription>Configure initial values and run settings</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="drivers">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="drivers">driver nodes</TabsTrigger>
+                  <TabsTrigger value="all">all nodes</TabsTrigger>
+                  <TabsTrigger value="settings">settings</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="drivers">
+                  <div className="space-y-4">
+                    {driverNodes.map((node) => (
+                      <NodeValueControl
+                        key={node.id}
+                        node={node}
+                        value={simulationParams.initialValues?.[node.id] ?? node.value}
+                        onChange={handleInitialValueChange}
+                      />
+                    ))}
                   </div>
-                  
-                  <div>
-                    <Label htmlFor="threshold">Convergence Threshold</Label>
-                    <Input
-                      id="threshold"
-                      type="number"
-                      value={simulationParams.threshold}
-                      onChange={(e) => 
-                        setSimulationParams(prev => ({
-                          ...prev,
-                          threshold: parseFloat(e.target.value) || 0.001,
-                        }))
-                      }
-                      min={0.0001}
-                      max={0.1}
-                      step={0.0001}
-                      className="mt-1"
-                    />
+                </TabsContent>
+                
+                <TabsContent value="all">
+                  <div className="space-y-4">
+                    {model.nodes.map((node) => (
+                      <NodeValueControl
+                        key={node.id}
+                        node={node}
+                        value={simulationParams.initialValues?.[node.id] ?? node.value}
+                        onChange={handleInitialValueChange}
+                      />
+                    ))}
                   </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-            
-            <div className="mt-8">
-              <Button 
-                className="w-full bg-secondary/20 hover:bg-secondary/30 text-secondary hover:text-white"
-                onClick={handleRunSimulation}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                </svg>
-                Run Simulation
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                </TabsContent>
+                
+                <TabsContent value="settings">
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="iterations">Max Iterations</Label>
+                      <Input
+                        id="iterations"
+                        type="number"
+                        value={simulationParams.iterations}
+                        onChange={(e) => 
+                          setSimulationParams(prev => ({
+                            ...prev,
+                            iterations: parseInt(e.target.value) || 20,
+                          }))
+                        }
+                        min={1}
+                        max={100}
+                        className="mt-1"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="threshold">Convergence Threshold</Label>
+                      <Input
+                        id="threshold"
+                        type="number"
+                        value={simulationParams.threshold}
+                        onChange={(e) => 
+                          setSimulationParams(prev => ({
+                            ...prev,
+                            threshold: parseFloat(e.target.value) || 0.001,
+                          }))
+                        }
+                        min={0.0001}
+                        max={0.1}
+                        step={0.0001}
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+              
+              <div className="mt-8">
+                <Button 
+                  className="w-full bg-secondary/20 hover:bg-secondary/30 text-secondary hover:text-white"
+                  onClick={handleRunSimulation}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                  Run Simulation
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Model Analysis */}
+          <ModelAnalysis model={model} />
+        </div>
         
         {/* Simulation Results */}
         <Dialog open={showSimulationResults} onOpenChange={setShowSimulationResults}>

@@ -2,11 +2,15 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
+import fetch from "node-fetch";
 import {
   insertProjectSchema,
   insertModelSchema,
   insertScenarioSchema,
 } from "@shared/schema";
+
+// Python simulation service URL
+const PYTHON_SIM_URL = process.env.PYTHON_SIM_URL || 'http://localhost:5050';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes
@@ -258,6 +262,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Failed to delete scenario" });
+    }
+  });
+
+  // Python Simulation API Proxy
+  app.post("/api/simulate", async (req: Request, res: Response) => {
+    try {
+      const response = await fetch(`${PYTHON_SIM_URL}/api/simulate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(req.body),
+      });
+
+      const data = await response.json() as any;
+      
+      // If Python service returns an error
+      if (!response.ok) {
+        console.error('Python simulation error:', data);
+        return res.status(response.status).json(data);
+      }
+      
+      // Create a properly formatted response object with expected structure
+      const responseData = {
+        finalValues: data.finalValues || {},
+        timeSeriesData: data.timeSeriesData || {},
+        iterations: data.iterations || 0,
+        converged: data.converged || false
+      };
+      
+      res.json(responseData);
+    } catch (error) {
+      console.error('Failed to connect to Python simulation service:', error);
+      res.status(503).json({ 
+        message: "Python simulation service unavailable",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Python Analysis API Proxy
+  app.post("/api/analyze", async (req: Request, res: Response) => {
+    try {
+      const response = await fetch(`${PYTHON_SIM_URL}/api/analyze`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(req.body),
+      });
+
+      const data = await response.json() as any;
+      
+      // If Python service returns an error
+      if (!response.ok) {
+        console.error('Python analysis error:', data);
+        return res.status(response.status).json(data);
+      }
+      
+      // Create a properly formatted response object with expected structure
+      const responseData = {
+        nodeCount: data.nodeCount || 0,
+        edgeCount: data.edgeCount || 0,
+        density: data.density || 0,
+        isConnected: data.isConnected || false,
+        hasLoop: data.hasLoop || false,
+        centrality: data.centrality || {
+          degree: {},
+          inDegree: {},
+          outDegree: {},
+          betweenness: {},
+          closeness: {}
+        },
+        adjacencyMatrix: data.adjacencyMatrix || [],
+        nodeIds: data.nodeIds || []
+      };
+      
+      res.json(responseData);
+    } catch (error) {
+      console.error('Failed to connect to Python analysis service:', error);
+      res.status(503).json({ 
+        message: "Python analysis service unavailable",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Python Health Check
+  app.get("/api/python-health", async (_req: Request, res: Response) => {
+    try {
+      const response = await fetch(`${PYTHON_SIM_URL}/api/health`);
+      
+      if (!response.ok) {
+        return res.status(503).json({ 
+          status: "unavailable",
+          message: "Python service is not healthy"
+        });
+      }
+      
+      const data = await response.json() as any;
+      const responseObj = { 
+        status: "available",
+        pythonStatus: data?.status || 'ok' 
+      };
+      res.json(responseObj);
+    } catch (error) {
+      console.error('Python service health check failed:', error);
+      res.status(503).json({ 
+        status: "unavailable",
+        message: "Python service is not reachable",
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 

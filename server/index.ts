@@ -1,6 +1,11 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { spawn, ChildProcess } from "child_process";
+import path from "path";
+
+// Python simulation service process
+let pythonProcess: ChildProcess | null = null;
 
 const app = express();
 app.use(express.json());
@@ -36,8 +41,51 @@ app.use((req, res, next) => {
   next();
 });
 
+// Function to start the Python simulation service
+function startPythonService() {
+  // Set the default port for the Python service
+  const pythonPort = 5050;
+  process.env.PYTHON_SIM_URL = `http://localhost:${pythonPort}`;
+  process.env.PYTHON_SIM_PORT = pythonPort.toString();
+
+  log(`Starting Python simulation service on port ${pythonPort}...`);
+  
+  // Start the Python service
+  pythonProcess = spawn('python', ['app.py'], {
+    cwd: path.join(process.cwd(), 'python_sim'),
+    env: {
+      ...process.env,
+      PYTHONUNBUFFERED: '1',  // Force Python to print to stdout without buffering
+    }
+  });
+
+  // Log Python process output
+  pythonProcess.stdout?.on('data', (data) => {
+    log(`Python service: ${data.toString().trim()}`, 'python');
+  });
+
+  pythonProcess.stderr?.on('data', (data) => {
+    log(`Python service error: ${data.toString().trim()}`, 'python');
+  });
+
+  pythonProcess.on('close', (code) => {
+    log(`Python service exited with code ${code}`, 'python');
+    
+    // Restart the service if it crashes
+    if (code !== 0) {
+      setTimeout(() => {
+        log('Restarting Python simulation service...', 'python');
+        startPythonService();
+      }, 5000);
+    }
+  });
+}
+
 (async () => {
   const server = await registerRoutes(app);
+
+  // Start the Python simulation service
+  startPythonService();
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -66,5 +114,26 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+  });
+  
+  // Handle cleanup on exit
+  const exitHandler = () => {
+    if (pythonProcess) {
+      log('Shutting down Python simulation service...', 'python');
+      pythonProcess.kill();
+      pythonProcess = null;
+    }
+    process.exit(0);
+  };
+  
+  // Handle SIGINT, SIGTERM, unhandledRejection, and uncaughtException
+  process.on('SIGINT', exitHandler);
+  process.on('SIGTERM', exitHandler);
+  process.on('unhandledRejection', (reason) => {
+    log(`Unhandled Rejection: ${reason}`, 'system');
+  });
+  process.on('uncaughtException', (error) => {
+    log(`Uncaught Exception: ${error.message}`, 'system');
+    exitHandler();
   });
 })();
