@@ -60,7 +60,9 @@ function createBaselineScenario(model: FCMModel): Scenario {
       finalValue = 0.5; // Regular nodes stay close to middle
     }
     
-    finalValues[node.id] = finalValue;
+    // Ensure node ID is consistently a string
+    const nodeId = toStringId(node.id);
+    finalValues[nodeId] = finalValue;
     
     // Create the time series showing gradual change from 0.5 to final value
     const series = [];
@@ -71,7 +73,7 @@ function createBaselineScenario(model: FCMModel): Scenario {
       const stepValue = startValue + (finalValue - startValue) * progress;
       series.push(stepValue);
     }
-    timeSeriesData[node.id] = series;
+    timeSeriesData[nodeId] = series;
   });
   
   // Create virtual baseline scenario
@@ -119,7 +121,8 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
   
   // Get node labels
   const nodeLabelsById = model.nodes.reduce<Record<string, string>>((acc, node) => {
-    acc[node.id] = node.label;
+    const nodeId = toStringId(node.id);
+    acc[nodeId] = node.label;
     return acc;
   }, {});
   
@@ -188,7 +191,7 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
         baseline: baselineValue,
         comparison: comparisonValue,
         delta: delta,
-        type: model.nodes.find(n => n.id === nodeId)?.type || 'regular'
+        type: model.nodes.find(n => toStringId(n.id) === nodeId)?.type || 'regular'
       };
     });
     
@@ -201,8 +204,9 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
   // Group nodes by type
   const nodesByType = model.nodes.reduce<Record<string, string[]>>((acc, node) => {
     const type = node.type || 'regular';
+    const nodeId = toStringId(node.id);
     acc[type] = acc[type] || [];
-    acc[type].push(node.id);
+    acc[type].push(nodeId);
     return acc;
   }, {});
   
