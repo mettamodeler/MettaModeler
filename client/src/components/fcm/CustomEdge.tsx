@@ -103,10 +103,12 @@ export default function CustomEdge({
       <EdgeLabelRenderer>
         {isVisible && (
           <div
-            className="dark-glass p-2 rounded-md shadow-glow-sm absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col min-w-[120px] transition-opacity"
+            className="dark-glass p-2 rounded-md shadow-glow-sm absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col min-w-[160px] cursor-pointer animate-in zoom-in-95 duration-200"
             style={{
               left: labelX,
               top: labelY,
+              padding: '12px',
+              zIndex: 1000,
             }}
           >
             <div className="flex justify-between items-center mb-1 px-1">
