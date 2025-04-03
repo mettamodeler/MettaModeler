@@ -46,19 +46,34 @@ export default function CustomNode({ id, data, selected }: NodeProps<CustomNodeD
       className={`node rounded-lg p-3 min-w-[150px] text-center ${selected ? 'ring-2 ring-secondary' : ''}`} 
       style={{ backgroundColor: getNodeColor() }}
     >
+      {/* Top handle */}
       <Handle 
         type="source" 
-        position={Position.Right} 
-        className="!absolute w-full h-full !bg-transparent !border-none !rounded-none cursor-crosshair"
-        style={{ right: 0, top: 0 }}
-      />
-      <Handle 
-        type="target" 
-        position={Position.Left} 
-        className="!absolute w-full h-full !bg-transparent !border-none !rounded-none cursor-crosshair"
-        style={{ left: 0, top: 0 }}
+        position={Position.Top}
+        className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
       />
       
+      {/* Right handle */}
+      <Handle 
+        type="source" 
+        position={Position.Right}
+        className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
+      />
+      
+      {/* Bottom handle */}
+      <Handle 
+        type="source" 
+        position={Position.Bottom}
+        className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
+      />
+      
+      {/* Left handle */}
+      <Handle 
+        type="source" 
+        position={Position.Left}
+        className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
+      />
+
       <input
         type="text"
         value={label}
