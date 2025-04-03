@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Scenario, FCMModel, SimulationResult } from '@/lib/types';
 import { toStringId } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -183,8 +183,14 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
   const [deltaData, setDeltaData] = useState<any[]>([]);
   const [selectedTab, setSelectedTab] = useState('chart');
   
-  // Create virtual baseline scenario
-  const baselineScenario = createBaselineScenario(model);
+  // Create baseline scenario only once - using a ref to prevent recreation on each render
+  const baselineScenarioRef = useRef<Scenario>();
+  if (!baselineScenarioRef.current) {
+    baselineScenarioRef.current = createBaselineScenario(model);
+  }
+  
+  // Use the memoized baselineScenario
+  const baselineScenario = baselineScenarioRef.current;
   
   // Add baseline to scenarios for selection
   const allScenarios = [baselineScenario, ...scenarios];
@@ -212,26 +218,26 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
     }
     
     // Get the baseline scenario (either virtual or a real one)
-    const baselineScenario = baselineScenarioId === 'baseline' 
-      ? createBaselineScenario(model) 
+    const selectedBaselineScenario = baselineScenarioId === 'baseline' 
+      ? baselineScenarioRef.current 
       : allScenarios.find(s => s.id === baselineScenarioId);
       
     // Get the comparison scenario
     const comparisonScenario = allScenarios.find(s => s.id === comparisonScenarioId);
     
     console.log('Scenarios found:', { 
-      baselineScenario: !!baselineScenario, 
+      baselineScenario: !!selectedBaselineScenario, 
       comparisonScenario: !!comparisonScenario,
-      baselineResults: !!baselineScenario?.results,
+      baselineResults: !!selectedBaselineScenario?.results,
       comparisonResults: !!comparisonScenario?.results
     });
     
     // Safety checks for results and finalValues existence
-    if (!baselineScenario?.results || !comparisonScenario?.results) return;
-    if (!baselineScenario.results.finalValues || !comparisonScenario.results.finalValues) return;
+    if (!selectedBaselineScenario?.results || !comparisonScenario?.results) return;
+    if (!selectedBaselineScenario.results.finalValues || !comparisonScenario.results.finalValues) return;
     
     // Calculate delta between baseline and comparison scenario
-    const baselineFinal = baselineScenario.results.finalValues;
+    const baselineFinal = selectedBaselineScenario.results.finalValues;
     const comparisonFinal = comparisonScenario.results.finalValues;
     
     console.log('Final values:', { 
@@ -433,10 +439,10 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
                     <div className="h-[400px]">
                       <CompareConvergencePlot 
                         baselineScenario={baselineScenarioId === 'baseline' 
-                          ? baselineScenario 
+                          ? baselineScenarioRef.current 
                           : allScenarios.find(s => s.id === baselineScenarioId)} 
                         comparisonScenario={comparisonScenarioId === 'baseline' 
-                          ? baselineScenario 
+                          ? baselineScenarioRef.current 
                           : allScenarios.find(s => s.id === comparisonScenarioId)}
                         nodeLabels={nodeLabelsById}
                       />
