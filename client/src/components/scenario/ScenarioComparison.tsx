@@ -77,14 +77,20 @@ function createBaselineScenario(model: FCMModel): Scenario {
   return {
     id: 'baseline',
     name: 'Baseline (No Intervention)',
-    modelId: model.id,
+    modelId: model.id.toString(), // Ensure modelId is a string
     initialValues: {},
     createdAt: new Date().toISOString(),
     results: {
       finalValues,
       timeSeriesData,
       iterations: iterations,
-      converged: true
+      converged: true,
+      // Add empty fields for the baseline comparison fields to ensure type safety
+      baselineFinalState: {},
+      baselineTimeSeries: {},
+      baselineIterations: 0,
+      baselineConverged: false,
+      deltaState: {}
     }
   };
 }
@@ -117,7 +123,10 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
   
   // Calculate delta when scenarios change
   useEffect(() => {
-    if (!baselineScenarioId || !comparisonScenarioId) return;
+    if (!baselineScenarioId || !comparisonScenarioId) {
+      console.log('Missing scenario IDs', { baselineScenarioId, comparisonScenarioId });
+      return;
+    }
     
     // Get the baseline scenario (either virtual or a real one)
     const baselineScenario = baselineScenarioId === 'baseline' 
@@ -127,6 +136,13 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
     // Get the comparison scenario
     const comparisonScenario = allScenarios.find(s => s.id === comparisonScenarioId);
     
+    console.log('Scenarios found:', { 
+      baselineScenario: !!baselineScenario, 
+      comparisonScenario: !!comparisonScenario,
+      baselineResults: !!baselineScenario?.results,
+      comparisonResults: !!comparisonScenario?.results
+    });
+    
     // Safety checks for results and finalValues existence
     if (!baselineScenario?.results || !comparisonScenario?.results) return;
     if (!baselineScenario.results.finalValues || !comparisonScenario.results.finalValues) return;
@@ -135,8 +151,15 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
     const baselineFinal = baselineScenario.results.finalValues;
     const comparisonFinal = comparisonScenario.results.finalValues;
     
+    console.log('Final values:', { 
+      baselineFinal: Object.keys(baselineFinal).length > 0 ? 'has data' : 'empty', 
+      comparisonFinal: Object.keys(comparisonFinal).length > 0 ? 'has data' : 'empty'
+    });
+    
     // Create comparison data
     const nodes = Object.keys(nodeLabelsById);
+    console.log('Node IDs found:', nodes);
+    
     const newDeltaData = nodes.filter(nodeId => nodeLabelsById[nodeId]).map(nodeId => {
       // Safely access values with fallbacks
       const baselineValue = baselineFinal && typeof baselineFinal[nodeId] === 'number' 
@@ -158,6 +181,8 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
         type: model.nodes.find(n => n.id === nodeId)?.type || 'regular'
       };
     });
+    
+    console.log('Delta data generated:', newDeltaData.length > 0 ? 'has data' : 'empty', newDeltaData);
     
     // Update state
     setDeltaData(newDeltaData);
