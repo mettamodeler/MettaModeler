@@ -43,8 +43,16 @@ function createBaselineScenario(model: FCMModel): Scenario {
   // Unique ID for this model to avoid re-running simulations
   const simulationId = `baseline-${model.id}`;
   
+  // Create default initialValues from the model
+  const defaultInitialValues = model.nodes.reduce<Record<string, number>>((acc, node) => {
+    acc[node.id] = node.value;
+    return acc;
+  }, {});
+  
   // Function to run a real simulation for the baseline
   const runRealBaseline = async () => {
+    console.log("Running real baseline simulation for chart/table views");
+    
     // Check if we've already run this simulation in the session
     const cachedResult = sessionStorage.getItem(simulationId);
     if (cachedResult) {
@@ -62,7 +70,7 @@ function createBaselineScenario(model: FCMModel): Scenario {
         id: node.id,
         data: {
           label: node.label,
-          value: node.value, // Use the actual node values (not 0.5)
+          value: node.value, // Use the model's default values for baseline
           type: node.type
         }
       }));
@@ -248,6 +256,66 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
     }
   }, [scenarios]);
   
+  // Function to run a simulation with given initial values
+  const runScenarioSimulation = async (initialValues: Record<string, number> = {}) => {
+    try {
+      // Prepare data for Python simulation API using the model's current structure
+      // but with customized initial values from the scenario
+      const reactFlowNodes = model.nodes.map(node => ({
+        id: node.id,
+        data: {
+          label: node.label,
+          // Use the scenario's initial value if available, otherwise use model default
+          value: initialValues[node.id] !== undefined ? initialValues[node.id] : node.value,
+          type: node.type
+        }
+      }));
+      
+      const reactFlowEdges = model.edges.map(edge => ({
+        source: edge.source,
+        target: edge.target,
+        data: {
+          weight: edge.weight
+        }
+      }));
+      
+      // Prepare payload
+      const payload = {
+        nodes: reactFlowNodes,
+        edges: reactFlowEdges,
+        activation: 'sigmoid',
+        threshold: 0.001,
+        maxIterations: 20,
+      };
+      
+      // Call the simulation API
+      const response = await fetch('/api/simulate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      
+      // Convert API response to our format
+      return {
+        finalValues: result.finalState || result.finalValues || {},
+        timeSeriesData: result.timeSeries || result.timeSeriesData || {},
+        iterations: result.iterations || 0,
+        converged: result.converged || false
+      };
+    } catch (error) {
+      console.error('Failed to run scenario simulation:', error);
+      return null;
+    }
+  };
+
   // Calculate delta when scenarios change
   useEffect(() => {
     if (!baselineScenarioId || !comparisonScenarioId) {
@@ -269,49 +337,96 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
       comparisonResults: !!comparisonScenario?.results
     });
     
-    // Safety checks for results and finalValues existence
-    if (!selectedBaselineScenario?.results || !comparisonScenario?.results) return;
-    if (!selectedBaselineScenario.results.finalValues || !comparisonScenario.results.finalValues) return;
+    // Early return if either scenario is missing
+    if (!selectedBaselineScenario || !comparisonScenario) return;
     
-    // Calculate delta between baseline and comparison scenario
-    const baselineFinal = selectedBaselineScenario.results.finalValues;
-    const comparisonFinal = comparisonScenario.results.finalValues;
-    
-    console.log('Final values:', { 
-      baselineFinal: Object.keys(baselineFinal).length > 0 ? 'has data' : 'empty', 
-      comparisonFinal: Object.keys(comparisonFinal).length > 0 ? 'has data' : 'empty'
-    });
-    
-    // Create comparison data
-    const nodes = Object.keys(nodeLabelsById);
-    console.log('Node IDs found:', nodes);
-    
-    const newDeltaData = nodes.filter(nodeId => nodeLabelsById[nodeId]).map(nodeId => {
-      // Safely access values with fallbacks
-      const baselineValue = baselineFinal && typeof baselineFinal[nodeId] === 'number' 
-        ? baselineFinal[nodeId] 
-        : 0;
+    // Run simulations with the correct initial values for each scenario
+    async function runComparisonSimulations() {
+      // Get the default initial values (from the model's current node values)
+      const defaultInitialValues = model.nodes.reduce<Record<string, number>>((acc, node) => {
+        acc[node.id] = node.value;
+        return acc;
+      }, {});
       
-      const comparisonValue = comparisonFinal && typeof comparisonFinal[nodeId] === 'number'
-        ? comparisonFinal[nodeId]
-        : 0;
+      // Run baseline simulation with model default values (or special baseline values if provided)
+      const baselineInitialValues = selectedBaselineScenario?.id === 'baseline-' + model.id 
+        ? defaultInitialValues 
+        : (selectedBaselineScenario?.initialValues || defaultInitialValues);
+
+      const baselineResults = await runScenarioSimulation(baselineInitialValues);
+      
+      // Run comparison simulation with the scenario's initial values
+      const comparisonInitialValues = comparisonScenario?.initialValues || defaultInitialValues;
+      const comparisonResults = await runScenarioSimulation(comparisonInitialValues);
+      
+      console.log('Ran live simulations with scenario initial values:', {
+        baselineHasCustomValues: Object.keys(selectedBaselineScenario?.initialValues || {}).length > 0,
+        comparisonHasCustomValues: Object.keys(comparisonScenario?.initialValues || {}).length > 0,
+        baselineResults: !!baselineResults,
+        comparisonResults: !!comparisonResults
+      });
+      
+      // If either simulation failed, return early
+      if (!baselineResults || !comparisonResults) return;
+      
+      // Get final values from simulation results
+      const baselineFinal = baselineResults.finalValues;
+      const comparisonFinal = comparisonResults.finalValues;
+      
+      // Update the results in the scenario objects for the chart and table to use
+      if (selectedBaselineScenario) {
+        selectedBaselineScenario.results = {
+          ...selectedBaselineScenario.results || {},
+          ...baselineResults
+        };
+      }
+      
+      if (comparisonScenario) {
+        comparisonScenario.results = {
+          ...comparisonScenario.results || {},
+          ...comparisonResults
+        };
+      }
+      
+      console.log('Final values:', { 
+        baselineFinal: baselineResults?.finalValues && Object.keys(baselineResults.finalValues).length > 0 ? 'has data' : 'empty', 
+        comparisonFinal: comparisonResults?.finalValues && Object.keys(comparisonResults.finalValues).length > 0 ? 'has data' : 'empty'
+      });
+    
+      // Create comparison data
+      const nodes = Object.keys(nodeLabelsById);
+      console.log('Node IDs found:', nodes);
+      
+      const newDeltaData = nodes.filter(nodeId => nodeLabelsById[nodeId]).map(nodeId => {
+        // Safely access values with fallbacks
+        const baselineValue = baselineResults?.finalValues && typeof baselineResults.finalValues[nodeId] === 'number' 
+          ? baselineResults.finalValues[nodeId] 
+          : 0;
         
-      const delta = comparisonValue - baselineValue;
+        const comparisonValue = comparisonResults?.finalValues && typeof comparisonResults.finalValues[nodeId] === 'number'
+          ? comparisonResults.finalValues[nodeId]
+          : 0;
+          
+        const delta = comparisonValue - baselineValue;
+        
+        return {
+          name: nodeLabelsById[nodeId] || `Node ${nodeId}`,
+          nodeId,
+          baseline: baselineValue,
+          comparison: comparisonValue,
+          delta: delta,
+          type: model.nodes.find(n => toStringId(n.id) === nodeId)?.type || 'regular'
+        };
+      });
       
-      return {
-        name: nodeLabelsById[nodeId] || `Node ${nodeId}`,
-        nodeId,
-        baseline: baselineValue,
-        comparison: comparisonValue,
-        delta: delta,
-        type: model.nodes.find(n => toStringId(n.id) === nodeId)?.type || 'regular'
-      };
-    });
+      console.log('Delta data generated:', newDeltaData.length > 0 ? 'has data' : 'empty', newDeltaData);
+      
+      // Update state
+      setDeltaData(newDeltaData);
+    }
     
-    console.log('Delta data generated:', newDeltaData.length > 0 ? 'has data' : 'empty', newDeltaData);
-    
-    // Update state
-    setDeltaData(newDeltaData);
+    // Run the comparison simulations whenever the selected scenarios change
+    runComparisonSimulations();
   }, [baselineScenarioId, comparisonScenarioId, scenarios, nodeLabelsById, model.nodes]);
   
   // Group nodes by type
@@ -610,7 +725,7 @@ function CompareConvergencePlot({ baselineScenario, comparisonScenario, nodeLabe
       dataType: comparisonTimeSeries[nodeId] ? typeof comparisonTimeSeries[nodeId] : 'missing',
       isArray: comparisonTimeSeries[nodeId] ? Array.isArray(comparisonTimeSeries[nodeId]) : false,
       arrayLength: comparisonTimeSeries[nodeId] ? comparisonTimeSeries[nodeId].length : 0,
-      value: comparisonTimeSeries[nodeId] ? JSON.stringify(comparisonTimeSeries[nodeId]).substring(0, 50) + '...' : 'null'
+      value: comparisonTimeSeries[nodeId] ? JSON.stringify(comparisonTimeSeries[nodeId]).substring(0, 100) + '...' : 'none'
     });
     
     if (comparisonTimeSeries[nodeId] && Array.isArray(comparisonTimeSeries[nodeId])) {
@@ -620,49 +735,40 @@ function CompareConvergencePlot({ baselineScenario, comparisonScenario, nodeLabe
         label: `${nodeLabels[nodeId] || `Node ${nodeId}`} (${comparisonScenario?.name || 'Comparison'})`,
         data: comparisonTimeSeries[nodeId],
         borderColor: colors[colorIndex],
-        backgroundColor: colors[colorIndex].replace('1)', '0.2)'),
+        backgroundColor: 'transparent',
         tension: 0.3,
       });
     }
   });
 
-  // More debugging for chart data generation
-  console.log('Chart data preparation:', {
-    maxIterations,
-    labelCount: labels.length,
-    nodeIdsFound: nodeIds,
-    datasetsGenerated: datasets.length,
-    baselineDatasetCount: nodeIds.filter(id => baselineTimeSeries[id]).length,
-    comparisonDatasetCount: nodeIds.filter(id => comparisonTimeSeries[id]).length
-  });
-  
-  const data = {
-    labels,
-    datasets,
-  };
-
+  // Chart options
   const options: ChartOptions<'line'> = {
     responsive: true,
     maintainAspectRatio: false,
     scales: {
-      y: {
-        beginAtZero: true,
-        max: 1,
+      x: {
+        title: {
+          display: true,
+          text: 'Iterations',
+          color: 'rgba(255, 255, 255, 0.7)',
+        },
         ticks: {
-          color: 'rgba(255, 255, 255, 0.8)',
+          color: 'rgba(255, 255, 255, 0.7)',
         },
         grid: {
           color: 'rgba(255, 255, 255, 0.1)',
         },
       },
-      x: {
+      y: {
+        min: 0,
+        max: 1,
         title: {
           display: true,
-          text: 'Iterations',
-          color: 'rgba(255, 255, 255, 0.8)',
+          text: 'Concept Value',
+          color: 'rgba(255, 255, 255, 0.7)',
         },
         ticks: {
-          color: 'rgba(255, 255, 255, 0.8)',
+          color: 'rgba(255, 255, 255, 0.7)',
         },
         grid: {
           color: 'rgba(255, 255, 255, 0.1)',
@@ -671,54 +777,45 @@ function CompareConvergencePlot({ baselineScenario, comparisonScenario, nodeLabe
     },
     plugins: {
       legend: {
-        position: 'top' as const,
+        position: 'top',
         labels: {
-          color: 'rgba(255, 255, 255, 0.8)',
-          boxWidth: 12,
+          color: 'rgba(255, 255, 255, 0.7)',
           font: {
-            family: 'Montserrat',
+            size: 10,
           },
-        },
-      },
-      title: {
-        display: true,
-        text: 'Convergence Comparison',
-        color: 'rgba(255, 255, 255, 0.9)',
-        font: {
-          family: 'Montserrat',
-          size: 14,
+          boxWidth: 12,
+          usePointStyle: true,
         },
       },
       tooltip: {
         backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        titleFont: {
-          family: 'Montserrat',
-        },
-        bodyFont: {
-          family: 'Montserrat',
-        },
+        titleColor: 'white',
+        bodyColor: 'white',
         callbacks: {
-          label: function(context: any) {
-            let label = context.dataset.label || '';
-            if (label) {
-              label += ': ';
-            }
-            if (context.parsed.y !== null) {
-              label += context.parsed.y.toFixed(3);
-            }
-            return label;
+          label: function(context) {
+            return `${context.dataset.label}: ${parseFloat(context.raw as string).toFixed(3)}`;
           }
         }
-      },
-    },
-    animation: {
-      duration: 1000,
+      }
     },
   };
 
+  console.log('Chart data preparation:', {
+    maxIterations: maxIterations, 
+    labelCount: labels.length,
+    nodeIdsFound: nodeIds,
+    datasetsGenerated: datasets.length,
+    baselineDatasetCount: nodeIds.filter(id => baselineTimeSeries[id] && Array.isArray(baselineTimeSeries[id])).length,
+    comparisonDatasetCount: nodeIds.filter(id => comparisonTimeSeries[id] && Array.isArray(comparisonTimeSeries[id])).length
+  });
+
   return (
-    <div className="h-full w-full">
-      <Line data={data} options={options} />
-    </div>
+    <Line
+      options={options}
+      data={{
+        labels: labels,
+        datasets: datasets
+      }}
+    />
   );
 }
