@@ -211,6 +211,9 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
       const offset = existingEdge ? 40 : 0;
       const isReverse = existingEdge && existingEdge.source === connection.source;
 
+      // Only create edge if both handles are defined
+      if (!connection.sourceHandle || !connection.targetHandle) return;
+
       const newEdge = {
         id: `edge-${Date.now()}`,
         source: connection.source,
@@ -220,7 +223,8 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
         type: 'custom',
         data: { 
           weight: defaultWeight,
-          offset: offset * (isReverse ? -1 : 1) // Opposite direction for reverse edges
+          offset: offset * (isReverse ? -1 : 1), // Opposite direction for reverse edges
+          edges: edges // Pass current edges for reference
         },
         markerEnd: {
           type: MarkerType.ArrowClosed,
