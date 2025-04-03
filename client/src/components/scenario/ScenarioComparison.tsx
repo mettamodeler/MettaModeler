@@ -389,8 +389,24 @@ interface CompareConvergencePlotProps {
 }
 
 function CompareConvergencePlot({ baselineScenario, comparisonScenario, nodeLabels }: CompareConvergencePlotProps) {
+  // Add debugging for convergence issues
+  console.log('CompareConvergencePlot - Scenarios:', { 
+    baselineId: baselineScenario?.id,
+    comparisonId: comparisonScenario?.id,
+    baselineHasTimeSeries: !!baselineScenario?.results?.timeSeriesData,
+    comparisonHasTimeSeries: !!comparisonScenario?.results?.timeSeriesData,
+    baselineTimeSeriesKeys: baselineScenario?.results?.timeSeriesData ? Object.keys(baselineScenario.results.timeSeriesData).length : 0,
+    comparisonTimeSeriesKeys: comparisonScenario?.results?.timeSeriesData ? Object.keys(comparisonScenario.results.timeSeriesData).length : 0
+  });
+  
   // Return early if either scenario is missing or doesn't have time series data
   if (!baselineScenario?.results?.timeSeriesData || !comparisonScenario?.results?.timeSeriesData) {
+    console.error('Missing time series data in scenarios:', {
+      baselineResultsExists: !!baselineScenario?.results,
+      comparisonResultsExists: !!comparisonScenario?.results,
+      baselineTimeSeriesExists: !!baselineScenario?.results?.timeSeriesData,
+      comparisonTimeSeriesExists: !!comparisonScenario?.results?.timeSeriesData
+    });
     return (
       <div className="flex items-center justify-center h-full">
         <p className="text-gray-400">No convergence data available for these scenarios</p>
@@ -401,6 +417,14 @@ function CompareConvergencePlot({ baselineScenario, comparisonScenario, nodeLabe
   // Get time series data from both scenarios
   const baselineTimeSeries = baselineScenario.results.timeSeriesData;
   const comparisonTimeSeries = comparisonScenario.results.timeSeriesData;
+  
+  // Debug what the time series data actually contains
+  console.log('Time series data inspection:', {
+    baselineTimeSeriesKeys: Object.keys(baselineTimeSeries),
+    comparisonTimeSeriesKeys: Object.keys(comparisonTimeSeries),
+    baselineTimeSeries: JSON.stringify(baselineTimeSeries).substring(0, 100) + '...',
+    comparisonTimeSeries: JSON.stringify(comparisonTimeSeries).substring(0, 100) + '...'
+  });
 
   // Get maximum iterations to ensure consistent x-axis
   const baselineIterations = baselineScenario.results.iterations;
@@ -436,7 +460,14 @@ function CompareConvergencePlot({ baselineScenario, comparisonScenario, nodeLabe
 
   // Add datasets for baseline scenario (dashed lines)
   nodeIds.forEach((nodeId, index) => {
-    if (baselineTimeSeries[nodeId]) {
+    console.log(`Checking baseline dataset for node ${nodeId}:`, {
+      exists: !!baselineTimeSeries[nodeId],
+      dataType: baselineTimeSeries[nodeId] ? typeof baselineTimeSeries[nodeId] : 'missing',
+      isArray: baselineTimeSeries[nodeId] ? Array.isArray(baselineTimeSeries[nodeId]) : false,
+      arrayLength: baselineTimeSeries[nodeId] ? baselineTimeSeries[nodeId].length : 0
+    });
+    
+    if (baselineTimeSeries[nodeId] && Array.isArray(baselineTimeSeries[nodeId])) {
       const colorIndex = index % colors.length;
       
       datasets.push({
@@ -452,7 +483,15 @@ function CompareConvergencePlot({ baselineScenario, comparisonScenario, nodeLabe
 
   // Add datasets for comparison scenario (solid lines)
   nodeIds.forEach((nodeId, index) => {
-    if (comparisonTimeSeries[nodeId]) {
+    console.log(`Checking comparison dataset for node ${nodeId}:`, {
+      exists: !!comparisonTimeSeries[nodeId],
+      dataType: comparisonTimeSeries[nodeId] ? typeof comparisonTimeSeries[nodeId] : 'missing',
+      isArray: comparisonTimeSeries[nodeId] ? Array.isArray(comparisonTimeSeries[nodeId]) : false,
+      arrayLength: comparisonTimeSeries[nodeId] ? comparisonTimeSeries[nodeId].length : 0,
+      value: comparisonTimeSeries[nodeId] ? JSON.stringify(comparisonTimeSeries[nodeId]).substring(0, 50) + '...' : 'null'
+    });
+    
+    if (comparisonTimeSeries[nodeId] && Array.isArray(comparisonTimeSeries[nodeId])) {
       const colorIndex = index % colors.length;
       
       datasets.push({
@@ -465,6 +504,16 @@ function CompareConvergencePlot({ baselineScenario, comparisonScenario, nodeLabe
     }
   });
 
+  // More debugging for chart data generation
+  console.log('Chart data preparation:', {
+    maxIterations,
+    labelCount: labels.length,
+    nodeIdsFound: nodeIds,
+    datasetsGenerated: datasets.length,
+    baselineDatasetCount: nodeIds.filter(id => baselineTimeSeries[id]).length,
+    comparisonDatasetCount: nodeIds.filter(id => comparisonTimeSeries[id]).length
+  });
+  
   const data = {
     labels,
     datasets,
