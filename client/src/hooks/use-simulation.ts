@@ -73,7 +73,8 @@ export function useSimulation(model: FCMModel) {
         edges: reactFlowEdges,
         activation: 'sigmoid',
         threshold: simulationParams.threshold,
-        maxIterations: simulationParams.iterations
+        maxIterations: simulationParams.iterations,
+        compareToBaseline: true // Enable baseline comparison
       };
       
       // Try to use Python API first
@@ -97,7 +98,14 @@ export function useSimulation(model: FCMModel) {
           finalValues: pythonResult.finalState,
           timeSeriesData: pythonResult.timeSeries,
           iterations: pythonResult.iterations,
-          converged: pythonResult.converged
+          converged: pythonResult.converged,
+          
+          // Include baseline comparison data if available
+          baselineFinalState: pythonResult.baselineFinalState,
+          baselineTimeSeries: pythonResult.baselineTimeSeries,
+          baselineIterations: pythonResult.baselineIterations,
+          baselineConverged: pythonResult.baselineConverged,
+          deltaState: pythonResult.deltaState
         };
         
         setSimulationResult(result);

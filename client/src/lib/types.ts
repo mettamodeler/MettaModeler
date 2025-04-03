@@ -50,6 +50,13 @@ export interface SimulationResult {
   timeSeriesData: Record<string, number[]>;
   iterations: number;
   converged: boolean;
+  
+  // New fields for baseline comparison
+  baselineFinalState?: Record<string, number>;
+  baselineTimeSeries?: Record<string, number[]>;
+  baselineIterations?: number;
+  baselineConverged?: boolean;
+  deltaState?: Record<string, number>;
 }
 
 export interface SimulationParams {

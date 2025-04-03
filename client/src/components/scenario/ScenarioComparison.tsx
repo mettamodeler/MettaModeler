@@ -1,181 +1,217 @@
-import { useState } from "react";
-import { ChartContainer, ChartLegend, ChartLegendItem } from "@/components/ui/chart";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Info } from "lucide-react";
-import { Scenario, SimulationResult } from "@/lib/types";
-import { FCMModel } from "@shared/schema";
+import { useState, useEffect } from 'react';
+import { Scenario, FCMModel } from '@/lib/types';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface ScenarioComparisonProps {
-  scenarios: Scenario[];
   model: FCMModel;
+  scenarios: Scenario[];
 }
 
-export default function ScenarioComparison({ scenarios, model }: ScenarioComparisonProps) {
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-
-  if (scenarios.length === 0) {
+export default function ScenarioComparison({ model, scenarios }: ScenarioComparisonProps) {
+  const [baselineScenarioId, setBaselineScenarioId] = useState<string>('');
+  const [comparisonScenarioId, setComparisonScenarioId] = useState<string>('');
+  const [deltaData, setDeltaData] = useState<any[]>([]);
+  
+  // Get node labels
+  const nodeLabelsById = model.nodes.reduce<Record<string, string>>((acc, node) => {
+    acc[node.id] = node.label;
+    return acc;
+  }, {});
+  
+  // Initialize with the first two scenarios if available
+  useEffect(() => {
+    if (scenarios.length >= 2) {
+      setBaselineScenarioId(scenarios[0].id);
+      setComparisonScenarioId(scenarios[1].id);
+    } else if (scenarios.length === 1) {
+      setBaselineScenarioId(scenarios[0].id);
+      setComparisonScenarioId(scenarios[0].id);
+    }
+  }, [scenarios]);
+  
+  // Calculate delta when scenarios change
+  useEffect(() => {
+    if (!baselineScenarioId || !comparisonScenarioId) return;
+    
+    const baselineScenario = scenarios.find(s => s.id === baselineScenarioId);
+    const comparisonScenario = scenarios.find(s => s.id === comparisonScenarioId);
+    
+    if (!baselineScenario?.results || !comparisonScenario?.results) return;
+    
+    // Calculate delta between baseline and comparison scenario
+    const baselineFinal = baselineScenario.results.finalValues;
+    const comparisonFinal = comparisonScenario.results.finalValues;
+    
+    // Create comparison data
+    const nodes = Object.keys(nodeLabelsById);
+    const newDeltaData = nodes.map(nodeId => {
+      const baselineValue = baselineFinal[nodeId] || 0;
+      const comparisonValue = comparisonFinal[nodeId] || 0;
+      const delta = comparisonValue - baselineValue;
+      
+      return {
+        name: nodeLabelsById[nodeId],
+        nodeId,
+        baseline: baselineValue,
+        comparison: comparisonValue,
+        delta: delta,
+        type: model.nodes.find(n => n.id === nodeId)?.type || 'regular'
+      };
+    });
+    
+    // Update state
+    setDeltaData(newDeltaData);
+  }, [baselineScenarioId, comparisonScenarioId, scenarios, nodeLabelsById, model.nodes]);
+  
+  // Group nodes by type
+  const nodesByType = model.nodes.reduce<Record<string, string[]>>((acc, node) => {
+    const type = node.type || 'regular';
+    acc[type] = acc[type] || [];
+    acc[type].push(node.id);
+    return acc;
+  }, {});
+  
+  if (scenarios.length < 1) {
     return (
-      <Alert className="mt-4">
-        <Info className="h-4 w-4" />
-        <AlertTitle>No Scenarios</AlertTitle>
-        <AlertDescription>Create some scenarios to compare their results</AlertDescription>
-      </Alert>
+      <Card className="dark-glass border border-white/10">
+        <CardHeader>
+          <CardTitle>scenario comparison</CardTitle>
+          <CardDescription>No scenarios available to compare</CardDescription>
+        </CardHeader>
+      </Card>
     );
   }
-
-  // Convert time series data into a format suitable for recharts
-  const chartData = scenarios.reduce((acc, scenario) => {
-    if (!scenario.results?.timeSeriesData) return acc;
-    
-    const timeseriesData = scenario.results.timeSeriesData;
-    const iterations = Object.values(timeseriesData)[0]?.length || 0;
-    
-    for (let i = 0; i < iterations; i++) {
-      if (!acc[i]) {
-        acc[i] = { iteration: i };
-      }
-      
-      for (const nodeId in timeseriesData) {
-        if (nodeId === selectedNodeId || !selectedNodeId) {
-          const key = `${scenario.name}-${nodeId}`;
-          acc[i][key] = timeseriesData[nodeId][i];
-        }
-      }
-    }
-    
-    return acc;
-  }, [] as Record<string, any>[]);
-
-  // Generate unique node name/id combinations for the dropdown
-  const nodeOptions = model.nodes.map(node => ({
-    id: node.id,
-    label: node.label
-  }));
-  
-  // Generate unique colors for each scenario
-  const colors = [
-    "#0ea5e9", // sky
-    "#f97316", // orange
-    "#10b981", // emerald
-    "#8b5cf6", // violet
-    "#ec4899", // pink
-    "#ef4444", // red
-    "#22d3ee", // cyan
-    "#84cc16", // lime
-  ];
   
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold tracking-tight">Scenario Comparison</h2>
-      
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="glass p-4 rounded-lg space-y-4">
-          <h3 className="text-lg font-semibold">Select Node to Compare</h3>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-            {nodeOptions.map((node, index) => (
-              <button
-                key={node.id}
-                className={`p-2 text-sm rounded border transition-colors ${
-                  selectedNodeId === node.id
-                    ? "bg-primary/10 border-primary text-primary"
-                    : "border-border hover:border-primary/40"
-                }`}
-                onClick={() => setSelectedNodeId(node.id)}
+    <Card className="dark-glass border border-white/10">
+      <CardHeader>
+        <CardTitle>scenario comparison</CardTitle>
+        <CardDescription>Compare results between different scenarios</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-6">
+          {/* Scenario selectors */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <div className="text-sm mb-2">Baseline Scenario</div>
+              <Select 
+                value={baselineScenarioId} 
+                onValueChange={setBaselineScenarioId}
               >
-                {node.label}
-              </button>
-            ))}
+                <SelectTrigger>
+                  <SelectValue placeholder="Select baseline scenario" />
+                </SelectTrigger>
+                <SelectContent>
+                  {scenarios.map((scenario) => (
+                    <SelectItem key={scenario.id} value={scenario.id}>
+                      {scenario.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <div className="text-sm mb-2">Comparison Scenario</div>
+              <Select 
+                value={comparisonScenarioId} 
+                onValueChange={setComparisonScenarioId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select comparison scenario" />
+                </SelectTrigger>
+                <SelectContent>
+                  {scenarios.map((scenario) => (
+                    <SelectItem key={scenario.id} value={scenario.id}>
+                      {scenario.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           
-          <button 
-            className="text-xs text-muted-foreground underline hover:text-primary transition-colors"
-            onClick={() => setSelectedNodeId(null)}
-          >
-            Show all nodes
-          </button>
-        </div>
-        
-        <div className="glass p-4 rounded-lg">
-          <h3 className="text-lg font-semibold mb-4">Scenarios</h3>
-          <ul className="space-y-2">
-            {scenarios.map((scenario, index) => {
-              const color = colors[index % colors.length];
-              return (
-                <li key={scenario.id} className="flex items-center gap-2">
-                  <span 
-                    className="w-3 h-3 inline-block rounded-full" 
-                    style={{ backgroundColor: color }}
-                  />
-                  <span>{scenario.name}</span>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      </div>
-      
-      <div className="glass p-4 rounded-lg">
-        <h3 className="text-lg font-semibold mb-4">Convergence Visualization</h3>
-        <div className="h-[400px]">
-          {chartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart
-                data={chartData}
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis 
-                  dataKey="iteration" 
-                  stroke="rgba(255,255,255,0.5)"
-                  label={{ value: 'Iterations', position: 'insideBottomRight', offset: -5, fill: 'rgba(255,255,255,0.5)' }}
-                />
-                <YAxis 
-                  stroke="rgba(255,255,255,0.5)"
-                  label={{ value: 'Node Value', angle: -90, position: 'insideLeft', fill: 'rgba(255,255,255,0.5)' }}
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'rgba(30, 41, 59, 0.8)', 
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '4px',
-                    color: 'white'
-                  }}
-                />
-                {scenarios.map((scenario, scenarioIndex) => {
-                  if (!scenario.results?.timeSeriesData) return null;
-                  
-                  const scenarioColor = colors[scenarioIndex % colors.length];
-                  
-                  return Object.keys(scenario.results.timeSeriesData).map((nodeId, nodeIndex) => {
-                    if (selectedNodeId && nodeId !== selectedNodeId) return null;
-                    
-                    // Find the node label for better display
-                    const nodeLabel = model.nodes.find(n => n.id === nodeId)?.label || nodeId;
-                    const dataKey = `${scenario.name}-${nodeId}`;
-                    
-                    return (
-                      <Line
-                        key={`${scenario.id}-${nodeId}`}
-                        type="monotone"
-                        dataKey={dataKey}
-                        name={`${scenario.name}: ${nodeLabel}`}
-                        stroke={scenarioColor}
-                        dot={{ r: 3 }}
-                        activeDot={{ r: 6 }}
+          {/* Comparison data */}
+          {deltaData.length > 0 && (
+            <Tabs defaultValue="chart">
+              <TabsList>
+                <TabsTrigger value="chart">chart view</TabsTrigger>
+                <TabsTrigger value="table">table view</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="chart">
+                <div className="h-[400px] mt-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={deltaData}
+                      margin={{
+                        top: 20,
+                        right: 30,
+                        left: 20,
+                        bottom: 60,
+                      }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        dataKey="name" 
+                        angle={-45} 
+                        textAnchor="end"
+                        height={80}
+                        tick={{fontSize: 12}}
                       />
-                    );
-                  });
-                })}
-              </LineChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <p className="text-muted-foreground">No data available for the selected scenarios</p>
-            </div>
+                      <YAxis />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: '#1a202c', border: 'none', borderRadius: '4px' }}
+                        formatter={(value: any, name: any) => [parseFloat(value).toFixed(3), name]}
+                      />
+                      <Bar dataKey="delta" fill="#8884d8" name="Difference" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="table">
+                <div className="overflow-x-auto">
+                  <table className="w-full mt-4">
+                    <thead>
+                      <tr className="border-b border-white/10">
+                        <th className="py-2 text-left text-xs uppercase tracking-wider text-gray-400">Node</th>
+                        <th className="py-2 text-left text-xs uppercase tracking-wider text-gray-400">Type</th>
+                        <th className="py-2 text-left text-xs uppercase tracking-wider text-gray-400">Baseline</th>
+                        <th className="py-2 text-left text-xs uppercase tracking-wider text-gray-400">Comparison</th>
+                        <th className="py-2 text-left text-xs uppercase tracking-wider text-gray-400">Difference</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.keys(nodesByType).map(type => (
+                        deltaData
+                          .filter(data => data.type === type)
+                          .map((row, index) => (
+                            <tr key={row.nodeId} className="border-b border-white/5">
+                              <td className="py-2">{row.name}</td>
+                              <td className="py-2">
+                                <Badge variant="outline">{row.type}</Badge>
+                              </td>
+                              <td className="py-2">{row.baseline.toFixed(3)}</td>
+                              <td className="py-2">{row.comparison.toFixed(3)}</td>
+                              <td className={`py-2 ${row.delta > 0 ? 'text-green-400' : row.delta < 0 ? 'text-red-400' : ''}`}>
+                                {row.delta > 0 ? '+' : ''}{row.delta.toFixed(3)}
+                              </td>
+                            </tr>
+                          ))
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </TabsContent>
+            </Tabs>
           )}
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

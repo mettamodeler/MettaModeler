@@ -20,7 +20,8 @@ def simulate():
         "activation": "sigmoid", // or "tanh", "relu"
         "threshold": 0.001, // optional
         "maxIterations": 100, // optional
-        "generateNotebook": false // optional
+        "generateNotebook": false, // optional
+        "compareToBaseline": false // optional
     }
     """
     try:
@@ -33,20 +34,98 @@ def simulate():
         threshold = data.get('threshold', 0.001)
         max_iterations = data.get('maxIterations', 100)
         generate_notebook = data.get('generateNotebook', False)
+        compare_to_baseline = data.get('compareToBaseline', False)
         
         # Validate inputs
         if not nodes:
             return jsonify({'error': 'No nodes provided'}), 400
+        
+        if compare_to_baseline:
+            # Create baseline scenario (original nodes with default values)
+            # Get a deep copy of the original nodes
+            baseline_nodes = []
+            for node in nodes:
+                baseline_node = {
+                    'id': node['id'],
+                    'data': {
+                        **{k: v for k, v in node.get('data', {}).items() if k != 'value'},
+                        'value': 0.0 if node['data'].get('type') != 'driver' else node['data'].get('value', 0.0)
+                    }
+                }
+                baseline_nodes.append(baseline_node)
+                
+            # Run baseline simulation
+            baseline_results = run_fcm_simulation(
+                nodes=baseline_nodes,
+                edges=edges,
+                activation_function=activation,
+                threshold=threshold,
+                max_iterations=max_iterations,
+                generate_notebook=False
+            )
             
-        # Run simulation
-        results = run_fcm_simulation(
-            nodes=nodes,
-            edges=edges,
-            activation_function=activation,
-            threshold=threshold,
-            max_iterations=max_iterations,
-            generate_notebook=generate_notebook
-        )
+            # Run scenario simulation
+            scenario_results = run_fcm_simulation(
+                nodes=nodes,
+                edges=edges,
+                activation_function=activation,
+                threshold=threshold,
+                max_iterations=max_iterations,
+                generate_notebook=generate_notebook
+            )
+            
+            # Calculate delta between baseline and scenario
+            baseline_final = baseline_results['finalState']
+            scenario_final = scenario_results['finalState']
+            
+            # Calculate delta values (scenario - baseline)
+            delta_values = {}
+            for node_id in baseline_final:
+                if node_id in scenario_final:
+                    delta_values[node_id] = scenario_final[node_id] - baseline_final[node_id]
+            
+            # Convert Python boolean to JSON-serializable format
+            scenario_converged = True if scenario_results['converged'] == True else False
+            baseline_converged = True if baseline_results['converged'] == True else False
+            
+            # Combine results
+            results = {
+                # Standard scenario results
+                'finalState': scenario_results['finalState'],
+                'timeSeries': scenario_results['timeSeries'],
+                'iterations': int(scenario_results['iterations']),
+                'converged': scenario_converged,
+                
+                # Baseline and comparison data
+                'baselineFinalState': baseline_results['finalState'],
+                'baselineTimeSeries': baseline_results['timeSeries'],
+                'baselineIterations': int(baseline_results['iterations']),
+                'baselineConverged': baseline_converged,
+                
+                # Delta values
+                'deltaState': delta_values,
+            }
+        else:
+            # Run standard simulation
+            sim_results = run_fcm_simulation(
+                nodes=nodes,
+                edges=edges,
+                activation_function=activation,
+                threshold=threshold,
+                max_iterations=max_iterations,
+                generate_notebook=generate_notebook
+            )
+            
+            # Ensure boolean is serializable
+            sim_converged = True if sim_results.get('converged') == True else False
+            
+            # Create properly serializable results
+            results = {
+                'finalState': sim_results['finalState'],
+                'timeSeries': sim_results['timeSeries'],
+                'iterations': int(sim_results['iterations']),
+                'converged': sim_converged
+            }
         
         # Return results
         return jsonify(results)

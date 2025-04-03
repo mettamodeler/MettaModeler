@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import ScenarioManager from '@/components/scenario/ScenarioManager';
-import { FCMModel } from '@shared/schema';
+import { FCMModel } from '@/lib/types';
 
 export default function ModelEditor() {
   const { modelId } = useParams<{ modelId: string }>();

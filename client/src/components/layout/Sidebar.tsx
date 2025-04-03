@@ -88,30 +88,32 @@ export default function Sidebar() {
           {models
             .filter(model => !currentProjectId || model.projectId === currentProjectId)
             .map((model) => (
-              <Link key={model.id} href={`/models/${model.id}`}>
-                <a className={cn(
-                  "glass rounded-md p-2 cursor-pointer group transition-all block",
+              <div 
+                key={model.id}
+                className={cn(
+                  "glass rounded-md p-2 cursor-pointer group transition-all",
                   model.id === currentModelId 
                     ? "bg-white/10 shadow-glow-sm border border-secondary/20" 
                     : "hover:shadow-glow-sm"
-                )}>
-                  <div className="flex justify-between items-center">
-                    <div className="text-sm font-medium">{model.name.toLowerCase()}</div>
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="text-xs p-1 hover:bg-white/10 rounded" onClick={(e) => e.preventDefault()}>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <circle cx="12" cy="12" r="1"></circle>
-                          <circle cx="19" cy="12" r="1"></circle>
-                          <circle cx="5" cy="12" r="1"></circle>
-                        </svg>
-                      </button>
-                    </div>
+                )}
+                onClick={() => setLocation(`/models/${model.id}`)}
+              >
+                <div className="flex justify-between items-center">
+                  <div className="text-sm font-medium">{model.name.toLowerCase()}</div>
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button className="text-xs p-1 hover:bg-white/10 rounded" onClick={(e) => e.stopPropagation()}>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="1"></circle>
+                        <circle cx="19" cy="12" r="1"></circle>
+                        <circle cx="5" cy="12" r="1"></circle>
+                      </svg>
+                    </button>
                   </div>
-                  <div className="text-xs text-gray-400 mt-1">
-                    {model.nodes.length} nodes · {model.edges.length} connections
-                  </div>
-                </a>
-              </Link>
+                </div>
+                <div className="text-xs text-gray-400 mt-1">
+                  {model.nodes.length} nodes · {model.edges.length} connections
+                </div>
+              </div>
             ))}
         </div>
       </div>

@@ -11,6 +11,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import ConvergencePlot from './ConvergencePlot';
 import ModelAnalysis from './ModelAnalysis';
+import BaselineComparison from './BaselineComparison';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
@@ -259,6 +260,14 @@ export default function SimulationPanel({ model }: SimulationPanelProps) {
                     })}
                   </div>
                 </div>
+                
+                {/* Baseline Comparison (only shown if there's baseline data) */}
+                {simulationResult.baselineFinalState && (
+                  <BaselineComparison 
+                    model={model}
+                    result={simulationResult}
+                  />
+                )}
                 
                 {/* Save Scenario */}
                 <div className="flex justify-between items-center">

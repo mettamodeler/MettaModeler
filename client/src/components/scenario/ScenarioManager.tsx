@@ -15,8 +15,7 @@ import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { useSimulation } from "@/hooks/use-simulation";
 import { format } from "date-fns";
-import { FCMModel } from "@shared/schema";
-import { Scenario, SimulationParams } from "@/lib/types";
+import { Scenario, SimulationParams, FCMModel } from "@/lib/types";
 import { apiRequest } from "@/lib/queryClient";
 import ScenarioComparison from "./ScenarioComparison";
 
@@ -35,7 +34,7 @@ export default function ScenarioManager({ model }: ScenarioManagerProps) {
   const [selectedScenarios, setSelectedScenarios] = useState<Set<string>>(new Set());
   const [newScenarioName, setNewScenarioName] = useState("");
   const [initialValues, setInitialValues] = useState<Record<string, number>>({});
-  const { runSimulation } = useSimulation(model);
+  const { runSimulation, updateParams } = useSimulation(model);
 
   // Fetch scenarios when model changes
   useEffect(() => {
@@ -86,24 +85,23 @@ export default function ScenarioManager({ model }: ScenarioManagerProps) {
     setCreateScenarioLoading(true);
     
     try {
-      // Run simulation with current initial values
-      const simParams: SimulationParams = {
-        initialValues
-      };
+      // Update the simulation parameters with current initial values
+      updateParams({ initialValues });
       
-      const results = runSimulation(simParams);
+      // Run the simulation
+      const results = await runSimulation();
       
       // Create scenario in database
-      const response = await apiRequest("/api/scenarios", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const response = await apiRequest(
+        "POST", 
+        "/api/scenarios", 
+        {
           name: newScenarioName,
           modelId: model.id,
           initialValues,
           results
-        })
-      });
+        }
+      );
       
       // Add new scenario to the list
       setScenarios(prev => [...prev, response]);
@@ -133,9 +131,10 @@ export default function ScenarioManager({ model }: ScenarioManagerProps) {
     if (!deleteScenarioId) return;
     
     try {
-      await apiRequest(`/api/scenarios/${deleteScenarioId}`, {
-        method: "DELETE"
-      });
+      await apiRequest(
+        "DELETE", 
+        `/api/scenarios/${deleteScenarioId}`
+      );
       
       // Remove from scenarios list
       setScenarios(prev => prev.filter(s => s.id !== deleteScenarioId));
@@ -273,10 +272,12 @@ export default function ScenarioManager({ model }: ScenarioManagerProps) {
           </div>
           
           {selectedScenariosList.length > 0 && (
-            <ScenarioComparison 
-              scenarios={selectedScenariosList}
-              model={model}
-            />
+            <div className="mt-6">
+              <ScenarioComparison 
+                scenarios={selectedScenariosList}
+                model={model}
+              />
+            </div>
           )}
         </>
       )}

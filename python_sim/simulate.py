@@ -413,3 +413,101 @@ def run_fcm_simulation(
         results["notebook"] = nbf.v4.writes(nb)
     
     return results
+
+
+def run_baseline_scenario_comparison(
+    nodes: List[Dict], 
+    edges: List[Dict], 
+    activation_function: str = "sigmoid",
+    threshold: float = 0.001,
+    max_iterations: int = 100,
+    generate_notebook: bool = False
+) -> Dict:
+    """
+    Run a baseline simulation and compare it with a scenario simulation.
+    
+    This function creates two simulations:
+    1. Baseline: Using the original node values
+    2. Scenario: Using the provided node values (which may have been modified by the user)
+    
+    Args:
+        nodes: List of node objects with id and data properties (for scenario)
+        edges: List of edge objects with source, target and data properties
+        activation_function: Activation function to use (sigmoid, tanh, relu)
+        threshold: Convergence threshold
+        max_iterations: Maximum number of iterations
+        generate_notebook: Whether to generate a Jupyter notebook
+        
+    Returns:
+        Dict with simulation results including baseline, scenario, and delta values
+    """
+    # Create baseline nodes (reset all node values to their default state)
+    baseline_nodes = []
+    for node in nodes:
+        # Create a deep copy of the node to avoid modifying the original
+        baseline_node = {
+            'id': node['id'],
+            'data': {
+                # Take all properties from the original node except 'value'
+                **{k: v for k, v in node.get('data', {}).items() if k != 'value'},
+                # For baseline, we use a default value of 0 for all nodes
+                # This represents the "no intervention" state
+                'value': 0.0 if node['data'].get('type') != 'driver' else node['data'].get('value', 0.0)
+            }
+        }
+        baseline_nodes.append(baseline_node)
+    
+    # Run baseline simulation
+    baseline_simulator = FCMSimulator(
+        nodes=baseline_nodes,
+        edges=edges,
+        activation_function=activation_function,
+        threshold=threshold,
+        max_iterations=max_iterations
+    )
+    baseline_results = baseline_simulator.run_simulation()
+    
+    # Run scenario simulation
+    scenario_simulator = FCMSimulator(
+        nodes=nodes,
+        edges=edges,
+        activation_function=activation_function,
+        threshold=threshold,
+        max_iterations=max_iterations
+    )
+    scenario_results = scenario_simulator.run_simulation()
+    
+    # Calculate delta between baseline and scenario
+    baseline_final = baseline_results['finalState']
+    scenario_final = scenario_results['finalState']
+    
+    # Calculate delta values (scenario - baseline)
+    delta_values = {}
+    for node_id in baseline_final:
+        if node_id in scenario_final:
+            delta_values[node_id] = scenario_final[node_id] - baseline_final[node_id]
+    
+    # Combine results
+    combined_results = {
+        # Standard scenario results
+        'finalState': scenario_results['finalState'],
+        'timeSeries': scenario_results['timeSeries'],
+        'iterations': scenario_results['iterations'],
+        'converged': scenario_results['converged'],
+        
+        # Baseline and comparison data
+        'baselineFinalState': baseline_results['finalState'],
+        'baselineTimeSeries': baseline_results['timeSeries'],
+        'baselineIterations': baseline_results['iterations'],
+        'baselineConverged': baseline_results['converged'],
+        
+        # Delta values
+        'deltaState': delta_values,
+    }
+    
+    # Generate notebook if requested
+    if generate_notebook:
+        nb = scenario_simulator.generate_notebook()
+        combined_results["notebook"] = nbf.v4.writes(nb)
+    
+    return combined_results
