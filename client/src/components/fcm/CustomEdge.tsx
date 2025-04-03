@@ -5,6 +5,7 @@ import {
   EdgeProps,
   getBezierPath,
   MarkerType,
+  Position,
 } from 'reactflow';
 import { Slider } from '@/components/ui/slider';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
