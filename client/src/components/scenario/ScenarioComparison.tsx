@@ -4,7 +4,7 @@ import { toStringId } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import ScenarioSelector from './ScenarioSelector';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Line } from 'react-chartjs-2';
 import {
@@ -146,12 +146,17 @@ function createBaselineScenario(model: FCMModel): Scenario {
     nodeCount: model.nodes.length 
   });
   
+  // Create a unique baseline ID for each model to prevent cross-contamination
+  // Use the unique model ID for this to ensure different models have different baselines
+  const uniqueBaselineId = `baseline-${modelId}`;
+  
   // Initialize a stub of the baseline scenario
   // We'll replace the results when the simulation finishes
   return {
-    id: 'baseline',
+    id: uniqueBaselineId,
     name: 'Baseline (No Intervention)',
     modelId: modelId,
+    // Empty initialValues differentiates this from comparison scenarios
     initialValues: {},
     createdAt: new Date().toISOString(),
     // We'll use the fallback initially, but replace it with the actual results when they're ready
@@ -178,18 +183,23 @@ function createBaselineScenario(model: FCMModel): Scenario {
 }
 
 export default function ScenarioComparison({ model, scenarios }: ScenarioComparisonProps) {
-  const [baselineScenarioId, setBaselineScenarioId] = useState<string>('baseline');
+  // Create state variables first
   const [comparisonScenarioId, setComparisonScenarioId] = useState<string>('');
   const [deltaData, setDeltaData] = useState<any[]>([]);
   const [selectedTab, setSelectedTab] = useState('chart');
+  const [baselineHasRun, setBaselineHasRun] = useState(false);
   
   // Create baseline scenario only once - using a ref to prevent recreation on each render
   const baselineScenarioRef = useRef<Scenario>();
-  const [baselineHasRun, setBaselineHasRun] = useState(false);
   
+  // Initialize the ref if it's not already set
   if (!baselineScenarioRef.current) {
     baselineScenarioRef.current = createBaselineScenario(model);
   }
+  
+  // Create a more specific ID that changes with each model
+  const uniqueBaselineId = baselineScenarioRef.current?.id || 'baseline';
+  const [baselineScenarioId, setBaselineScenarioId] = useState<string>(uniqueBaselineId);
   
   // Use the memoized baselineScenario
   const baselineScenario = baselineScenarioRef.current;
@@ -232,7 +242,8 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
   // Initialize with baseline and first actual scenario if available
   useEffect(() => {
     if (scenarios.length >= 1) {
-      setBaselineScenarioId('baseline'); // Always use the virtual baseline by default
+      // Use the actual ID from the baseline scenario object rather than the string 'baseline'
+      setBaselineScenarioId(baselineScenarioRef.current?.id || 'baseline');
       setComparisonScenarioId(scenarios[0].id);
     }
   }, [scenarios]);
@@ -244,10 +255,9 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
       return;
     }
     
-    // Get the baseline scenario (either virtual or a real one)
-    const selectedBaselineScenario = baselineScenarioId === 'baseline' 
-      ? baselineScenarioRef.current 
-      : allScenarios.find(s => s.id === baselineScenarioId);
+    // Get the selected baseline scenario from allScenarios
+    // First try an exact match by ID, otherwise use the default baseline scenario
+    const selectedBaselineScenario = allScenarios.find(s => s.id === baselineScenarioId) || baselineScenarioRef.current;
       
     // Get the comparison scenario
     const comparisonScenario = allScenarios.find(s => s.id === comparisonScenarioId);
@@ -334,49 +344,23 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
         <div className="space-y-6">
           {/* Scenario selectors */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <div className="text-sm mb-2">Baseline Scenario</div>
-              <Select 
-                value={baselineScenarioId} 
-                onValueChange={setBaselineScenarioId}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select baseline scenario" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem key="baseline" value="baseline">
-                    Baseline (No Intervention)
-                  </SelectItem>
-                  {scenarios.map((scenario) => (
-                    <SelectItem key={scenario.id} value={scenario.id}>
-                      {scenario.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <ScenarioSelector 
+              value={baselineScenarioId}
+              onValueChange={setBaselineScenarioId}
+              scenarios={scenarios}
+              baselineId={uniqueBaselineId}
+              label="Baseline Scenario"
+              placeholder="Select baseline scenario"
+            />
             
-            <div>
-              <div className="text-sm mb-2">Comparison Scenario</div>
-              <Select 
-                value={comparisonScenarioId} 
-                onValueChange={setComparisonScenarioId}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select comparison scenario" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem key="baseline" value="baseline">
-                    Baseline (No Intervention)
-                  </SelectItem>
-                  {scenarios.map((scenario) => (
-                    <SelectItem key={scenario.id} value={scenario.id}>
-                      {scenario.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <ScenarioSelector 
+              value={comparisonScenarioId}
+              onValueChange={setComparisonScenarioId}
+              scenarios={scenarios}
+              baselineId={uniqueBaselineId}
+              label="Comparison Scenario"
+              placeholder="Select comparison scenario"
+            />
           </div>
           
           {/* Comparison data */}
@@ -465,12 +449,8 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
                   <div className="mt-4">
                     <div className="h-[400px]">
                       <CompareConvergencePlot 
-                        baselineScenario={baselineScenarioId === 'baseline' 
-                          ? baselineScenarioRef.current 
-                          : allScenarios.find(s => s.id === baselineScenarioId)} 
-                        comparisonScenario={comparisonScenarioId === 'baseline' 
-                          ? baselineScenarioRef.current 
-                          : allScenarios.find(s => s.id === comparisonScenarioId)}
+                        baselineScenario={allScenarios.find(s => s.id === baselineScenarioId) || baselineScenarioRef.current}
+                        comparisonScenario={allScenarios.find(s => s.id === comparisonScenarioId)}
                         nodeLabels={nodeLabelsById}
                       />
                     </div>
@@ -505,7 +485,17 @@ function CompareConvergencePlot({ baselineScenario, comparisonScenario, nodeLabe
     baselineHasTimeSeries: !!actualBaselineResults?.timeSeriesData,
     comparisonHasTimeSeries: !!comparisonScenario?.results?.timeSeriesData,
     baselineTimeSeriesKeys: actualBaselineResults?.timeSeriesData ? Object.keys(actualBaselineResults.timeSeriesData).length : 0,
-    comparisonTimeSeriesKeys: comparisonScenario?.results?.timeSeriesData ? Object.keys(comparisonScenario.results.timeSeriesData).length : 0
+    comparisonTimeSeriesKeys: comparisonScenario?.results?.timeSeriesData ? Object.keys(comparisonScenario.results.timeSeriesData).length : 0,
+    // Check if scenarios are the same object reference
+    areSameScenario: baselineScenario === comparisonScenario,
+    // Check if results are the same object reference
+    areSameResults: actualBaselineResults === comparisonScenario?.results,
+    // Compare IDs to ensure they're different
+    baselineScenarioId: baselineScenario?.id,
+    comparisonScenarioId: comparisonScenario?.id,
+    // Are initial values different?
+    initialValuesEqual: baselineScenario?.initialValues && comparisonScenario?.initialValues ? 
+      JSON.stringify(baselineScenario.initialValues) === JSON.stringify(comparisonScenario.initialValues) : 'N/A',
   });
   
   // No loading indicator needed anymore since we handle the simulation in the parent component
@@ -533,6 +523,13 @@ function CompareConvergencePlot({ baselineScenario, comparisonScenario, nodeLabe
         <p className="text-gray-400">No convergence data available for these scenarios</p>
       </div>
     );
+  }
+
+  // Check if we're comparing a scenario to itself
+  if (baselineScenario?.id !== 'baseline' && 
+      comparisonScenario?.id !== 'baseline' &&
+      baselineScenario?.id === comparisonScenario?.id) {
+    console.warn('Same scenario selected for both baseline and comparison');
   }
 
   // Get time series data from both scenarios, handling different field names
