@@ -302,14 +302,31 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
       }
       
       const result = await response.json();
+      console.log('Raw API response structure:', Object.keys(result));
       
-      // Convert API response to our format
-      return {
+      // Check if time series data exists in the response
+      if (!result.timeSeries && !result.timeSeriesData) {
+        console.warn('No time series data in API response. Raw result:', result);
+      }
+      
+      // Convert API response to our format with both field names for compatibility
+      const formattedResult = {
         finalValues: result.finalState || result.finalValues || {},
+        finalState: result.finalState || result.finalValues || {},
         timeSeriesData: result.timeSeries || result.timeSeriesData || {},
+        timeSeries: result.timeSeries || result.timeSeriesData || {},
         iterations: result.iterations || 0,
         converged: result.converged || false
       };
+      
+      console.log('Formatted result structure:', {
+        hasTimeSeriesData: !!formattedResult.timeSeriesData,
+        timeSeriesDataKeys: Object.keys(formattedResult.timeSeriesData).length,
+        hasFinalValues: !!formattedResult.finalValues,
+        finalValuesKeys: Object.keys(formattedResult.finalValues).length
+      });
+      
+      return formattedResult;
     } catch (error) {
       console.error('Failed to run scenario simulation:', error);
       return null;
@@ -352,11 +369,13 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
       const baselineInitialValues = selectedBaselineScenario?.id === 'baseline-' + model.id 
         ? defaultInitialValues 
         : (selectedBaselineScenario?.initialValues || defaultInitialValues);
-
+        
+      console.log('Running baseline simulation with initial values:', baselineInitialValues);
       const baselineResults = await runScenarioSimulation(baselineInitialValues);
       
       // Run comparison simulation with the scenario's initial values
       const comparisonInitialValues = comparisonScenario?.initialValues || defaultInitialValues;
+      console.log('Running comparison simulation with initial values:', comparisonInitialValues);
       const comparisonResults = await runScenarioSimulation(comparisonInitialValues);
       
       console.log('Ran live simulations with scenario initial values:', {
@@ -615,15 +634,39 @@ function CompareConvergencePlot({ baselineScenario, comparisonScenario, nodeLabe
   
   // No loading indicator needed anymore since we handle the simulation in the parent component
   
-  // Handle both timeSeriesData and timeSeries field naming for backward compatibility
-  const hasBaselineTimeSeries = !!actualBaselineResults?.timeSeriesData || 
-                               !!actualBaselineResults?.baselineTimeSeries || 
-                               !!(actualBaselineResults as any)?.timeSeries;
-                            
-  const hasComparisonTimeSeries = !!comparisonScenario?.results?.timeSeriesData || 
-                                 !!(comparisonScenario?.results as any)?.timeSeries;
+  // Check if we have scenario results
+  if (!baselineScenario || !comparisonScenario) {
+    console.log('Scenarios found:', {
+      baselineScenario: !!baselineScenario,
+      comparisonScenario: !!comparisonScenario,
+      baselineResults: !!baselineScenario?.results,
+      comparisonResults: !!comparisonScenario?.results
+    });
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-gray-400">Select both baseline and comparison scenarios to view convergence plot</p>
+      </div>
+    );
+  }
   
-  // Return early if either scenario is missing or doesn't have time series data
+  // Handle both timeSeriesData and timeSeries field naming for backward compatibility
+  // Try retrieving time series data from multiple possible field names
+  const baselineTimeSeriesData = 
+    actualBaselineResults?.timeSeriesData || 
+    actualBaselineResults?.timeSeries || 
+    (actualBaselineResults as any)?.baselineTimeSeries || 
+    {};
+                            
+  const comparisonTimeSeriesData = 
+    comparisonScenario?.results?.timeSeriesData || 
+    comparisonScenario?.results?.timeSeries || 
+    {};
+  
+  // Check if we have time series data
+  const hasBaselineTimeSeries = Object.keys(baselineTimeSeriesData).length > 0;
+  const hasComparisonTimeSeries = Object.keys(comparisonTimeSeriesData).length > 0;
+  
+  // Return early if either scenario doesn't have time series data
   if (!hasBaselineTimeSeries || !hasComparisonTimeSeries) {
     console.error('Missing time series data in scenarios:', {
       baselineResultsExists: !!actualBaselineResults,
@@ -633,6 +676,17 @@ function CompareConvergencePlot({ baselineScenario, comparisonScenario, nodeLabe
       baselineResultsFields: actualBaselineResults ? Object.keys(actualBaselineResults) : [],
       comparisonResultsFields: comparisonScenario?.results ? Object.keys(comparisonScenario.results) : []
     });
+    
+    // If we're missing time series data, run the simulation with the current model
+    if (!hasComparisonTimeSeries) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full gap-2">
+          <p className="text-amber-400">Waiting for simulation data...</p>
+          <p className="text-gray-400 text-sm">Select "Run Comparison" to generate convergence data</p>
+        </div>
+      );
+    }
+    
     return (
       <div className="flex items-center justify-center h-full">
         <p className="text-gray-400">No convergence data available for these scenarios</p>
@@ -647,13 +701,9 @@ function CompareConvergencePlot({ baselineScenario, comparisonScenario, nodeLabe
     console.warn('Same scenario selected for both baseline and comparison');
   }
 
-  // Get time series data from both scenarios, handling different field names
-  const baselineTimeSeries = actualBaselineResults?.timeSeriesData || 
-                            actualBaselineResults?.baselineTimeSeries || 
-                            (actualBaselineResults as any)?.timeSeries || {};
-                            
-  const comparisonTimeSeries = comparisonScenario?.results?.timeSeriesData || 
-                              (comparisonScenario?.results as any)?.timeSeries || {};
+  // Use the time series data we already prepared above
+  const baselineTimeSeries = baselineTimeSeriesData;
+  const comparisonTimeSeries = comparisonTimeSeriesData;
   
   // Debug what the time series data actually contains
   console.log('Time series data inspection:', {
