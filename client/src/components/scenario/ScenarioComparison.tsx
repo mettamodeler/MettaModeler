@@ -35,49 +35,86 @@ interface ScenarioComparisonProps {
   scenarios: Scenario[];
 }
 
-// Create a virtual baseline scenario representing model's default state
+// Create a baseline scenario by running the FCM simulation with model's original node values
 function createBaselineScenario(model: FCMModel): Scenario {
-  // Create baseline results with neutral values for all nodes
-  const finalValues: Record<string, number> = {};
-  const timeSeriesData: Record<string, number[]> = {};
+  // Variables to hold simulation results - will be populated by runRealBaseline
+  let baselineResult: SimulationResult | null = null;
   
-  // Generate pseudo-convergence data for baseline scenario
-  // For baseline, all nodes start at a neutral value (0.5) and converge to their natural state
-  const iterations = 10; // Show some iterations for visual comparison
-  
-  model.nodes.forEach(node => {
-    // All nodes, including drivers, start at a neutral value (0.5)
-    // For the sake of visualization, we'll have them converge to different values
-    
-    let finalValue: number;
-    
-    // Create pseudo-final values based on node type for visual demonstration
-    if (node.type === 'driver') {
-      finalValue = 0.7; // Drivers tend to have higher impact
-    } else if (node.type === 'outcome') {
-      finalValue = 0.4; // Outcomes show the result of system activity
-    } else {
-      finalValue = 0.5; // Regular nodes stay close to middle
+  // Function to run a real simulation for the baseline
+  const runRealBaseline = async () => {
+    try {
+      // Prepare data for Python simulation API using the model's default values
+      const reactFlowNodes = model.nodes.map(node => ({
+        id: node.id,
+        data: {
+          label: node.label,
+          value: node.value, // Use the actual node values (not 0.5)
+          type: node.type
+        }
+      }));
+      
+      const reactFlowEdges = model.edges.map(edge => ({
+        source: edge.source,
+        target: edge.target,
+        data: {
+          weight: edge.weight
+        }
+      }));
+      
+      // Prepare payload
+      const payload = {
+        nodes: reactFlowNodes,
+        edges: reactFlowEdges,
+        activation: 'sigmoid',
+        threshold: 0.001,
+        maxIterations: 20,
+      };
+      
+      // Call the simulation API
+      const response = await fetch('/api/simulate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      
+      // Convert API response to our format
+      return {
+        finalValues: result.finalState || result.finalValues || {},
+        timeSeriesData: result.timeSeries || result.timeSeriesData || {},
+        iterations: result.iterations || 0,
+        converged: result.converged || false
+      };
+    } catch (error) {
+      console.error('Failed to run baseline simulation:', error);
+      // Return fallback result with just the original values as final
+      const fallbackFinalValues: Record<string, number> = {};
+      const fallbackTimeSeries: Record<string, number[]> = {};
+      
+      model.nodes.forEach(node => {
+        const nodeId = toStringId(node.id);
+        fallbackFinalValues[nodeId] = node.value;
+        fallbackTimeSeries[nodeId] = [node.value]; // Just one data point
+      });
+      
+      return {
+        finalValues: fallbackFinalValues,
+        timeSeriesData: fallbackTimeSeries,
+        iterations: 0,
+        converged: false
+      };
     }
-    
-    // Ensure node ID is consistently a string
-    const nodeId = toStringId(node.id);
-    finalValues[nodeId] = finalValue;
-    
-    // Create the time series showing gradual change from 0.5 to final value
-    const series = [];
-    const startValue = 0.5; // Neutral starting point
-    
-    for (let i = 0; i <= iterations; i++) {
-      const progress = i / iterations;
-      const stepValue = startValue + (finalValue - startValue) * progress;
-      series.push(stepValue);
-    }
-    timeSeriesData[nodeId] = series;
-  });
+  };
   
-  // Create virtual baseline scenario
-  // Ensure modelId is a string regardless of the source type
+  // Synchronously create and return the scenario object
+  // (The actual simulation will be run when needed)
   const modelId = toStringId(model.id);
   
   console.log('Creating baseline scenario for model:', { 
@@ -86,25 +123,30 @@ function createBaselineScenario(model: FCMModel): Scenario {
     nodeCount: model.nodes.length 
   });
   
+  // Initialize a stub of the baseline scenario
+  // We'll replace the results when the simulation finishes
   return {
     id: 'baseline',
     name: 'Baseline (No Intervention)',
     modelId: modelId,
     initialValues: {},
     createdAt: new Date().toISOString(),
+    // We'll use the fallback initially, but replace it with the actual results when they're ready
     results: {
-      finalValues,
-      timeSeriesData,
-      iterations: iterations,
-      converged: true,
-      // Add empty fields for the baseline comparison fields to ensure type safety
+      finalValues: {},
+      timeSeriesData: {},
+      iterations: 0,
+      converged: false,
       baselineFinalState: {},
       baselineTimeSeries: {},
       baselineIterations: 0,
       baselineConverged: false,
       deltaState: {}
-    }
-  };
+    },
+    // Attach the async function that will fetch the real simulation results
+    // This will be called when the scenario is selected
+    runRealBaseline
+  } as Scenario & { runRealBaseline: () => Promise<SimulationResult> };
 }
 
 export default function ScenarioComparison({ model, scenarios }: ScenarioComparisonProps) {
@@ -389,20 +431,55 @@ interface CompareConvergencePlotProps {
 }
 
 function CompareConvergencePlot({ baselineScenario, comparisonScenario, nodeLabels }: CompareConvergencePlotProps) {
+  const [baselineResults, setBaselineResults] = useState<SimulationResult | null>(null);
+  const [isLoadingBaseline, setIsLoadingBaseline] = useState<boolean>(false);
+  
+  // Run the real baseline simulation if we have the special baseline scenario with the runRealBaseline function
+  useEffect(() => {
+    const fetchBaselineResults = async () => {
+      if (baselineScenario?.id === 'baseline' && (baselineScenario as any).runRealBaseline) {
+        setIsLoadingBaseline(true);
+        try {
+          const results = await (baselineScenario as any).runRealBaseline();
+          setBaselineResults(results);
+          console.log('Real baseline simulation results:', results);
+        } catch (error) {
+          console.error('Failed to run real baseline simulation:', error);
+        } finally {
+          setIsLoadingBaseline(false);
+        }
+      }
+    };
+    
+    fetchBaselineResults();
+  }, [baselineScenario]);
+  
+  // Get the actual results (either from our state or from the scenario object)
+  const actualBaselineResults = baselineResults || baselineScenario?.results;
+  
   // Add debugging for convergence issues
   console.log('CompareConvergencePlot - Scenarios:', { 
     baselineId: baselineScenario?.id,
     comparisonId: comparisonScenario?.id,
-    baselineHasTimeSeries: !!baselineScenario?.results?.timeSeriesData,
+    baselineHasTimeSeries: !!actualBaselineResults?.timeSeriesData,
     comparisonHasTimeSeries: !!comparisonScenario?.results?.timeSeriesData,
-    baselineTimeSeriesKeys: baselineScenario?.results?.timeSeriesData ? Object.keys(baselineScenario.results.timeSeriesData).length : 0,
+    baselineTimeSeriesKeys: actualBaselineResults?.timeSeriesData ? Object.keys(actualBaselineResults.timeSeriesData).length : 0,
     comparisonTimeSeriesKeys: comparisonScenario?.results?.timeSeriesData ? Object.keys(comparisonScenario.results.timeSeriesData).length : 0
   });
   
+  // If we're still loading the baseline, show a loading indicator
+  if (isLoadingBaseline) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-gray-400">Loading real baseline simulation...</p>
+      </div>
+    );
+  }
+  
   // Handle both timeSeriesData and timeSeries field naming for backward compatibility
-  const hasBaselineTimeSeries = !!baselineScenario?.results?.timeSeriesData || 
-                               !!baselineScenario?.results?.baselineTimeSeries || 
-                               !!(baselineScenario?.results as any)?.timeSeries;
+  const hasBaselineTimeSeries = !!actualBaselineResults?.timeSeriesData || 
+                               !!actualBaselineResults?.baselineTimeSeries || 
+                               !!(actualBaselineResults as any)?.timeSeries;
                             
   const hasComparisonTimeSeries = !!comparisonScenario?.results?.timeSeriesData || 
                                  !!(comparisonScenario?.results as any)?.timeSeries;
@@ -410,11 +487,11 @@ function CompareConvergencePlot({ baselineScenario, comparisonScenario, nodeLabe
   // Return early if either scenario is missing or doesn't have time series data
   if (!hasBaselineTimeSeries || !hasComparisonTimeSeries) {
     console.error('Missing time series data in scenarios:', {
-      baselineResultsExists: !!baselineScenario?.results,
+      baselineResultsExists: !!actualBaselineResults,
       comparisonResultsExists: !!comparisonScenario?.results,
       baselineTimeSeriesExists: hasBaselineTimeSeries,
       comparisonTimeSeriesExists: hasComparisonTimeSeries,
-      baselineResultsFields: baselineScenario?.results ? Object.keys(baselineScenario.results) : [],
+      baselineResultsFields: actualBaselineResults ? Object.keys(actualBaselineResults) : [],
       comparisonResultsFields: comparisonScenario?.results ? Object.keys(comparisonScenario.results) : []
     });
     return (
@@ -425,9 +502,9 @@ function CompareConvergencePlot({ baselineScenario, comparisonScenario, nodeLabe
   }
 
   // Get time series data from both scenarios, handling different field names
-  const baselineTimeSeries = baselineScenario?.results?.timeSeriesData || 
-                            baselineScenario?.results?.baselineTimeSeries || 
-                            (baselineScenario?.results as any)?.timeSeries || {};
+  const baselineTimeSeries = actualBaselineResults?.timeSeriesData || 
+                            actualBaselineResults?.baselineTimeSeries || 
+                            (actualBaselineResults as any)?.timeSeries || {};
                             
   const comparisonTimeSeries = comparisonScenario?.results?.timeSeriesData || 
                               (comparisonScenario?.results as any)?.timeSeries || {};
@@ -441,7 +518,7 @@ function CompareConvergencePlot({ baselineScenario, comparisonScenario, nodeLabe
   });
 
   // Get maximum iterations to ensure consistent x-axis
-  const baselineIterations = baselineScenario?.results?.iterations || 0;
+  const baselineIterations = actualBaselineResults?.iterations || 0;
   const comparisonIterations = comparisonScenario?.results?.iterations || 0;
   const maxIterations = Math.max(baselineIterations, comparisonIterations);
 
