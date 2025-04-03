@@ -40,7 +40,9 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
     const baselineScenario = scenarios.find(s => s.id === baselineScenarioId);
     const comparisonScenario = scenarios.find(s => s.id === comparisonScenarioId);
     
+    // Safety checks for results and finalValues existence
     if (!baselineScenario?.results || !comparisonScenario?.results) return;
+    if (!baselineScenario.results.finalValues || !comparisonScenario.results.finalValues) return;
     
     // Calculate delta between baseline and comparison scenario
     const baselineFinal = baselineScenario.results.finalValues;
@@ -48,13 +50,20 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
     
     // Create comparison data
     const nodes = Object.keys(nodeLabelsById);
-    const newDeltaData = nodes.map(nodeId => {
-      const baselineValue = baselineFinal[nodeId] || 0;
-      const comparisonValue = comparisonFinal[nodeId] || 0;
+    const newDeltaData = nodes.filter(nodeId => nodeLabelsById[nodeId]).map(nodeId => {
+      // Safely access values with fallbacks
+      const baselineValue = baselineFinal && typeof baselineFinal[nodeId] === 'number' 
+        ? baselineFinal[nodeId] 
+        : 0;
+      
+      const comparisonValue = comparisonFinal && typeof comparisonFinal[nodeId] === 'number'
+        ? comparisonFinal[nodeId]
+        : 0;
+        
       const delta = comparisonValue - baselineValue;
       
       return {
-        name: nodeLabelsById[nodeId],
+        name: nodeLabelsById[nodeId] || `Node ${nodeId}`,
         nodeId,
         baseline: baselineValue,
         comparison: comparisonValue,
@@ -187,23 +196,29 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
                       </tr>
                     </thead>
                     <tbody>
-                      {Object.keys(nodesByType).map(type => (
-                        deltaData
-                          .filter(data => data.type === type)
-                          .map((row, index) => (
-                            <tr key={row.nodeId} className="border-b border-white/5">
-                              <td className="py-2">{row.name}</td>
-                              <td className="py-2">
-                                <Badge variant="outline">{row.type}</Badge>
-                              </td>
-                              <td className="py-2">{row.baseline.toFixed(3)}</td>
-                              <td className="py-2">{row.comparison.toFixed(3)}</td>
-                              <td className={`py-2 ${row.delta > 0 ? 'text-green-400' : row.delta < 0 ? 'text-red-400' : ''}`}>
-                                {row.delta > 0 ? '+' : ''}{row.delta.toFixed(3)}
-                              </td>
-                            </tr>
-                          ))
-                      ))}
+                      {/* Safe rendering of each node type group */}
+                      {Object.keys(nodesByType).map(type => {
+                        // Get rows for this node type
+                        const typeRows = deltaData.filter(data => data.type === type);
+                        
+                        // If no rows for this type, skip
+                        if (typeRows.length === 0) return null;
+                        
+                        // Return the rows for this type
+                        return typeRows.map((row, index) => (
+                          <tr key={row.nodeId || `row-${index}`} className="border-b border-white/5">
+                            <td className="py-2">{row.name}</td>
+                            <td className="py-2">
+                              <Badge variant="outline">{row.type}</Badge>
+                            </td>
+                            <td className="py-2">{typeof row.baseline === 'number' ? row.baseline.toFixed(3) : '0.000'}</td>
+                            <td className="py-2">{typeof row.comparison === 'number' ? row.comparison.toFixed(3) : '0.000'}</td>
+                            <td className={`py-2 ${row.delta > 0 ? 'text-green-400' : row.delta < 0 ? 'text-red-400' : ''}`}>
+                              {row.delta > 0 ? '+' : ''}{typeof row.delta === 'number' ? row.delta.toFixed(3) : '0.000'}
+                            </td>
+                          </tr>
+                        ));
+                      })}
                     </tbody>
                   </table>
                 </div>
