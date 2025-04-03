@@ -36,33 +36,41 @@ interface ScenarioComparisonProps {
 
 // Create a virtual baseline scenario representing model's default state
 function createBaselineScenario(model: FCMModel): Scenario {
-  // Create baseline results with all zeros except driver nodes
+  // Create baseline results with neutral values for all nodes
   const finalValues: Record<string, number> = {};
   const timeSeriesData: Record<string, number[]> = {};
   
   // Generate pseudo-convergence data for baseline scenario
-  // For baseline, driver nodes maintain their value while other nodes get small pseudo-values
+  // For baseline, all nodes start at a neutral value (0.5) and converge to their natural state
   const iterations = 10; // Show some iterations for visual comparison
   
   model.nodes.forEach(node => {
-    // For driver nodes, maintain constant values throughout all iterations
+    // All nodes, including drivers, start at a neutral value (0.5)
+    // For the sake of visualization, we'll have them converge to different values
+    
+    let finalValue: number;
+    
+    // Create pseudo-final values based on node type for visual demonstration
     if (node.type === 'driver') {
-      finalValues[node.id] = node.value;
-      timeSeriesData[node.id] = Array(iterations + 1).fill(node.value);
-    } 
-    // For non-driver nodes, show gradual increase from 0 up to a small value
-    else {
-      const finalValue = 0.1; // Small final value for regular/outcome nodes
-      finalValues[node.id] = finalValue;
-      
-      // Create the time series showing gradual increase
-      const series = [];
-      for (let i = 0; i <= iterations; i++) {
-        const stepValue = (finalValue * i) / iterations;
-        series.push(stepValue);
-      }
-      timeSeriesData[node.id] = series;
+      finalValue = 0.7; // Drivers tend to have higher impact
+    } else if (node.type === 'outcome') {
+      finalValue = 0.4; // Outcomes show the result of system activity
+    } else {
+      finalValue = 0.5; // Regular nodes stay close to middle
     }
+    
+    finalValues[node.id] = finalValue;
+    
+    // Create the time series showing gradual change from 0.5 to final value
+    const series = [];
+    const startValue = 0.5; // Neutral starting point
+    
+    for (let i = 0; i <= iterations; i++) {
+      const progress = i / iterations;
+      const stepValue = startValue + (finalValue - startValue) * progress;
+      series.push(stepValue);
+    }
+    timeSeriesData[node.id] = series;
   });
   
   // Create virtual baseline scenario

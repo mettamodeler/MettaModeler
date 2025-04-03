@@ -441,7 +441,7 @@ def run_baseline_scenario_comparison(
     Returns:
         Dict with simulation results including baseline, scenario, and delta values
     """
-    # Create baseline nodes (reset all node values to their default state)
+    # Create baseline nodes (set all nodes to a neutral starting value)
     baseline_nodes = []
     for node in nodes:
         # Create a deep copy of the node to avoid modifying the original
@@ -450,9 +450,9 @@ def run_baseline_scenario_comparison(
             'data': {
                 # Take all properties from the original node except 'value'
                 **{k: v for k, v in node.get('data', {}).items() if k != 'value'},
-                # For baseline, we use a default value of 0 for all nodes
-                # This represents the "no intervention" state
-                'value': 0.0 if node['data'].get('type') != 'driver' else node['data'].get('value', 0.0)
+                # For baseline, use a neutral value of 0.5 for ALL nodes, including drivers
+                # This represents the system's natural convergence from a neutral state
+                'value': 0.5
             }
         }
         baseline_nodes.append(baseline_node)
