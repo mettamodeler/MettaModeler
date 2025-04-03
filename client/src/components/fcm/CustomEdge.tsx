@@ -37,15 +37,32 @@ export default function CustomEdge({
     (e.source === source && e.target === target && e.id !== id)
   );
   
-  // Calculate offset for bidirectional edges
-  const offset = hasBidirectionalEdge ? 40 : 0;
-  const centerY = (sourceY + targetY) / 2;
+  // Get offset from edge data or calculate it
+  const offset = data?.offset || 0;
   
-  // For bidirectional edges, create a higher arc
-  const controlPoint = hasBidirectionalEdge ? {
-    x: (sourceX + targetX) / 2,
-    y: centerY - offset
-  } : undefined;
+  // Calculate midpoint
+  const midX = (sourceX + targetX) / 2;
+  const midY = (sourceY + targetY) / 2;
+  
+  // Calculate perpendicular offset point
+  const dx = targetX - sourceX;
+  const dy = targetY - sourceY;
+  const length = Math.sqrt(dx * dx + dy * dy);
+  
+  let controlPoint;
+  if (isSelfLoop) {
+    // Create a loop that comes out from the source handle direction
+    controlPoint = {
+      x: sourceX + (sourcePosition === Position.Left ? -100 : sourcePosition === Position.Right ? 100 : 0),
+      y: sourceY + (sourcePosition === Position.Top ? -100 : sourcePosition === Position.Bottom ? 100 : 0)
+    };
+  } else if (offset !== 0) {
+    // For bidirectional edges, offset perpendicular to the edge
+    controlPoint = {
+      x: midX + (-dy / length) * offset,
+      y: midY + (dx / length) * offset
+    };
+  }
 
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
@@ -54,7 +71,7 @@ export default function CustomEdge({
     targetX,
     targetY,
     targetPosition,
-    curvature: isSelfLoop ? 0.8 : (hasBidirectionalEdge ? 0.5 : 0.2),
+    curvature: isSelfLoop ? 0.8 : (offset !== 0 ? 0.3 : 0.2),
     controlPoints: controlPoint ? [controlPoint] : undefined,
   });
 

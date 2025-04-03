@@ -202,7 +202,15 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
 
       // Create a new edge with default weight
       // Edge direction is determined by source -> target
-      // Smart handle selection for better edge routing
+      // Each edge will be offset in opposite directions when bidirectional
+      const existingEdge = edges.find(e => 
+        (e.source === connection.target && e.target === connection.source) ||
+        (e.source === connection.source && e.target === connection.target)
+      );
+
+      const offset = existingEdge ? 40 : 0;
+      const isReverse = existingEdge && existingEdge.source === connection.source;
+
       const newEdge = {
         id: `edge-${Date.now()}`,
         source: connection.source,
@@ -210,14 +218,10 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
         sourceHandle: connection.sourceHandle,
         targetHandle: connection.targetHandle,
         type: 'custom',
-        // Use the actual handles for better connection points
-        sourcePosition: connection.sourceHandle?.includes('bottom') ? Position.Bottom : 
-                      connection.sourceHandle?.includes('right') ? Position.Right :
-                      connection.sourceHandle?.includes('left') ? Position.Left : Position.Top,
-        targetPosition: connection.targetHandle?.includes('bottom') ? Position.Bottom :
-                      connection.targetHandle?.includes('right') ? Position.Right :
-                      connection.targetHandle?.includes('left') ? Position.Left : Position.Top,
-        data: { weight: defaultWeight },
+        data: { 
+          weight: defaultWeight,
+          offset: offset * (isReverse ? -1 : 1) // Opposite direction for reverse edges
+        },
         markerEnd: {
           type: MarkerType.ArrowClosed,
           width: 20,
