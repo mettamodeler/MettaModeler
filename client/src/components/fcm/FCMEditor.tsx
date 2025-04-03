@@ -14,6 +14,7 @@ import ReactFlow, {
   EdgeChange,
   Panel,
   MarkerType,
+  Position,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { FCMModel, FCMNode, FCMEdge, NodeType } from '@/lib/types';
