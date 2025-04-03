@@ -164,6 +164,8 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
   // Handle new connections
   const onConnect = useCallback(
     (connection: Connection) => {
+      if (!connection.source || !connection.target) return;
+      
       // Default weight for new connections
       const defaultWeight = 0.5;
       
@@ -171,9 +173,11 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
       const edgeColor = 'rgba(239, 68, 68, 0.8)'; // red for positive
       
       // Create a new edge with default weight
+      // Edge direction is determined by source -> target
       const newEdge = {
-        ...connection,
         id: `edge-${Date.now()}`,
+        source: connection.source,
+        target: connection.target,
         type: 'custom',
         data: { weight: defaultWeight },
         markerEnd: {
