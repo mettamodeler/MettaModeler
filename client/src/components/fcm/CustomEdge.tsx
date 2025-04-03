@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { 
   BaseEdge,
   EdgeLabelRenderer,
@@ -7,7 +7,6 @@ import {
   MarkerType,
 } from 'reactflow';
 import { Slider } from '@/components/ui/slider';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface CustomEdgeData {
   weight: number;
@@ -29,7 +28,8 @@ export default function CustomEdge({
   markerEnd,
 }: EdgeProps<CustomEdgeData>) {
   const { weight, onChange } = data || { weight: 0 };
-
+  
+  // Generate bezier path for the edge
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
@@ -38,12 +38,13 @@ export default function CustomEdge({
     targetY,
     targetPosition,
   });
-
+  
+  // Determine edge color based on weight value
   const isPositive = weight >= 0;
   const edgeColor = isPositive 
-    ? 'rgba(255, 64, 129, 0.8)' // hot pink for positive
-    : 'rgba(0, 196, 255, 0.8)'; // blue for negative
-
+    ? 'rgba(239, 68, 68, 0.8)' // red for positive
+    : 'rgba(59, 130, 246, 0.8)'; // blue for negative
+  
   const edgeStyle = {
     stroke: edgeColor,
     strokeWidth: 2,
@@ -51,100 +52,56 @@ export default function CustomEdge({
       ? `drop-shadow(0 0 5px ${edgeColor})` 
       : `drop-shadow(0 0 3px ${edgeColor})`,
   };
-
+  
   const handleWeightChange = useCallback(
     (value: number[]) => {
       if (onChange) {
+        // Get the first value from the slider array
         const newWeight = value[0];
         onChange(id, newWeight);
       }
     },
     [id, onChange]
   );
-
+  
   return (
     <>
+      <BaseEdge
+        id={id}
+        path={edgePath}
+        style={edgeStyle}
+        // @ts-ignore
+        markerEnd={{
+          type: MarkerType.ArrowClosed,
+          color: edgeColor,
+          width: 20,
+          height: 20,
+        }}
+      />
       <EdgeLabelRenderer>
         <div
+          className="dark-glass p-2 rounded-md shadow-glow-sm absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col min-w-[120px]"
           style={{
-            position: 'absolute',
-            transform: 'translate(-50%, -50%)',
             left: labelX,
             top: labelY,
-            zIndex: 1000,
-            pointerEvents: 'all',
           }}
         >
-          <Popover>
-            <PopoverTrigger asChild>
-              <div 
-                className="w-6 h-6 rounded-full bg-background/80 cursor-pointer hover:bg-background flex items-center justify-center border border-border"
-              >
-                <span className="text-xs font-mono">{weight.toFixed(1)}</span>
-              </div>
-            </PopoverTrigger>
-            <PopoverContent className="w-64 p-4 dark-glass">
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs">{weight.toFixed(1)}</span>
-                  <span className={`text-xs ${isPositive ? 'text-pink-500' : 'text-cyan-400'}`}>
-                    {isPositive ? 'Positive' : 'Negative'}
-                  </span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onChange?.(id, 0); // Reset weight to trigger deletion
-                      // setIsVisible(false); //Requires state management addition
-                    }}
-                    className="ml-2 p-1 hover:bg-red-500/20 rounded-sm"
-                    title="Delete edge"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M18 6L6 18M6 6l12 12"/>
-                    </svg>
-                  </button>
-                </div>
-                <Slider
-                  value={[weight]}
-                  min={-1}
-                  max={1}
-                  step={0.1}
-                  onValueChange={handleWeightChange}
-                  className={`${isPositive ? 'bg-pink-950/30' : 'bg-cyan-950/30'}`}
-                />
-              </div>
-            </PopoverContent>
-          </Popover>
+          <div className="flex justify-between items-center mb-1 px-1">
+            <span className="text-xs">{weight.toFixed(1)}</span>
+            <span className={`text-xs ${isPositive ? 'text-red-500' : 'text-blue-500'}`}>
+              {isPositive ? 'Positive' : 'Negative'}
+            </span>
+          </div>
+          <Slider
+            value={[weight]}
+            min={-1}
+            max={1}
+            step={0.1}
+            onValueChange={handleWeightChange}
+            className={`${isPositive ? 'bg-red-950/30' : 'bg-blue-950/30'}`}
+          />
         </div>
       </EdgeLabelRenderer>
-      <path
-        id={id}
-        className="react-flow__edge-path"
-        d={edgePath}
-        style={edgeStyle}
-        data-weight-sign={isPositive ? "positive" : "negative"}
-        markerEnd={`url(#${id}-arrow)`}
-      />
-      <defs>
-        <marker
-          id={`${id}-arrow`}
-          markerWidth="25"
-          markerHeight="25"
-          viewBox="-10 -10 20 20"
-          orient="auto"
-          refX="0"
-          refY="0"
-        >
-          <polyline
-            stroke={edgeColor}
-            strokeWidth="1"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill={edgeColor}
-            points="-5,-4 0,0 -5,4 -5,-4"
-          />
-        </marker>
-      </defs>
     </>
   );
 }

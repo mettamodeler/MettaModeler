@@ -13,13 +13,11 @@
     --popover: 219 39% 25%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 270 95% 65%; /* #A855F7 (purple) */
+    --primary: 272 94% 65%; /* #A855F7 (purple) */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 195 100% 50%; /* #00C4FF (blue) */
+    --secondary: 195 100% 50%; /* #00C4FF (teal) */
     --secondary-foreground: 0 0% 100%;
-    
-    --tertiary: 163 85% 47%; /* #10DEA7 (teal/green) */
 
     --muted: 219 39% 30%;
     --muted-foreground: 0 0% 85%;
@@ -65,62 +63,17 @@
 
 /* Glassmorphism styles */
 .glass {
-  @apply backdrop-blur-md bg-white/10 border border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.1)];
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  @apply backdrop-blur-md bg-white/10 border border-white/10;
 }
 
 .dark-glass {
-  @apply backdrop-blur-md bg-black/20 border border-white/5 shadow-[0_4px_15px_rgba(0,0,0,0.2)];
-  background: linear-gradient(135deg, rgba(20, 30, 48, 0.7), rgba(10, 15, 24, 0.8));
-}
-
-.glow-effect {
-  @apply relative;
-}
-
-.glow-effect::before {
-  content: '';
-  @apply absolute top-0 left-0 w-full h-full rounded-lg pointer-events-none;
-  background: radial-gradient(circle at 50% 50%, rgba(0, 196, 255, 0.15), transparent 70%);
-  z-index: -1;
+  @apply backdrop-blur-md bg-black/30 border border-white/5;
 }
 
 /* React Flow customizations */
 .react-flow__edge path {
-  @apply stroke-[2px] cursor-pointer transition-all duration-200;
+  @apply stroke-secondary stroke-[2px];
   filter: drop-shadow(0 0 3px rgba(0, 196, 255, 0.6));
-}
-
-/* Hot pink for positive edges */
-.react-flow__edge[data-weight-sign="positive"] path {
-  stroke: rgba(255, 64, 129, 0.8);
-  filter: drop-shadow(0 0 4px rgba(255, 64, 129, 0.5));
-}
-
-/* Blue for negative edges */
-.react-flow__edge[data-weight-sign="negative"] path {
-  stroke: rgba(0, 196, 255, 0.8);
-  filter: drop-shadow(0 0 4px rgba(0, 196, 255, 0.5));
-}
-
-/* Animation utilities */
-.animate-in {
-  animation: scale-in 0.2s ease-out;
-}
-
-.zoom-in-95 {
-  transform-origin: center;
-}
-
-@keyframes scale-in {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translate(-50%, -50%);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translate(-50%, -50%);
-  }
 }
 
 .react-flow__controls {
@@ -136,27 +89,12 @@
 }
 
 .react-flow__node {
-  @apply rounded-lg;
-  filter: drop-shadow(0 0 10px rgba(0, 196, 255, 0.3));
-  transition: filter 0.2s ease, transform 0.2s ease;
+  @apply rounded-lg shadow-[0_0_20px_rgba(0,196,255,0.3)];
+  transition: box-shadow 0.2s ease;
 }
 
 .react-flow__node:hover {
-  filter: drop-shadow(0 0 15px rgba(0, 196, 255, 0.5));
-  transform: translateY(-2px);
-}
-
-/* Custom node type-based glow effects */
-.react-flow__node[data-type="driver"] {
-  filter: drop-shadow(0 0 10px rgba(0, 196, 255, 0.4));
-}
-
-.react-flow__node[data-type="regular"] {
-  filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.4));
-}
-
-.react-flow__node[data-type="outcome"] {
-  filter: drop-shadow(0 0 10px rgba(16, 222, 167, 0.4));
+  @apply shadow-[0_0_20px_rgba(0,196,255,0.5)];
 }
 
 /* Custom scrollbar */
