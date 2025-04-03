@@ -4,11 +4,9 @@ export default function AppHeader() {
   return (
     <header className="h-14 glass flex items-center justify-between px-4 z-10">
       <div className="flex items-center">
-        <Link href="/">
-          <a className="text-2xl font-light tracking-wider mr-6">
-            <span className="text-secondary font-semibold">metta</span>
-            <span className="text-primary">modeler</span>
-          </a>
+        <Link href="/" className="text-2xl font-light tracking-wider mr-6">
+          <span className="text-secondary font-semibold">metta</span>
+          <span className="text-primary">modeler</span>
         </Link>
         <nav className="hidden md:flex space-x-4">
           <button className="px-3 py-1 text-sm rounded-md hover:bg-white/10 transition">models</button>
