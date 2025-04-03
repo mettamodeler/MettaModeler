@@ -185,12 +185,39 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
   
   // Create baseline scenario only once - using a ref to prevent recreation on each render
   const baselineScenarioRef = useRef<Scenario>();
+  const [baselineHasRun, setBaselineHasRun] = useState(false);
+  
   if (!baselineScenarioRef.current) {
     baselineScenarioRef.current = createBaselineScenario(model);
   }
   
   // Use the memoized baselineScenario
   const baselineScenario = baselineScenarioRef.current;
+  
+  // Run the baseline simulation once when the component mounts
+  useEffect(() => {
+    async function runBaselineSimulation() {
+      if (baselineScenario && !baselineHasRun && (baselineScenario as any).runRealBaseline) {
+        console.log('Running real baseline simulation for chart/table views');
+        try {
+          const results = await (baselineScenario as any).runRealBaseline();
+          // Update the scenario's results
+          baselineScenario.results = {
+            ...baselineScenario.results,
+            finalValues: results.finalValues,
+            timeSeriesData: results.timeSeriesData,
+            iterations: results.iterations,
+            converged: results.converged
+          };
+          setBaselineHasRun(true);
+        } catch (error) {
+          console.error('Failed to run baseline simulation:', error);
+        }
+      }
+    }
+    
+    runBaselineSimulation();
+  }, [baselineScenario]);
   
   // Add baseline to scenarios for selection
   const allScenarios = [baselineScenario, ...scenarios];
@@ -465,40 +492,11 @@ interface CompareConvergencePlotProps {
 }
 
 function CompareConvergencePlot({ baselineScenario, comparisonScenario, nodeLabels }: CompareConvergencePlotProps) {
-  const [baselineResults, setBaselineResults] = useState<SimulationResult | null>(null);
-  const [isLoadingBaseline, setIsLoadingBaseline] = useState<boolean>(false);
-  const simulationRequestRef = useRef<boolean>(false);
+  // We don't need to run the simulation again since it's already handled in the parent component
+  // and the results are already stored in the baselineScenario.results
   
-  // Run the real baseline simulation if we have the special baseline scenario with the runRealBaseline function
-  useEffect(() => {
-    // Only run this once per component instance to prevent multiple API calls
-    if (simulationRequestRef.current) {
-      return;
-    }
-
-    const fetchBaselineResults = async () => {
-      if (baselineScenario?.id === 'baseline' && (baselineScenario as any).runRealBaseline) {
-        // Mark that we've already requested this simulation to prevent repeats
-        simulationRequestRef.current = true;
-        setIsLoadingBaseline(true);
-        
-        try {
-          const results = await (baselineScenario as any).runRealBaseline();
-          setBaselineResults(results);
-          console.log('Real baseline simulation results:', results);
-        } catch (error) {
-          console.error('Failed to run real baseline simulation:', error);
-        } finally {
-          setIsLoadingBaseline(false);
-        }
-      }
-    };
-    
-    fetchBaselineResults();
-  }, []);
-  
-  // Get the actual results (either from our state or from the scenario object)
-  const actualBaselineResults = baselineResults || baselineScenario?.results;
+  // Get the actual results directly from the scenario object
+  const actualBaselineResults = baselineScenario?.results;
   
   // Add debugging for convergence issues
   console.log('CompareConvergencePlot - Scenarios:', { 
@@ -510,14 +508,7 @@ function CompareConvergencePlot({ baselineScenario, comparisonScenario, nodeLabe
     comparisonTimeSeriesKeys: comparisonScenario?.results?.timeSeriesData ? Object.keys(comparisonScenario.results.timeSeriesData).length : 0
   });
   
-  // If we're still loading the baseline, show a loading indicator
-  if (isLoadingBaseline) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-gray-400">Loading real baseline simulation...</p>
-      </div>
-    );
-  }
+  // No loading indicator needed anymore since we handle the simulation in the parent component
   
   // Handle both timeSeriesData and timeSeries field naming for backward compatibility
   const hasBaselineTimeSeries = !!actualBaselineResults?.timeSeriesData || 
