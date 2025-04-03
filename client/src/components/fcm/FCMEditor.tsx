@@ -221,6 +221,13 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
         sourceHandle: connection.sourceHandle,
         targetHandle: connection.targetHandle,
         type: 'custom',
+        // Get positions from handles
+        sourcePosition: connection.sourceHandle?.includes('bottom') ? Position.Bottom :
+                      connection.sourceHandle?.includes('right') ? Position.Right :
+                      connection.sourceHandle?.includes('left') ? Position.Left : Position.Top,
+        targetPosition: connection.targetHandle?.includes('bottom') ? Position.Bottom :
+                      connection.targetHandle?.includes('right') ? Position.Right :
+                      connection.targetHandle?.includes('left') ? Position.Left : Position.Top,
         data: { 
           weight: defaultWeight,
           offset: offset * (isReverse ? -1 : 1), // Opposite direction for reverse edges
