@@ -1,4 +1,3 @@
-
 import { useCallback, useState } from 'react';
 import { 
   BaseEdge,
@@ -30,7 +29,7 @@ export default function CustomEdge({
   markerEnd,
 }: EdgeProps<CustomEdgeData>) {
   const { weight, onChange } = data || { weight: 0 };
-  
+
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
@@ -39,12 +38,12 @@ export default function CustomEdge({
     targetY,
     targetPosition,
   });
-  
+
   const isPositive = weight >= 0;
   const edgeColor = isPositive 
     ? 'rgba(239, 68, 68, 0.8)' // red for positive
     : 'rgba(59, 130, 246, 0.8)'; // blue for negative
-  
+
   const edgeStyle = {
     stroke: edgeColor,
     strokeWidth: 2,
@@ -52,7 +51,7 @@ export default function CustomEdge({
       ? `drop-shadow(0 0 5px ${edgeColor})` 
       : `drop-shadow(0 0 3px ${edgeColor})`,
   };
-  
+
   const handleWeightChange = useCallback(
     (value: number[]) => {
       if (onChange) {
@@ -91,6 +90,19 @@ export default function CustomEdge({
                   <span className={`text-xs ${isPositive ? 'text-red-500' : 'text-blue-500'}`}>
                     {isPositive ? 'Positive' : 'Negative'}
                   </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onChange?.(id, 0); // Reset weight to trigger deletion
+                      // setIsVisible(false); //Requires state management addition
+                    }}
+                    className="ml-2 p-1 hover:bg-red-500/20 rounded-sm"
+                    title="Delete edge"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                  </button>
                 </div>
                 <Slider
                   value={[weight]}

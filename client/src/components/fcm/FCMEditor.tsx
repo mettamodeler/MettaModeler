@@ -152,6 +152,33 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
     [onNodesChange, saveModelChanges]
   );
   
+  // Handle node deletion with keyboard
+  const onKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        const selectedNodes = nodes.filter(node => node.selected);
+        const selectedEdges = edges.filter(edge => edge.selected);
+        
+        if (selectedNodes.length > 0) {
+          setNodes(nodes.filter(node => !node.selected));
+          // Remove connected edges
+          setEdges(edges.filter(edge => 
+            !selectedNodes.some(node => 
+              node.id === edge.source || node.id === edge.target
+            )
+          ));
+          saveModelChanges();
+        }
+        
+        if (selectedEdges.length > 0) {
+          setEdges(edges.filter(edge => !edge.selected));
+          saveModelChanges();
+        }
+      }
+    },
+    [nodes, edges, setNodes, setEdges, saveModelChanges]
+  );
+
   // Handle edge changes
   const handleEdgesChange = useCallback(
     (changes: EdgeChange[]) => {
@@ -330,6 +357,8 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
         // Close any open edge popups when clicking canvas
         setEdges(eds => eds.map(e => ({ ...e, data: { ...e.data, isVisible: false } })));
       }}
+      onKeyDown={onKeyDown}
+      deleteKeyCode={['Backspace', 'Delete']}
       fitView
       minZoom={0.2}
       maxZoom={4}
