@@ -340,22 +340,36 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
       return;
     }
     
-    // Get the selected baseline scenario from allScenarios
-    // First try an exact match by ID, otherwise use the default baseline scenario
-    const selectedBaselineScenario = allScenarios.find(s => s.id === baselineScenarioId) || baselineScenarioRef.current;
+    // Debug the available scenario IDs vs what we're looking for
+    console.log('Scenario ID verification:', {
+      lookingForBaselineId: baselineScenarioId,
+      lookingForComparisonId: comparisonScenarioId,
+      availableScenarioIds: allScenarios.map(s => ({ id: s.id, type: typeof s.id })),
+      baselineMatches: allScenarios.filter(s => String(s.id) === String(baselineScenarioId)).length,
+      comparisonMatches: allScenarios.filter(s => String(s.id) === String(comparisonScenarioId)).length
+    });
+    
+    // Use string comparison for safer ID matching to handle number vs string ID issues
+    const selectedBaselineScenario = allScenarios.find(s => String(s.id) === String(baselineScenarioId)) || baselineScenarioRef.current;
       
-    // Get the comparison scenario
-    const comparisonScenario = allScenarios.find(s => s.id === comparisonScenarioId);
+    // Get the comparison scenario using string comparison for ID matching
+    const comparisonScenario = allScenarios.find(s => String(s.id) === String(comparisonScenarioId));
     
     console.log('Scenarios found:', { 
       baselineScenario: !!selectedBaselineScenario, 
       comparisonScenario: !!comparisonScenario,
+      baselineId: selectedBaselineScenario?.id,
+      comparisonId: comparisonScenario?.id,
       baselineResults: !!selectedBaselineScenario?.results,
       comparisonResults: !!comparisonScenario?.results
     });
     
     // Early return if either scenario is missing
-    if (!selectedBaselineScenario || !comparisonScenario) return;
+    if (!selectedBaselineScenario || !comparisonScenario) {
+      console.log('Cannot proceed: Missing one or both scenarios');
+      setDeltaData([]); // Clear delta data when scenarios are missing
+      return;
+    }
     
     // Run simulations with the correct initial values for each scenario
     async function runComparisonSimulations() {
@@ -497,94 +511,111 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
             />
           </div>
           
-          {/* Comparison data */}
-          {deltaData.length > 0 && (
+          {/* Check if both scenarios are selected */}
+          {(!baselineScenarioId || !comparisonScenarioId) ? (
+            <div className="flex flex-col items-center justify-center p-8 text-center">
+              <p className="text-amber-400 mb-2">Please select both baseline and comparison scenarios</p>
+              <p className="text-gray-400 text-sm">The comparison view will show differences between scenarios</p>
+            </div>
+          ) : (
             <Tabs defaultValue="chart" onValueChange={setSelectedTab}>
               <TabsList>
-                <TabsTrigger value="chart">chart view</TabsTrigger>
-                <TabsTrigger value="table">table view</TabsTrigger>
+                <TabsTrigger value="chart" disabled={deltaData.length === 0}>chart view</TabsTrigger>
+                <TabsTrigger value="table" disabled={deltaData.length === 0}>table view</TabsTrigger>
                 <TabsTrigger value="convergence">convergence plot</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="chart">
-                <div className="h-[400px] mt-4">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={deltaData}
-                      margin={{
-                        top: 20,
-                        right: 30,
-                        left: 20,
-                        bottom: 60,
-                      }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis 
-                        dataKey="name" 
-                        angle={-45} 
-                        textAnchor="end"
-                        height={80}
-                        tick={{fontSize: 12}}
-                      />
-                      <YAxis />
-                      <Tooltip 
-                        contentStyle={{ backgroundColor: '#1a202c', border: 'none', borderRadius: '4px' }}
-                        formatter={(value: any, name: any) => [parseFloat(value).toFixed(3), name]}
-                      />
-                      <Bar dataKey="delta" fill="#8884d8" name="Difference" />
-                    </BarChart>
-                  </ResponsiveContainer>
+              {deltaData.length === 0 && selectedTab !== 'convergence' ? (
+                <div className="flex flex-col items-center justify-center p-8 h-[400px] text-center">
+                  <p className="text-amber-400 mb-2">Waiting for comparison data...</p>
+                  <p className="text-gray-400 text-sm">
+                    Select the convergence plot tab to view simulation progress,<br />
+                    or make sure both scenarios have been simulated.
+                  </p>
                 </div>
-              </TabsContent>
-              
-              <TabsContent value="table">
-                <div className="overflow-x-auto">
-                  <table className="w-full mt-4">
-                    <thead>
-                      <tr className="border-b border-white/10">
-                        <th className="py-2 text-left text-xs uppercase tracking-wider text-gray-400">Node</th>
-                        <th className="py-2 text-left text-xs uppercase tracking-wider text-gray-400">Type</th>
-                        <th className="py-2 text-left text-xs uppercase tracking-wider text-gray-400">Baseline</th>
-                        <th className="py-2 text-left text-xs uppercase tracking-wider text-gray-400">Comparison</th>
-                        <th className="py-2 text-left text-xs uppercase tracking-wider text-gray-400">Difference</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {/* Safe rendering of each node type group */}
-                      {Object.keys(nodesByType).map(type => {
-                        // Get rows for this node type
-                        const typeRows = deltaData.filter(data => data.type === type);
-                        
-                        // If no rows for this type, skip
-                        if (typeRows.length === 0) return null;
-                        
-                        // Return the rows for this type
-                        return typeRows.map((row, index) => (
-                          <tr key={row.nodeId || `row-${index}`} className="border-b border-white/5">
-                            <td className="py-2">{row.name}</td>
-                            <td className="py-2">
-                              <Badge variant="outline">{row.type}</Badge>
-                            </td>
-                            <td className="py-2">{typeof row.baseline === 'number' ? row.baseline.toFixed(3) : '0.000'}</td>
-                            <td className="py-2">{typeof row.comparison === 'number' ? row.comparison.toFixed(3) : '0.000'}</td>
-                            <td className={`py-2 ${row.delta > 0 ? 'text-green-400' : row.delta < 0 ? 'text-red-400' : ''}`}>
-                              {row.delta > 0 ? '+' : ''}{typeof row.delta === 'number' ? row.delta.toFixed(3) : '0.000'}
-                            </td>
+              ) : (
+                <>
+                  <TabsContent value="chart">
+                    <div className="h-[400px] mt-4">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={deltaData}
+                          margin={{
+                            top: 20,
+                            right: 30,
+                            left: 20,
+                            bottom: 60,
+                          }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis 
+                            dataKey="name" 
+                            angle={-45} 
+                            textAnchor="end"
+                            height={80}
+                            tick={{fontSize: 12}}
+                          />
+                          <YAxis />
+                          <Tooltip 
+                            contentStyle={{ backgroundColor: '#1a202c', border: 'none', borderRadius: '4px' }}
+                            formatter={(value: any, name: any) => [parseFloat(value).toFixed(3), name]}
+                          />
+                          <Bar dataKey="delta" fill="#8884d8" name="Difference" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="table">
+                    <div className="overflow-x-auto">
+                      <table className="w-full mt-4">
+                        <thead>
+                          <tr className="border-b border-white/10">
+                            <th className="py-2 text-left text-xs uppercase tracking-wider text-gray-400">Node</th>
+                            <th className="py-2 text-left text-xs uppercase tracking-wider text-gray-400">Type</th>
+                            <th className="py-2 text-left text-xs uppercase tracking-wider text-gray-400">Baseline</th>
+                            <th className="py-2 text-left text-xs uppercase tracking-wider text-gray-400">Comparison</th>
+                            <th className="py-2 text-left text-xs uppercase tracking-wider text-gray-400">Difference</th>
                           </tr>
-                        ));
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </TabsContent>
+                        </thead>
+                        <tbody>
+                          {/* Safe rendering of each node type group */}
+                          {Object.keys(nodesByType).map(type => {
+                            // Get rows for this node type
+                            const typeRows = deltaData.filter(data => data.type === type);
+                            
+                            // If no rows for this type, skip
+                            if (typeRows.length === 0) return null;
+                            
+                            // Return the rows for this type
+                            return typeRows.map((row, index) => (
+                              <tr key={row.nodeId || `row-${index}`} className="border-b border-white/5">
+                                <td className="py-2">{row.name}</td>
+                                <td className="py-2">
+                                  <Badge variant="outline">{row.type}</Badge>
+                                </td>
+                                <td className="py-2">{typeof row.baseline === 'number' ? row.baseline.toFixed(3) : '0.000'}</td>
+                                <td className="py-2">{typeof row.comparison === 'number' ? row.comparison.toFixed(3) : '0.000'}</td>
+                                <td className={`py-2 ${row.delta > 0 ? 'text-green-400' : row.delta < 0 ? 'text-red-400' : ''}`}>
+                                  {row.delta > 0 ? '+' : ''}{typeof row.delta === 'number' ? row.delta.toFixed(3) : '0.000'}
+                                </td>
+                              </tr>
+                            ));
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </TabsContent>
+                </>
+              )}
               
               <TabsContent value="convergence">
                 {selectedTab === 'convergence' && (
                   <div className="mt-4">
                     <div className="h-[400px]">
                       <CompareConvergencePlot 
-                        baselineScenario={allScenarios.find(s => s.id === baselineScenarioId) || baselineScenarioRef.current}
-                        comparisonScenario={allScenarios.find(s => s.id === comparisonScenarioId)}
+                        baselineScenario={allScenarios.find(s => String(s.id) === String(baselineScenarioId)) || baselineScenarioRef.current}
+                        comparisonScenario={allScenarios.find(s => String(s.id) === String(comparisonScenarioId))}
                         nodeLabels={nodeLabelsById}
                       />
                     </div>
