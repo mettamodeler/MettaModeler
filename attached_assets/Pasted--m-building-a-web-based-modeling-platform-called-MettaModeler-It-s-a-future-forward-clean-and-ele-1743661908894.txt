@@ -1,0 +1,116 @@
+’m building a web-based modeling platform called MettaModeler. It’s a future-forward, clean, and elegant tool for building, editing, and simulating Fuzzy Cognitive Maps (FCMs). Think of it as a next-gen, cloud-native version of Mental Modeler, but for collaborative systems thinking, participatory modeling, and causal inference—especially in social and environmental science.
+
+🔧 App Structure
+Use a Python Flask backend and a React + TypeScript frontend (with Vite) to cleanly separate concerns:
+
+Flask backend: serves JSON API only (no templates), handles users, projects, models (FCMs), and scenarios.
+
+React frontend: a full Single Page Application (SPA) using React Router.
+
+Use React Flow for the FCM editor.
+
+Use Chart.js or React-Chartjs-2 for visualizing simulation results (e.g., convergence plots).
+
+Do not use Firebase Cloud Messaging. “FCM” here always means Fuzzy Cognitive Maps.
+
+🧑‍💻 Functionality Overview
+Project List: shows user projects in a left-hand sidebar.
+
+Model List: shows models within the selected project.
+
+Scenario List: shows saved simulation scenarios for each model.
+
+FCM Editor:
+
+Drag and drop nodes.
+
+Connect them with weighted, directed edges (-1 to +1).
+
+Custom node types: ordinary, driver, outcome.
+
+Inline editing of node name/type and edge weights.
+
+Simulation Panel:
+
+Displays convergence plots (time series of node values).
+
+Displays simulation results (final node values, outcomes, etc).
+
+Jupyter Notebook Export (later feature): allow users to export model data for simulation/analysis in Python.
+
+🖼️ Design + Aesthetic
+Clean, dark theme: background #1E2A44 (dark blue-gray).
+
+Fonts: Montserrat, all lowercase for branding.
+
+Use glassmorphism and neon edge glows for visual polish.
+
+Color palette:
+
+Nodes/accents: purple (#A855F7) and teal (#00C4FF)
+
+Glow effects: #00C4FF
+
+Background UI: #1E2A44
+
+Fonts: silver or soft white
+
+Visuals should feel:
+
+Elegant
+
+Futuristic
+
+Academic but design-forward
+
+Like a science tool, but not clinical
+
+🌐 Frontend Tech Stack
+React
+
+React Flow (custom nodes and edges)
+
+React Router
+
+Chart.js or React Chart.js 2
+
+Axios for API requests
+
+Bootstrap or Tailwind (or custom CSS modules)
+
+No jQuery, no legacy script patches
+
+Vite for build
+
+⚙️ Backend Tech Stack
+Flask (Python)
+
+SQLAlchemy (PostgreSQL)
+
+flask-login for auth
+
+RESTful API
+
+CORS, CSRF, session handling
+
+🧩 Features + Dev Notes
+All React components must support being mounted in a SPA, not into Flask templates.
+
+Avoid Frankenstein bridges and fallback hacks. Use clean routing and component logic.
+
+React Flow canvas should expand and collapse based on current view (i.e., when editor is selected).
+
+Support editing and saving nodes/edges to backend via API.
+
+Models and projects should be easily selectable from a persistent sidebar.
+
+No reloads between selecting projects/models.
+
+🔮 Vision
+Designed for researchers, policymakers, students, and engaged communities.
+
+Tool should support participatory modeling, not just individual tinkering.
+
+Prioritize intuitive modeling, clean UI, and future integration with other social/environmental datasets.
+
+MettaModeler is both a platform and a thinking tool.
