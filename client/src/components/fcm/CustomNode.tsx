@@ -35,16 +35,17 @@ export default function CustomNode({ id, data, selected }: NodeProps<CustomNodeD
   // Determine background color based on type or explicit color
   const getNodeColor = () => {
     if (color) return color;
-    // Default colors
-    if (type === 'driver') return '#00C4FF'; // teal
-    if (type === 'outcome') return '#A855F7'; // purple
+    // Colors matching the logo
+    if (type === 'driver') return '#00C4FF'; // blue
+    if (type === 'outcome') return '#10DEA7'; // teal/green
     return '#A855F7'; // purple for regular nodes
   };
   
   return (
     <div 
-      className={`node rounded-lg p-3 min-w-[150px] text-center ${selected ? 'ring-2 ring-secondary' : ''}`} 
+      className={`node rounded-lg p-3 min-w-[150px] text-center ${selected ? 'ring-2 ring-white/30' : ''}`} 
       style={{ backgroundColor: getNodeColor() }}
+      data-type={type}
     >
       <Handle type="target" position={Position.Top} className="w-3 h-3" />
       

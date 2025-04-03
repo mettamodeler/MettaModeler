@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import ReactFlow, {
   ReactFlowProvider,
   MiniMap,
@@ -52,10 +52,12 @@ function modelToReactFlow(model: FCMModel): { nodes: Node[], edges: Edge[] } {
   }));
   
   const edges = model.edges.map((edge) => {
-    // Determine edge color based on weight
+    // Determine edge color based on weight - match logo colors
     const edgeColor = edge.weight >= 0 
-      ? 'rgba(239, 68, 68, 0.8)' // red for positive
-      : 'rgba(59, 130, 246, 0.8)'; // blue for negative
+      ? 'rgba(255, 64, 129, 0.8)' // hot pink for positive
+      : 'rgba(0, 196, 255, 0.8)'; // blue for negative
+    
+    const isPositive = edge.weight >= 0;
       
     return {
       id: edge.id,
@@ -69,6 +71,9 @@ function modelToReactFlow(model: FCMModel): { nodes: Node[], edges: Edge[] } {
         height: 20,
         color: edgeColor,
       },
+      className: isPositive ? 'positive-edge' : 'negative-edge',
+      // Custom data attributes for styling
+      'data-weight-sign': isPositive ? 'positive' : 'negative',
     };
   });
   
@@ -154,7 +159,7 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
   
   // Handle node deletion with keyboard
   const onKeyDown = useCallback(
-    (event: KeyboardEvent) => {
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
       if (event.key === 'Delete' || event.key === 'Backspace') {
         const selectedNodes = nodes.filter(node => node.selected);
         const selectedEdges = edges.filter(edge => edge.selected);
@@ -196,8 +201,8 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
       // Default weight for new connections
       const defaultWeight = 0.5;
       
-      // Determine color based on weight (positive by default)
-      const edgeColor = 'rgba(239, 68, 68, 0.8)'; // red for positive
+      // Determine color based on weight (positive by default) - use logo colors
+      const edgeColor = 'rgba(255, 64, 129, 0.8)'; // hot pink for positive
       
       // Create a new edge with default weight
       // Edge direction is determined by source -> target
@@ -213,6 +218,8 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
           height: 20,
           color: edgeColor,
         },
+        className: 'positive-edge',
+        'data-weight-sign': 'positive',
       };
       
       setEdges((eds) => addEdge(newEdge, eds));
@@ -249,8 +256,9 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
       setNodes((nds) =>
         nds.map((node) => {
           if (node.id === id) {
-            // Change color based on type
-            const color = type === 'driver' ? '#00C4FF' : '#A855F7';
+            // Change color based on type to match logo colors
+            const color = type === 'driver' ? '#00C4FF' : 
+                          type === 'outcome' ? '#10DEA7' : '#A855F7';
             
             return {
               ...node,
@@ -275,10 +283,12 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
       setEdges((eds) =>
         eds.map((edge) => {
           if (edge.id === id) {
-            // Determine color based on updated weight
+            // Determine color based on updated weight - use logo colors
             const edgeColor = weight >= 0 
-              ? 'rgba(239, 68, 68, 0.8)' // red for positive
-              : 'rgba(59, 130, 246, 0.8)'; // blue for negative
+              ? 'rgba(255, 64, 129, 0.8)' // hot pink for positive
+              : 'rgba(0, 196, 255, 0.8)'; // blue for negative
+            
+            const isPositive = weight >= 0;
             
             return {
               ...edge,
@@ -293,7 +303,9 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
                 color: edgeColor,
                 width: 20,
                 height: 20,
-              }
+              },
+              className: isPositive ? 'positive-edge' : 'negative-edge',
+              'data-weight-sign': isPositive ? 'positive' : 'negative'
             };
           }
           return edge;
@@ -315,7 +327,7 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
         label: 'New Node', 
         type: 'regular' as NodeType, 
         value: 0.5,
-        color: '#A855F7',
+        color: '#A855F7', // Purple for regular nodes
         onChange: onNodeLabelChange,
         onTypeChange: onNodeTypeChange,
       },
@@ -363,13 +375,13 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
       minZoom={0.2}
       maxZoom={4}
     >
-      <Background color="#ffffff" gap={16} size={1} />
+      <Background color="#1e2a43" gap={16} size={1} />
       <Controls className="dark-glass" />
       <MiniMap 
         nodeColor={(n) => {
           return n.data?.color || '#A855F7';
         }}
-        maskColor="rgba(30, 42, 68, 0.8)"
+        maskColor="rgba(15, 21, 34, 0.8)"
         className="dark-glass"
       />
       

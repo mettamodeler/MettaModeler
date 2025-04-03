@@ -41,8 +41,8 @@ export default function CustomEdge({
 
   const isPositive = weight >= 0;
   const edgeColor = isPositive 
-    ? 'rgba(239, 68, 68, 0.8)' // red for positive
-    : 'rgba(59, 130, 246, 0.8)'; // blue for negative
+    ? 'rgba(255, 64, 129, 0.8)' // hot pink for positive
+    : 'rgba(0, 196, 255, 0.8)'; // blue for negative
 
   const edgeStyle = {
     stroke: edgeColor,
@@ -87,7 +87,7 @@ export default function CustomEdge({
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-xs">{weight.toFixed(1)}</span>
-                  <span className={`text-xs ${isPositive ? 'text-red-500' : 'text-blue-500'}`}>
+                  <span className={`text-xs ${isPositive ? 'text-pink-500' : 'text-cyan-400'}`}>
                     {isPositive ? 'Positive' : 'Negative'}
                   </span>
                   <button
@@ -110,7 +110,7 @@ export default function CustomEdge({
                   max={1}
                   step={0.1}
                   onValueChange={handleWeightChange}
-                  className={`${isPositive ? 'bg-red-950/30' : 'bg-blue-950/30'}`}
+                  className={`${isPositive ? 'bg-pink-950/30' : 'bg-cyan-950/30'}`}
                 />
               </div>
             </PopoverContent>
@@ -122,6 +122,7 @@ export default function CustomEdge({
         className="react-flow__edge-path"
         d={edgePath}
         style={edgeStyle}
+        data-weight-sign={isPositive ? "positive" : "negative"}
         markerEnd={`url(#${id}-arrow)`}
       />
       <defs>
