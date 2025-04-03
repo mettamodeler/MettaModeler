@@ -236,13 +236,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/scenarios", async (req: Request, res: Response) => {
     try {
-      const validatedData = insertScenarioSchema.parse(req.body);
+      // Handle case where modelId might be a string but schema expects a number
+      let data = { ...req.body };
+      if (typeof data.modelId === 'string') {
+        data.modelId = parseInt(data.modelId, 10);
+      }
+      
+      const validatedData = insertScenarioSchema.parse(data);
       const scenario = await storage.createScenario(validatedData);
       res.status(201).json(scenario);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: error.message });
       }
+      console.error("Failed to create scenario:", error);
       res.status(500).json({ message: "Failed to create scenario" });
     }
   });

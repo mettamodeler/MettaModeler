@@ -1,0 +1,30 @@
+Delta data generated: has data (6) [{…}, {…}, {…}, {…}, {…}, {…}]
+queryClient.ts:15 
+            
+            
+           POST https://2777cb12-af7a-4d08-8c58-3daf5821655c-00-2deaqbcgdlbo.spock.replit.dev/api/scenarios 400 (Bad Request)
+apiRequest @ queryClient.ts:15
+(anonymous) @ SimulationPanel.tsx:82
+callCallback2 @ chunk-RPCDYKBN.js?v=771de18e:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=771de18e:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=771de18e:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=771de18e:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=771de18e:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=771de18e:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=771de18e:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=771de18e:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=771de18e:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=771de18e:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=771de18e:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=771de18e:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=771de18e:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=771de18e:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=771de18e:5449Understand this errorAI
+ScenarioComparison.tsx:81 Creating baseline scenario for model: {modelId: '4', type: 'number', nodeCount: 6}
+ScenarioComparison.tsx:137 Missing scenario IDs {baselineScenarioId: 'baseline', comparisonScenarioId: ''}
+ScenarioComparison.tsx:81 Creating baseline scenario for model: {modelId: '4', type: 'number', nodeCount: 6}
+ScenarioComparison.tsx:81 Creating baseline scenario for model: {modelId: '4', type: 'number', nodeCount: 6}
+ScenarioComparison.tsx:149 Scenarios found: {baselineScenario: true, comparisonScenario: true, baselineResults: true, comparisonResults: true}
+ScenarioComparison.tsx:81 Creating baseline scenario for model: {modelId: '4', type: 'number', nodeCount: 6}
+ScenarioComparison.tsx:81 Creating baseline scenario for model: {modelId: '4', type: 'number', nodeCount: 6}
+ScenarioComparison.tsx:149 Scenarios found: {baselineScenario: true, comparisonScenario: true, baselineResults: true, comparisonResults: true}
