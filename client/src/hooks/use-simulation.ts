@@ -74,7 +74,7 @@ export function useSimulation(model: FCMModel) {
         activation: 'sigmoid',
         threshold: simulationParams.threshold,
         maxIterations: simulationParams.iterations,
-        compareToBaseline: true // Enable baseline comparison
+        compareToBaseline: true // Always enable baseline comparison for all simulations
       };
       
       // Try to use Python API first

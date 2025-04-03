@@ -1,10 +1,32 @@
 import { useState, useEffect } from 'react';
-import { Scenario, FCMModel } from '@/lib/types';
+import { Scenario, FCMModel, SimulationResult } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip as ChartTooltip,
+  Legend
+} from 'chart.js';
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  ChartTooltip,
+  Legend
+);
 
 interface ScenarioComparisonProps {
   model: FCMModel;
@@ -15,6 +37,7 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
   const [baselineScenarioId, setBaselineScenarioId] = useState<string>('');
   const [comparisonScenarioId, setComparisonScenarioId] = useState<string>('');
   const [deltaData, setDeltaData] = useState<any[]>([]);
+  const [selectedTab, setSelectedTab] = useState('chart');
   
   // Get node labels
   const nodeLabelsById = model.nodes.reduce<Record<string, string>>((acc, node) => {
@@ -146,10 +169,11 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
           
           {/* Comparison data */}
           {deltaData.length > 0 && (
-            <Tabs defaultValue="chart">
+            <Tabs defaultValue="chart" onValueChange={setSelectedTab}>
               <TabsList>
                 <TabsTrigger value="chart">chart view</TabsTrigger>
                 <TabsTrigger value="table">table view</TabsTrigger>
+                <TabsTrigger value="convergence">convergence plot</TabsTrigger>
               </TabsList>
               
               <TabsContent value="chart">
@@ -223,10 +247,194 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
                   </table>
                 </div>
               </TabsContent>
+              
+              <TabsContent value="convergence">
+                {selectedTab === 'convergence' && (
+                  <div className="mt-4">
+                    <div className="h-[400px]">
+                      <CompareConvergencePlot 
+                        baselineScenario={scenarios.find(s => s.id === baselineScenarioId)} 
+                        comparisonScenario={scenarios.find(s => s.id === comparisonScenarioId)}
+                        nodeLabels={nodeLabelsById}
+                      />
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
             </Tabs>
           )}
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+interface CompareConvergencePlotProps {
+  baselineScenario?: Scenario;
+  comparisonScenario?: Scenario;
+  nodeLabels: Record<string, string>;
+}
+
+function CompareConvergencePlot({ baselineScenario, comparisonScenario, nodeLabels }: CompareConvergencePlotProps) {
+  // Return early if either scenario is missing or doesn't have time series data
+  if (!baselineScenario?.results?.timeSeriesData || !comparisonScenario?.results?.timeSeriesData) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-gray-400">No convergence data available for these scenarios</p>
+      </div>
+    );
+  }
+
+  // Get time series data from both scenarios
+  const baselineTimeSeries = baselineScenario.results.timeSeriesData;
+  const comparisonTimeSeries = comparisonScenario.results.timeSeriesData;
+
+  // Get maximum iterations to ensure consistent x-axis
+  const baselineIterations = baselineScenario.results.iterations;
+  const comparisonIterations = comparisonScenario.results.iterations;
+  const maxIterations = Math.max(baselineIterations, comparisonIterations);
+
+  // Generate labels for x-axis (iterations)
+  const labels = Array.from({ length: maxIterations + 1 }, (_, i) => `${i}`);
+
+  // Select up to 5 nodes to display (prioritize outcome nodes if available)
+  const allNodeIds = Object.keys(nodeLabels);
+  const nodeIds = allNodeIds.length <= 5 ? allNodeIds : allNodeIds.slice(0, 5);
+
+  // Generate datasets for the chart
+  const colors = [
+    'rgba(168, 85, 247, 1)',  // purple
+    'rgba(0, 196, 255, 1)',   // teal
+    'rgba(239, 68, 68, 1)',   // red
+    'rgba(59, 130, 246, 1)',  // blue
+    'rgba(234, 179, 8, 1)',   // yellow
+  ];
+  
+  type ChartDataset = {
+    label: string;
+    data: number[];
+    borderColor: string;
+    backgroundColor: string;
+    borderDash?: number[];
+    tension: number;
+  };
+  
+  const datasets: ChartDataset[] = [];
+
+  // Add datasets for baseline scenario (dashed lines)
+  nodeIds.forEach((nodeId, index) => {
+    if (baselineTimeSeries[nodeId]) {
+      const colorIndex = index % colors.length;
+      
+      datasets.push({
+        label: `${nodeLabels[nodeId] || `Node ${nodeId}`} (Baseline)`,
+        data: baselineTimeSeries[nodeId],
+        borderColor: colors[colorIndex],
+        backgroundColor: 'transparent',
+        borderDash: [5, 5],
+        tension: 0.3,
+      });
+    }
+  });
+
+  // Add datasets for comparison scenario (solid lines)
+  nodeIds.forEach((nodeId, index) => {
+    if (comparisonTimeSeries[nodeId]) {
+      const colorIndex = index % colors.length;
+      
+      datasets.push({
+        label: `${nodeLabels[nodeId] || `Node ${nodeId}`} (${comparisonScenario.name})`,
+        data: comparisonTimeSeries[nodeId],
+        borderColor: colors[colorIndex],
+        backgroundColor: colors[colorIndex].replace('1)', '0.2)'),
+        tension: 0.3,
+      });
+    }
+  });
+
+  const data = {
+    labels,
+    datasets,
+  };
+
+  const options: ChartOptions<'line'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: 1,
+        ticks: {
+          color: 'rgba(255, 255, 255, 0.8)',
+        },
+        grid: {
+          color: 'rgba(255, 255, 255, 0.1)',
+        },
+      },
+      x: {
+        title: {
+          display: true,
+          text: 'Iterations',
+          color: 'rgba(255, 255, 255, 0.8)',
+        },
+        ticks: {
+          color: 'rgba(255, 255, 255, 0.8)',
+        },
+        grid: {
+          color: 'rgba(255, 255, 255, 0.1)',
+        },
+      },
+    },
+    plugins: {
+      legend: {
+        position: 'top' as const,
+        labels: {
+          color: 'rgba(255, 255, 255, 0.8)',
+          boxWidth: 12,
+          font: {
+            family: 'Montserrat',
+          },
+        },
+      },
+      title: {
+        display: true,
+        text: 'Convergence Comparison',
+        color: 'rgba(255, 255, 255, 0.9)',
+        font: {
+          family: 'Montserrat',
+          size: 14,
+        },
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        titleFont: {
+          family: 'Montserrat',
+        },
+        bodyFont: {
+          family: 'Montserrat',
+        },
+        callbacks: {
+          label: function(context: any) {
+            let label = context.dataset.label || '';
+            if (label) {
+              label += ': ';
+            }
+            if (context.parsed.y !== null) {
+              label += context.parsed.y.toFixed(3);
+            }
+            return label;
+          }
+        }
+      },
+    },
+    animation: {
+      duration: 1000,
+    },
+  };
+
+  return (
+    <div className="h-full w-full">
+      <Line data={data} options={options} />
+    </div>
   );
 }
