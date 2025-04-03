@@ -30,6 +30,10 @@ export default function CustomEdge({
 }: EdgeProps<CustomEdgeData>) {
   const { weight, onChange } = data || { weight: 0 };
 
+  // Calculate if this is a self-loop or overlapping edge
+  const isSelfLoop = source === target;
+  const offset = isSelfLoop ? 50 : 0;
+
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
@@ -37,6 +41,7 @@ export default function CustomEdge({
     targetX,
     targetY,
     targetPosition,
+    curvature: isSelfLoop ? 0.5 : 0.2, // Increase curve for self-loops
   });
 
   const isPositive = weight >= 0;

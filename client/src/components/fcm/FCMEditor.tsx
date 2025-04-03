@@ -205,6 +205,8 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
         id: `edge-${Date.now()}`,
         source: connection.source,
         target: connection.target,
+        sourceHandle: connection.sourceHandle,
+        targetHandle: connection.targetHandle,
         type: 'custom',
         data: { weight: defaultWeight },
         markerEnd: {
