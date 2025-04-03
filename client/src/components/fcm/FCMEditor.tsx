@@ -152,6 +152,33 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
     [onNodesChange, saveModelChanges]
   );
   
+  // Handle node deletion with keyboard
+  const onKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        const selectedNodes = nodes.filter(node => node.selected);
+        const selectedEdges = edges.filter(edge => edge.selected);
+        
+        if (selectedNodes.length > 0) {
+          setNodes(nodes.filter(node => !node.selected));
+          // Remove connected edges
+          setEdges(edges.filter(edge => 
+            !selectedNodes.some(node => 
+              node.id === edge.source || node.id === edge.target
+            )
+          ));
+          saveModelChanges();
+        }
+        
+        if (selectedEdges.length > 0) {
+          setEdges(edges.filter(edge => !edge.selected));
+          saveModelChanges();
+        }
+      }
+    },
+    [nodes, edges, setNodes, setEdges, saveModelChanges]
+  );
+
   // Handle edge changes
   const handleEdgesChange = useCallback(
     (changes: EdgeChange[]) => {
@@ -164,6 +191,8 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
   // Handle new connections
   const onConnect = useCallback(
     (connection: Connection) => {
+      if (!connection.source || !connection.target) return;
+      
       // Default weight for new connections
       const defaultWeight = 0.5;
       
@@ -171,9 +200,11 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
       const edgeColor = 'rgba(239, 68, 68, 0.8)'; // red for positive
       
       // Create a new edge with default weight
+      // Edge direction is determined by source -> target
       const newEdge = {
-        ...connection,
         id: `edge-${Date.now()}`,
+        source: connection.source,
+        target: connection.target,
         type: 'custom',
         data: { weight: defaultWeight },
         markerEnd: {
@@ -322,6 +353,12 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
       onConnect={onConnect}
       nodeTypes={nodeTypes}
       edgeTypes={edgeTypes}
+      onClick={() => {
+        // Close any open edge popups when clicking canvas
+        setEdges(eds => eds.map(e => ({ ...e, data: { ...e.data, isVisible: false } })));
+      }}
+      onKeyDown={onKeyDown}
+      deleteKeyCode={['Backspace', 'Delete']}
       fitView
       minZoom={0.2}
       maxZoom={4}
