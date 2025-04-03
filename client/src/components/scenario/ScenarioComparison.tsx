@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Scenario, FCMModel, SimulationResult } from '@/lib/types';
+import { toStringId } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -74,10 +75,19 @@ function createBaselineScenario(model: FCMModel): Scenario {
   });
   
   // Create virtual baseline scenario
+  // Ensure modelId is a string regardless of the source type
+  const modelId = toStringId(model.id);
+  
+  console.log('Creating baseline scenario for model:', { 
+    modelId, 
+    type: typeof model.id, 
+    nodeCount: model.nodes.length 
+  });
+  
   return {
     id: 'baseline',
     name: 'Baseline (No Intervention)',
-    modelId: model.id.toString(), // Ensure modelId is a string
+    modelId: modelId,
     initialValues: {},
     createdAt: new Date().toISOString(),
     results: {

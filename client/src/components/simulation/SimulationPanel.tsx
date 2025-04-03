@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { FCMModel, SimulationParams, SimulationResult, FCMNode } from '@/lib/types';
 import { runSimulation, calculateChange } from '@/lib/simulation';
+import { toStringId } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
@@ -32,7 +33,7 @@ export default function SimulationPanel({ model }: SimulationPanelProps) {
   
   // Create a map of node IDs to labels for display
   const nodeLabels = Object.fromEntries(
-    model.nodes.map(node => [node.id, node.label])
+    model.nodes.map(node => [toStringId(node.id), node.label])
   );
   
   // Map nodes by type for organizing the UI
@@ -73,7 +74,7 @@ export default function SimulationPanel({ model }: SimulationPanelProps) {
     try {
       const scenario = {
         name: scenarioName || `Scenario ${new Date().toLocaleString()}`,
-        modelId: model.id,
+        modelId: toStringId(model.id),
         initialValues: simulationParams.initialValues || {},
         results: simulationResult,
       };
@@ -228,12 +229,13 @@ export default function SimulationPanel({ model }: SimulationPanelProps) {
                   <h3 className="text-sm font-semibold mb-3">final node values</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {model.nodes.map((node) => {
-                      const initialValue = simulationParams.initialValues?.[node.id] ?? node.value;
-                      const finalValue = simulationResult.finalValues[node.id] || 0;
+                      const nodeId = toStringId(node.id);
+                      const initialValue = simulationParams.initialValues?.[nodeId] ?? node.value;
+                      const finalValue = simulationResult.finalValues[nodeId] || 0;
                       const change = calculateChange(initialValue, finalValue);
                       
                       return (
-                        <div key={node.id} className="glass p-3 rounded-md">
+                        <div key={nodeId} className="glass p-3 rounded-md">
                           <div className="flex justify-between items-center mb-1">
                             <div className="text-sm font-medium">{node.label}</div>
                             <div className="text-xs px-2 py-0.5 rounded bg-white/10 text-white">
@@ -298,10 +300,12 @@ interface NodeValueControlProps {
 }
 
 function NodeValueControl({ node, value, onChange }: NodeValueControlProps) {
+  const nodeId = toStringId(node.id);
+  
   return (
     <div>
       <div className="flex justify-between mb-1">
-        <Label htmlFor={`node-${node.id}`}>{node.label}</Label>
+        <Label htmlFor={`node-${nodeId}`}>{node.label}</Label>
         <span className={`text-xs px-2 py-0.5 rounded ${
           node.type === 'driver' ? 'bg-secondary/20 text-secondary' : 'bg-primary/20 text-primary'
         }`}>
@@ -310,12 +314,12 @@ function NodeValueControl({ node, value, onChange }: NodeValueControlProps) {
       </div>
       <div className="flex items-center gap-2">
         <Slider
-          id={`node-${node.id}`}
+          id={`node-${nodeId}`}
           value={[value]}
           min={0}
           max={1}
           step={0.01}
-          onValueChange={(values) => onChange(node.id, values[0])}
+          onValueChange={(values) => onChange(nodeId, values[0])}
         />
         <div className="w-12 text-center font-mono text-sm">
           {value.toFixed(2)}

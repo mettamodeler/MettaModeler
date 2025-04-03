@@ -1,4 +1,5 @@
 import { FCMModel, SimulationResult, FCMNode } from '@/lib/types';
+import { toStringId } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -24,8 +25,18 @@ export default function BaselineComparison({ model, result }: BaselineComparison
   }
 
   // Get node labels mapped by ID
+  // Log for debugging the state of the model
+  console.log('BaselineComparison model:', { 
+    modelId: model.id, 
+    type: typeof model.id, 
+    nodeCount: model.nodes.length,
+    result: !!result
+  });
+  
   const nodeLabelsById = model.nodes.reduce<Record<string, string>>((acc, node) => {
-    acc[node.id] = node.label;
+    // Ensure nodeId is handled as string regardless of type
+    const nodeId = toStringId(node.id);
+    acc[nodeId] = node.label;
     return acc;
   }, {});
 
@@ -39,7 +50,10 @@ export default function BaselineComparison({ model, result }: BaselineComparison
 
   // Get total change for each type
   const typeChanges = Object.entries(nodesByType).reduce<Record<string, number>>((acc, [type, nodes]) => {
-    acc[type] = nodes.reduce((sum, node) => sum + Math.abs(result.deltaState?.[node.id] || 0), 0);
+    acc[type] = nodes.reduce((sum, node) => {
+      const nodeId = toStringId(node.id);
+      return sum + Math.abs(result.deltaState?.[nodeId] || 0);
+    }, 0);
     return acc;
   }, {});
 
@@ -89,7 +103,8 @@ export default function BaselineComparison({ model, result }: BaselineComparison
                   </h4>
                   
                   {nodesOfType.map(node => {
-                    const delta = result.deltaState?.[node.id] || 0;
+                    const nodeId = toStringId(node.id);
+                    const delta = result.deltaState?.[nodeId] || 0;
                     const absPercentage = Math.min(Math.abs(delta) / (maxDelta || 1) * 100, 100);
                     const colorClass = delta > 0 
                       ? 'bg-green-500' 
@@ -98,9 +113,9 @@ export default function BaselineComparison({ model, result }: BaselineComparison
                         : 'bg-gray-500';
                     
                     return (
-                      <div key={node.id} className="space-y-1">
+                      <div key={nodeId} className="space-y-1">
                         <div className="flex justify-between text-xs">
-                          <span>{nodeLabelsById[node.id]}</span>
+                          <span>{nodeLabelsById[nodeId]}</span>
                           <span className={delta > 0 ? 'text-green-400' : delta < 0 ? 'text-red-400' : 'text-gray-400'}>
                             {delta > 0 ? '+' : ''}{delta.toFixed(3)}
                           </span>

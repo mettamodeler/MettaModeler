@@ -13,6 +13,7 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { SimulationResult } from '@/lib/types';
+import { toStringId } from '@/lib/utils';
 
 ChartJS.register(
   CategoryScale,
@@ -38,6 +39,9 @@ export default function ConvergencePlot({ simulationResult, nodeLabels }: Conver
   
   // Generate datasets for each node
   const datasets = Object.entries(timeSeriesData).map(([nodeId, values], index) => {
+    // Ensure nodeId is a string
+    const stringNodeId = toStringId(nodeId);
+    
     // Colors from theme
     const colors = [
       'rgba(168, 85, 247, 1)', // purple
@@ -50,7 +54,7 @@ export default function ConvergencePlot({ simulationResult, nodeLabels }: Conver
     const colorIndex = index % colors.length;
     
     return {
-      label: nodeLabels[nodeId] || `Node ${nodeId}`,
+      label: nodeLabels[stringNodeId] || `Node ${stringNodeId}`,
       data: values,
       borderColor: colors[colorIndex],
       backgroundColor: colors[colorIndex].replace('1)', '0.2)'),
