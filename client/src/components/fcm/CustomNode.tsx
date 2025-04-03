@@ -46,28 +46,45 @@ export default function CustomNode({ id, data, selected }: NodeProps<CustomNodeD
       className={`node rounded-lg p-3 min-w-[150px] text-center ${selected ? 'ring-2 ring-secondary' : ''}`} 
       style={{ backgroundColor: getNodeColor() }}
     >
-      {/* Top handle */}
+      {/* All positions can be both source and target */}
+      <Handle 
+        type="target" 
+        position={Position.Top}
+        className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
+      />
       <Handle 
         type="source" 
         position={Position.Top}
         className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
       />
       
-      {/* Right handle */}
+      <Handle 
+        type="target" 
+        position={Position.Right}
+        className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
+      />
       <Handle 
         type="source" 
         position={Position.Right}
         className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
       />
       
-      {/* Bottom handle */}
+      <Handle 
+        type="target" 
+        position={Position.Bottom}
+        className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
+      />
       <Handle 
         type="source" 
         position={Position.Bottom}
         className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
       />
       
-      {/* Left handle */}
+      <Handle 
+        type="target" 
+        position={Position.Left}
+        className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
+      />
       <Handle 
         type="source" 
         position={Position.Left}
