@@ -40,8 +40,22 @@ function createBaselineScenario(model: FCMModel): Scenario {
   // Variables to hold simulation results - will be populated by runRealBaseline
   let baselineResult: SimulationResult | null = null;
   
+  // Unique ID for this model to avoid re-running simulations
+  const simulationId = `baseline-${model.id}`;
+  
   // Function to run a real simulation for the baseline
   const runRealBaseline = async () => {
+    // Check if we've already run this simulation in the session
+    const cachedResult = sessionStorage.getItem(simulationId);
+    if (cachedResult) {
+      try {
+        return JSON.parse(cachedResult) as SimulationResult;
+      } catch (e) {
+        console.error('Failed to parse cached simulation result', e);
+        // Fall through to run the simulation again
+      }
+    }
+    
     try {
       // Prepare data for Python simulation API using the model's default values
       const reactFlowNodes = model.nodes.map(node => ({
@@ -86,12 +100,21 @@ function createBaselineScenario(model: FCMModel): Scenario {
       const result = await response.json();
       
       // Convert API response to our format
-      return {
+      const formattedResult = {
         finalValues: result.finalState || result.finalValues || {},
         timeSeriesData: result.timeSeries || result.timeSeriesData || {},
         iterations: result.iterations || 0,
         converged: result.converged || false
       };
+      
+      // Cache the result in session storage
+      try {
+        sessionStorage.setItem(simulationId, JSON.stringify(formattedResult));
+      } catch (e) {
+        console.error('Failed to cache simulation result', e);
+      }
+      
+      return formattedResult;
     } catch (error) {
       console.error('Failed to run baseline simulation:', error);
       // Return fallback result with just the original values as final
@@ -145,8 +168,13 @@ function createBaselineScenario(model: FCMModel): Scenario {
     },
     // Attach the async function that will fetch the real simulation results
     // This will be called when the scenario is selected
-    runRealBaseline
-  } as Scenario & { runRealBaseline: () => Promise<SimulationResult> };
+    runRealBaseline,
+    // Flag to track if the simulation has been requested
+    simulationRequested: false
+  } as Scenario & { 
+    runRealBaseline: () => Promise<SimulationResult>;
+    simulationRequested: boolean;
+  };
 }
 
 export default function ScenarioComparison({ model, scenarios }: ScenarioComparisonProps) {
@@ -433,12 +461,21 @@ interface CompareConvergencePlotProps {
 function CompareConvergencePlot({ baselineScenario, comparisonScenario, nodeLabels }: CompareConvergencePlotProps) {
   const [baselineResults, setBaselineResults] = useState<SimulationResult | null>(null);
   const [isLoadingBaseline, setIsLoadingBaseline] = useState<boolean>(false);
+  const simulationRequestRef = useRef<boolean>(false);
   
   // Run the real baseline simulation if we have the special baseline scenario with the runRealBaseline function
   useEffect(() => {
+    // Only run this once per component instance to prevent multiple API calls
+    if (simulationRequestRef.current) {
+      return;
+    }
+
     const fetchBaselineResults = async () => {
       if (baselineScenario?.id === 'baseline' && (baselineScenario as any).runRealBaseline) {
+        // Mark that we've already requested this simulation to prevent repeats
+        simulationRequestRef.current = true;
         setIsLoadingBaseline(true);
+        
         try {
           const results = await (baselineScenario as any).runRealBaseline();
           setBaselineResults(results);
@@ -452,7 +489,7 @@ function CompareConvergencePlot({ baselineScenario, comparisonScenario, nodeLabe
     };
     
     fetchBaselineResults();
-  }, [baselineScenario]);
+  }, []);
   
   // Get the actual results (either from our state or from the scenario object)
   const actualBaselineResults = baselineResults || baselineScenario?.results;
