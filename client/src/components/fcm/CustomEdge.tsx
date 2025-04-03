@@ -1,3 +1,4 @@
+
 import { useCallback, useState } from 'react';
 import { 
   BaseEdge,
@@ -7,6 +8,7 @@ import {
   MarkerType,
 } from 'reactflow';
 import { Slider } from '@/components/ui/slider';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface CustomEdgeData {
   weight: number;
@@ -29,7 +31,6 @@ export default function CustomEdge({
 }: EdgeProps<CustomEdgeData>) {
   const { weight, onChange } = data || { weight: 0 };
   
-  // Generate bezier path for the edge
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
@@ -39,7 +40,6 @@ export default function CustomEdge({
     targetPosition,
   });
   
-  // Determine edge color based on weight value
   const isPositive = weight >= 0;
   const edgeColor = isPositive 
     ? 'rgba(239, 68, 68, 0.8)' // red for positive
@@ -56,97 +56,82 @@ export default function CustomEdge({
   const handleWeightChange = useCallback(
     (value: number[]) => {
       if (onChange) {
-        // Get the first value from the slider array
         const newWeight = value[0];
         onChange(id, newWeight);
       }
     },
     [id, onChange]
   );
-  
-  const [isVisible, setIsVisible] = useState(false);
-  
-  // Add click handler to toggle visibility
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsVisible(!isVisible);
-  };
-  
-  // Add hover area around edge for easier targeting
-  const strokeWidth = 20; // Wider hover area
-  
+
   return (
     <>
-      <>
-        <path
-          id={id}
-          className="react-flow__edge-path"
-          d={edgePath}
-          style={edgeStyle}
-          markerEnd={`url(#${id}-arrow)`}
-        />
-        {/* Invisible wider path for better hover detection */}
-        <path
-          d={edgePath}
-          fill="none"
-          strokeWidth={strokeWidth}
-          stroke="transparent"
-          onClick={handleClick}
-          className="cursor-pointer"
-          style={{ pointerEvents: 'stroke' }}
-        />
-        <defs>
-          <marker
-            id={`${id}-arrow`}
-            markerWidth="25"
-            markerHeight="25"
-            viewBox="-10 -10 20 20"
-            orient="auto"
-            refX="0"
-            refY="0"
-          >
-            <polyline
-              stroke={edgeColor}
-              strokeWidth="1"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill={edgeColor}
-              points="-5,-4 0,0 -5,4 -5,-4"
-            />
-          </marker>
-        </defs>
-      </>
       <EdgeLabelRenderer>
-        {isVisible && (
-          <div
-            className="dark-glass p-2 rounded-md shadow-glow-sm absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col min-w-[160px] animate-in zoom-in-95 duration-200"
-            style={{
-              left: labelX,
-              top: labelY - 40, // Offset up to avoid mouse interference
-              padding: '12px',
-              zIndex: 1000,
-            }}
-            onClick={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center mb-1 px-1">
-              <span className="text-xs">{weight.toFixed(1)}</span>
-              <span className={`text-xs ${isPositive ? 'text-red-500' : 'text-blue-500'}`}>
-                {isPositive ? 'Positive' : 'Negative'}
-              </span>
-            </div>
-            <Slider
-              value={[weight]}
-              min={-1}
-              max={1}
-              step={0.1}
-              onValueChange={handleWeightChange}
-              className={`${isPositive ? 'bg-red-950/30' : 'bg-blue-950/30'}`}
-            />
-          </div>
-        )}
+        <div
+          style={{
+            position: 'absolute',
+            transform: 'translate(-50%, -50%)',
+            left: labelX,
+            top: labelY,
+            zIndex: 1000,
+            pointerEvents: 'all',
+          }}
+        >
+          <Popover>
+            <PopoverTrigger asChild>
+              <div 
+                className="w-6 h-6 rounded-full bg-background/80 cursor-pointer hover:bg-background flex items-center justify-center border border-border"
+              >
+                <span className="text-xs font-mono">{weight.toFixed(1)}</span>
+              </div>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-4 dark-glass">
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs">{weight.toFixed(1)}</span>
+                  <span className={`text-xs ${isPositive ? 'text-red-500' : 'text-blue-500'}`}>
+                    {isPositive ? 'Positive' : 'Negative'}
+                  </span>
+                </div>
+                <Slider
+                  value={[weight]}
+                  min={-1}
+                  max={1}
+                  step={0.1}
+                  onValueChange={handleWeightChange}
+                  className={`${isPositive ? 'bg-red-950/30' : 'bg-blue-950/30'}`}
+                />
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
       </EdgeLabelRenderer>
+      <path
+        id={id}
+        className="react-flow__edge-path"
+        d={edgePath}
+        style={edgeStyle}
+        markerEnd={`url(#${id}-arrow)`}
+      />
+      <defs>
+        <marker
+          id={`${id}-arrow`}
+          markerWidth="25"
+          markerHeight="25"
+          viewBox="-10 -10 20 20"
+          orient="auto"
+          refX="0"
+          refY="0"
+        >
+          <polyline
+            stroke={edgeColor}
+            strokeWidth="1"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill={edgeColor}
+            points="-5,-4 0,0 -5,4 -5,-4"
+          />
+        </marker>
+      </defs>
     </>
   );
 }
