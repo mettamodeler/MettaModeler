@@ -46,58 +46,8 @@ export default function CustomNode({ id, data, selected }: NodeProps<CustomNodeD
       className={`node rounded-lg p-3 min-w-[150px] text-center ${selected ? 'ring-2 ring-secondary' : ''}`} 
       style={{ backgroundColor: getNodeColor() }}
     >
-      <Handle 
-        type="source" 
-        position={Position.Top}
-        id="top"
-        className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
-      />
-      <Handle 
-        type="target" 
-        position={Position.Top}
-        id="top"
-        className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
-      />
+      <Handle type="target" position={Position.Top} className="w-3 h-3" />
       
-      <Handle 
-        type="source" 
-        position={Position.Right}
-        id="right"
-        className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
-      />
-      <Handle 
-        type="target" 
-        position={Position.Right}
-        id="right"
-        className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
-      />
-      
-      <Handle 
-        type="source" 
-        position={Position.Bottom}
-        id="bottom"
-        className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
-      />
-      <Handle 
-        type="target" 
-        position={Position.Bottom}
-        id="bottom"
-        className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
-      />
-      
-      <Handle 
-        type="source" 
-        position={Position.Left}
-        id="left"
-        className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
-      />
-      <Handle 
-        type="target" 
-        position={Position.Left}
-        id="left"
-        className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
-      />
-
       <input
         type="text"
         value={label}
@@ -117,6 +67,8 @@ export default function CustomNode({ id, data, selected }: NodeProps<CustomNodeD
         </select>
         <span className="ml-1">: {value.toFixed(1)}</span>
       </div>
+      
+      <Handle type="source" position={Position.Bottom} className="w-3 h-3" />
     </div>
   );
 }

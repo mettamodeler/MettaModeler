@@ -5,7 +5,6 @@ import {
   EdgeProps,
   getBezierPath,
   MarkerType,
-  Position,
 } from 'reactflow';
 import { Slider } from '@/components/ui/slider';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -31,53 +30,6 @@ export default function CustomEdge({
 }: EdgeProps<CustomEdgeData>) {
   const { weight, onChange } = data || { weight: 0 };
 
-  // Calculate if this is a self-loop or find bidirectional edges
-  const isSelfLoop = source === target;
-  const hasBidirectionalEdge = data?.edges?.some(e => 
-    (e.source === target && e.target === source) || 
-    (e.source === source && e.target === target && e.id !== id)
-  );
-  
-  // Get offset from edge data or calculate it
-  const offset = data?.offset || 0;
-  
-  // Calculate midpoint
-  const midX = (sourceX + targetX) / 2;
-  const midY = (sourceY + targetY) / 2;
-  
-  // Calculate perpendicular offset point
-  const dx = targetX - sourceX;
-  const dy = targetY - sourceY;
-  const length = Math.sqrt(dx * dx + dy * dy);
-  
-  let controlPoint;
-  if (isSelfLoop) {
-    // Create a loop that comes out from the source handle direction
-    const distance = 100;
-    if (sourcePosition === Position.Left || sourcePosition === Position.Right) {
-      controlPoint = {
-        x: sourceX + (sourcePosition === Position.Left ? -distance : distance),
-        y: sourceY
-      };
-    } else {
-      controlPoint = {
-        x: sourceX,
-        y: sourceY + (sourcePosition === Position.Top ? -distance : distance)
-      };
-    }
-  } else if (offset !== 0) {
-    // Calculate midpoint based on handle positions for smoother curves
-    const midpointOffsetX = (sourcePosition === Position.Left ? -20 : sourcePosition === Position.Right ? 20 : 0);
-    const midpointOffsetY = (sourcePosition === Position.Top ? -20 : sourcePosition === Position.Bottom ? 20 : 0);
-    const targetOffsetX = (targetPosition === Position.Left ? -20 : targetPosition === Position.Right ? 20 : 0);
-    const targetOffsetY = (targetPosition === Position.Top ? -20 : targetPosition === Position.Bottom ? 20 : 0);
-    
-    controlPoint = {
-      x: midX + midpointOffsetX + targetOffsetX + (-dy / length) * offset,
-      y: midY + midpointOffsetY + targetOffsetY + (dx / length) * offset
-    };
-  }
-
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
@@ -85,7 +37,6 @@ export default function CustomEdge({
     targetX,
     targetY,
     targetPosition,
-    curvature: 0.2
   });
 
   const isPositive = weight >= 0;
