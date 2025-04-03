@@ -85,17 +85,7 @@ export default function CustomEdge({
     targetX,
     targetY,
     targetPosition,
-    curvature: isSelfLoop ? 0.8 : offset !== 0 ? 0.3 : 0.2,
-    controlPoints: isSelfLoop ? undefined : [
-      {
-        x: sourceX + (targetX - sourceX) * 0.25,
-        y: sourceY + (targetY - sourceY) * 0.25 + (offset || 0)
-      },
-      {
-        x: sourceX + (targetX - sourceX) * 0.75,
-        y: sourceY + (targetY - sourceY) * 0.75 + (offset || 0)
-      }
-    ]
+    curvature: 0.2
   });
 
   const isPositive = weight >= 0;

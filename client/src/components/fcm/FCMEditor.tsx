@@ -194,18 +194,8 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
     (connection: Connection) => {
       if (!connection.source || !connection.target) return;
 
-      // Default weight for new connections
       const defaultWeight = 0.5;
-      const edgeColor = 'rgba(239, 68, 68, 0.8)'; // red for positive
-
-      // Find existing edges between these nodes
-      const existingEdge = edges.find(e => 
-        (e.source === connection.target && e.target === connection.source) ||
-        (e.source === connection.source && e.target === connection.target)
-      );
-
-      const offset = existingEdge ? 40 : 0;
-      const isReverse = existingEdge && existingEdge.source === connection.source;
+      const edgeColor = 'rgba(239, 68, 68, 0.8)';
 
       const newEdge = {
         id: `edge-${Date.now()}`,
