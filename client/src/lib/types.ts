@@ -46,12 +46,17 @@ export interface Scenario {
 }
 
 export interface SimulationResult {
-  finalValues: Record<string, number>;
-  timeSeriesData: Record<string, number[]>;
+  // Support multiple field name formats for compatibility
+  finalValues: Record<string, number>;         // Our frontend format
+  finalState?: Record<string, number>;         // Python API format
+  
+  timeSeriesData: Record<string, number[]>;    // Our frontend format
+  timeSeries?: Record<string, number[]>;       // Python API format
+  
   iterations: number;
   converged: boolean;
   
-  // New fields for baseline comparison
+  // Baseline comparison fields
   baselineFinalState?: Record<string, number>;
   baselineTimeSeries?: Record<string, number[]>;
   baselineIterations?: number;

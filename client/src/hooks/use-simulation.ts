@@ -93,19 +93,22 @@ export function useSimulation(model: FCMModel) {
         
         const pythonResult = await response.json();
         
+        console.log('Python simulation result:', pythonResult);
+        
         // Convert Python API response format to our app's format
         const result: SimulationResult = {
-          finalValues: pythonResult.finalState,
-          timeSeriesData: pythonResult.timeSeries,
-          iterations: pythonResult.iterations,
-          converged: pythonResult.converged,
+          // Map Python API field names to our expected field names
+          finalValues: pythonResult.finalState || pythonResult.finalValues || {},
+          timeSeriesData: pythonResult.timeSeries || pythonResult.timeSeriesData || {}, 
+          iterations: pythonResult.iterations || 0,
+          converged: pythonResult.converged || false,
           
           // Include baseline comparison data if available
-          baselineFinalState: pythonResult.baselineFinalState,
-          baselineTimeSeries: pythonResult.baselineTimeSeries,
-          baselineIterations: pythonResult.baselineIterations,
-          baselineConverged: pythonResult.baselineConverged,
-          deltaState: pythonResult.deltaState
+          baselineFinalState: pythonResult.baselineFinalState || {},
+          baselineTimeSeries: pythonResult.baselineTimeSeries || {},
+          baselineIterations: pythonResult.baselineIterations || 0,
+          baselineConverged: pythonResult.baselineConverged || false,
+          deltaState: pythonResult.deltaState || {}
         };
         
         setSimulationResult(result);

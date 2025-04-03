@@ -399,13 +399,23 @@ function CompareConvergencePlot({ baselineScenario, comparisonScenario, nodeLabe
     comparisonTimeSeriesKeys: comparisonScenario?.results?.timeSeriesData ? Object.keys(comparisonScenario.results.timeSeriesData).length : 0
   });
   
+  // Handle both timeSeriesData and timeSeries field naming for backward compatibility
+  const hasBaselineTimeSeries = !!baselineScenario?.results?.timeSeriesData || 
+                               !!baselineScenario?.results?.baselineTimeSeries || 
+                               !!(baselineScenario?.results as any)?.timeSeries;
+                            
+  const hasComparisonTimeSeries = !!comparisonScenario?.results?.timeSeriesData || 
+                                 !!(comparisonScenario?.results as any)?.timeSeries;
+  
   // Return early if either scenario is missing or doesn't have time series data
-  if (!baselineScenario?.results?.timeSeriesData || !comparisonScenario?.results?.timeSeriesData) {
+  if (!hasBaselineTimeSeries || !hasComparisonTimeSeries) {
     console.error('Missing time series data in scenarios:', {
       baselineResultsExists: !!baselineScenario?.results,
       comparisonResultsExists: !!comparisonScenario?.results,
-      baselineTimeSeriesExists: !!baselineScenario?.results?.timeSeriesData,
-      comparisonTimeSeriesExists: !!comparisonScenario?.results?.timeSeriesData
+      baselineTimeSeriesExists: hasBaselineTimeSeries,
+      comparisonTimeSeriesExists: hasComparisonTimeSeries,
+      baselineResultsFields: baselineScenario?.results ? Object.keys(baselineScenario.results) : [],
+      comparisonResultsFields: comparisonScenario?.results ? Object.keys(comparisonScenario.results) : []
     });
     return (
       <div className="flex items-center justify-center h-full">
@@ -414,9 +424,13 @@ function CompareConvergencePlot({ baselineScenario, comparisonScenario, nodeLabe
     );
   }
 
-  // Get time series data from both scenarios
-  const baselineTimeSeries = baselineScenario.results.timeSeriesData;
-  const comparisonTimeSeries = comparisonScenario.results.timeSeriesData;
+  // Get time series data from both scenarios, handling different field names
+  const baselineTimeSeries = baselineScenario?.results?.timeSeriesData || 
+                            baselineScenario?.results?.baselineTimeSeries || 
+                            (baselineScenario?.results as any)?.timeSeries || {};
+                            
+  const comparisonTimeSeries = comparisonScenario?.results?.timeSeriesData || 
+                              (comparisonScenario?.results as any)?.timeSeries || {};
   
   // Debug what the time series data actually contains
   console.log('Time series data inspection:', {
@@ -427,8 +441,8 @@ function CompareConvergencePlot({ baselineScenario, comparisonScenario, nodeLabe
   });
 
   // Get maximum iterations to ensure consistent x-axis
-  const baselineIterations = baselineScenario.results.iterations;
-  const comparisonIterations = comparisonScenario.results.iterations;
+  const baselineIterations = baselineScenario?.results?.iterations || 0;
+  const comparisonIterations = comparisonScenario?.results?.iterations || 0;
   const maxIterations = Math.max(baselineIterations, comparisonIterations);
 
   // Generate labels for x-axis (iterations)
@@ -495,7 +509,7 @@ function CompareConvergencePlot({ baselineScenario, comparisonScenario, nodeLabe
       const colorIndex = index % colors.length;
       
       datasets.push({
-        label: `${nodeLabels[nodeId] || `Node ${nodeId}`} (${comparisonScenario.name})`,
+        label: `${nodeLabels[nodeId] || `Node ${nodeId}`} (${comparisonScenario?.name || 'Comparison'})`,
         data: comparisonTimeSeries[nodeId],
         borderColor: colors[colorIndex],
         backgroundColor: colors[colorIndex].replace('1)', '0.2)'),

@@ -292,11 +292,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Create a properly formatted response object with expected structure
+      // Map Python API field names to match our frontend expectations
       const responseData = {
-        finalValues: data.finalValues || {},
-        timeSeriesData: data.timeSeriesData || {},
+        finalValues: data.finalState || data.finalValues || {},
+        timeSeriesData: data.timeSeries || data.timeSeriesData || {},
         iterations: data.iterations || 0,
-        converged: data.converged || false
+        converged: data.converged || false,
+        // Include baseline data if available
+        baselineFinalState: data.baselineFinalState || {},
+        baselineTimeSeries: data.baselineTimeSeries || {},
+        baselineIterations: data.baselineIterations || 0,
+        baselineConverged: data.baselineConverged || false,
+        deltaState: data.deltaState || {}
       };
       
       res.json(responseData);
