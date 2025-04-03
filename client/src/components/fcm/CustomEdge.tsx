@@ -66,18 +66,34 @@ export default function CustomEdge({
   
   const [isVisible, setIsVisible] = useState(false);
   
+  // Add click handler to toggle visibility
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsVisible(!isVisible);
+  };
+  
+  // Add hover area around edge for easier targeting
+  const strokeWidth = 20; // Wider hover area
+  
   return (
     <>
       <>
         <path
           id={id}
-          className="react-flow__edge-path cursor-pointer"
+          className="react-flow__edge-path"
           d={edgePath}
           style={edgeStyle}
-          onClick={() => setIsVisible(!isVisible)}
-          onMouseEnter={() => setIsVisible(true)}
-          onMouseLeave={() => setIsVisible(false)}
           markerEnd={`url(#${id}-arrow)`}
+        />
+        {/* Invisible wider path for better hover detection */}
+        <path
+          d={edgePath}
+          fill="none"
+          strokeWidth={strokeWidth}
+          stroke="transparent"
+          onClick={handleClick}
+          className="cursor-pointer"
+          style={{ pointerEvents: 'stroke' }}
         />
         <defs>
           <marker
@@ -103,13 +119,16 @@ export default function CustomEdge({
       <EdgeLabelRenderer>
         {isVisible && (
           <div
-            className="dark-glass p-2 rounded-md shadow-glow-sm absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col min-w-[160px] cursor-pointer animate-in zoom-in-95 duration-200"
+            className="dark-glass p-2 rounded-md shadow-glow-sm absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col min-w-[160px] animate-in zoom-in-95 duration-200"
             style={{
               left: labelX,
-              top: labelY,
+              top: labelY - 40, // Offset up to avoid mouse interference
               padding: '12px',
               zIndex: 1000,
             }}
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-1 px-1">
               <span className="text-xs">{weight.toFixed(1)}</span>

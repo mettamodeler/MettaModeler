@@ -322,6 +322,10 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
       onConnect={onConnect}
       nodeTypes={nodeTypes}
       edgeTypes={edgeTypes}
+      onClick={() => {
+        // Close any open edge popups when clicking canvas
+        setEdges(eds => eds.map(e => ({ ...e, data: { ...e.data, isVisible: false } })));
+      }}
       fitView
       minZoom={0.2}
       maxZoom={4}
