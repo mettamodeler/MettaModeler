@@ -70,6 +70,17 @@ export interface SimulationResult {
   converged: boolean;
 }
 
+export interface FCMModel {
+  id: number;
+  name: string;
+  description: string | null;
+  nodes: FCMNode[];
+  edges: FCMEdge[];
+  projectId: number | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,

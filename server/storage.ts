@@ -4,8 +4,15 @@ import {
   Model, InsertModel, 
   Scenario, InsertScenario,
   FCMNode,
-  FCMEdge
+  FCMEdge,
+  users,
+  projects,
+  models,
+  scenarios
 } from "@shared/schema";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import { eq, and } from 'drizzle-orm';
 
 export interface IStorage {
   // User operations
@@ -34,6 +41,131 @@ export interface IStorage {
   getScenario(id: number): Promise<Scenario | undefined>;
   createScenario(scenario: InsertScenario): Promise<Scenario>;
   deleteScenario(id: number): Promise<boolean>;
+}
+
+export class PostgresStorage implements IStorage {
+  private db: ReturnType<typeof drizzle>;
+  
+  constructor() {
+    // Create a PostgreSQL connection
+    const queryClient = postgres(process.env.DATABASE_URL || "");
+    this.db = drizzle(queryClient);
+  }
+
+  // USER OPERATIONS
+  async getUser(id: number): Promise<User | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.id, id));
+    return result[0];
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.username, username));
+    return result[0];
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const result = await this.db.insert(users).values(insertUser).returning();
+    return result[0];
+  }
+  
+  // PROJECT OPERATIONS
+  async getProjects(): Promise<Project[]> {
+    return await this.db.select().from(projects);
+  }
+  
+  async getProject(id: number): Promise<Project | undefined> {
+    const result = await this.db.select().from(projects).where(eq(projects.id, id));
+    return result[0];
+  }
+  
+  async createProject(insertProject: InsertProject): Promise<Project> {
+    const result = await this.db.insert(projects).values(insertProject).returning();
+    return result[0];
+  }
+  
+  async updateProject(id: number, updates: Partial<Project>): Promise<Project | undefined> {
+    const result = await this.db.update(projects)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(projects.id, id))
+      .returning();
+    return result[0];
+  }
+  
+  async deleteProject(id: number): Promise<boolean> {
+    try {
+      const result = await this.db.delete(projects).where(eq(projects.id, id)).returning({ id: projects.id });
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting project:", error);
+      return false;
+    }
+  }
+  
+  // MODEL OPERATIONS
+  async getModels(): Promise<Model[]> {
+    return await this.db.select().from(models);
+  }
+  
+  async getModelsByProject(projectId: number): Promise<Model[]> {
+    return await this.db.select().from(models).where(eq(models.projectId, projectId));
+  }
+  
+  async getModel(id: number): Promise<Model | undefined> {
+    const result = await this.db.select().from(models).where(eq(models.id, id));
+    return result[0];
+  }
+  
+  async createModel(insertModel: InsertModel): Promise<Model> {
+    const result = await this.db.insert(models).values(insertModel).returning();
+    return result[0];
+  }
+  
+  async updateModel(id: number, updates: Partial<Model>): Promise<Model | undefined> {
+    const result = await this.db.update(models)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(models.id, id))
+      .returning();
+    return result[0];
+  }
+  
+  async deleteModel(id: number): Promise<boolean> {
+    try {
+      const result = await this.db.delete(models).where(eq(models.id, id)).returning({ id: models.id });
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting model:", error);
+      return false;
+    }
+  }
+  
+  // SCENARIO OPERATIONS
+  async getScenarios(): Promise<Scenario[]> {
+    return await this.db.select().from(scenarios);
+  }
+  
+  async getScenariosByModel(modelId: number): Promise<Scenario[]> {
+    return await this.db.select().from(scenarios).where(eq(scenarios.modelId, modelId));
+  }
+  
+  async getScenario(id: number): Promise<Scenario | undefined> {
+    const result = await this.db.select().from(scenarios).where(eq(scenarios.id, id));
+    return result[0];
+  }
+  
+  async createScenario(insertScenario: InsertScenario): Promise<Scenario> {
+    const result = await this.db.insert(scenarios).values(insertScenario).returning();
+    return result[0];
+  }
+  
+  async deleteScenario(id: number): Promise<boolean> {
+    try {
+      const result = await this.db.delete(scenarios).where(eq(scenarios.id, id)).returning({ id: scenarios.id });
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error deleting scenario:", error);
+      return false;
+    }
+  }
 }
 
 export class MemStorage implements IStorage {
@@ -75,7 +207,7 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userId++;
-    const user: User = { ...insertUser, id };
+    const user = { ...insertUser, id, displayName: insertUser.displayName || null, role: insertUser.role || null };
     this.users.set(id, user);
     return user;
   }
@@ -91,7 +223,7 @@ export class MemStorage implements IStorage {
   
   async createProject(insertProject: InsertProject): Promise<Project> {
     const id = this.projectId++;
-    const now = new Date().toISOString();
+    const now = new Date();
     
     const project: Project = { 
       ...insertProject, 
@@ -111,7 +243,7 @@ export class MemStorage implements IStorage {
     const updatedProject = { 
       ...project, 
       ...updates,
-      updatedAt: new Date().toISOString(),
+      updatedAt: new Date(),
     };
     
     this.projects.set(id, updatedProject);
@@ -138,7 +270,7 @@ export class MemStorage implements IStorage {
   
   async createModel(insertModel: InsertModel): Promise<Model> {
     const id = this.modelId++;
-    const now = new Date().toISOString();
+    const now = new Date();
     
     const model: Model = { 
       ...insertModel, 
@@ -158,7 +290,7 @@ export class MemStorage implements IStorage {
     const updatedModel = { 
       ...model, 
       ...updates,
-      updatedAt: new Date().toISOString(),
+      updatedAt: new Date(),
     };
     
     this.models.set(id, updatedModel);
@@ -185,7 +317,7 @@ export class MemStorage implements IStorage {
   
   async createScenario(insertScenario: InsertScenario): Promise<Scenario> {
     const id = this.scenarioId++;
-    const now = new Date().toISOString();
+    const now = new Date();
     
     const scenario: Scenario = { 
       ...insertScenario, 
@@ -236,7 +368,7 @@ export class MemStorage implements IStorage {
     
     projects.forEach(project => {
       const id = this.projectId++;
-      const now = new Date().toISOString();
+      const now = new Date();
       
       const newProject: Project = {
         ...project,
@@ -362,7 +494,7 @@ export class MemStorage implements IStorage {
     
     models.forEach(model => {
       const id = this.modelId++;
-      const now = new Date().toISOString();
+      const now = new Date();
       
       const newModel: Model = {
         ...model,
@@ -376,4 +508,8 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Use PostgresStorage if DATABASE_URL is available, otherwise use MemStorage
+const usePostgres = !!process.env.DATABASE_URL;
+export const storage = usePostgres ? new PostgresStorage() : new MemStorage();
+
+console.log(`Using ${usePostgres ? 'PostgreSQL' : 'in-memory'} storage for MettaModeler`);
