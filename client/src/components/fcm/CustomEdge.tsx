@@ -37,6 +37,16 @@ export default function CustomEdge({
     (e.source === source && e.target === target && e.id !== id)
   );
   
+  // Calculate offset for bidirectional edges
+  const offset = hasBidirectionalEdge ? 40 : 0;
+  const centerY = (sourceY + targetY) / 2;
+  
+  // For bidirectional edges, create a higher arc
+  const controlPoint = hasBidirectionalEdge ? {
+    x: (sourceX + targetX) / 2,
+    y: centerY - offset
+  } : undefined;
+
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
@@ -44,7 +54,8 @@ export default function CustomEdge({
     targetX,
     targetY,
     targetPosition,
-    curvature: isSelfLoop ? 0.5 : (hasBidirectionalEdge ? 0.3 : 0.1),
+    curvature: isSelfLoop ? 0.8 : (hasBidirectionalEdge ? 0.5 : 0.2),
+    controlPoints: controlPoint ? [controlPoint] : undefined,
   });
 
   const isPositive = weight >= 0;
