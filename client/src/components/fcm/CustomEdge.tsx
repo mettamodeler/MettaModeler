@@ -52,15 +52,28 @@ export default function CustomEdge({
   let controlPoint;
   if (isSelfLoop) {
     // Create a loop that comes out from the source handle direction
-    controlPoint = {
-      x: sourceX + (sourcePosition === Position.Left ? -100 : sourcePosition === Position.Right ? 100 : 0),
-      y: sourceY + (sourcePosition === Position.Top ? -100 : sourcePosition === Position.Bottom ? 100 : 0)
-    };
+    const distance = 100;
+    if (sourcePosition === Position.Left || sourcePosition === Position.Right) {
+      controlPoint = {
+        x: sourceX + (sourcePosition === Position.Left ? -distance : distance),
+        y: sourceY
+      };
+    } else {
+      controlPoint = {
+        x: sourceX,
+        y: sourceY + (sourcePosition === Position.Top ? -distance : distance)
+      };
+    }
   } else if (offset !== 0) {
-    // For bidirectional edges, offset perpendicular to the edge
+    // Calculate midpoint based on handle positions for smoother curves
+    const midpointOffsetX = (sourcePosition === Position.Left ? -20 : sourcePosition === Position.Right ? 20 : 0);
+    const midpointOffsetY = (sourcePosition === Position.Top ? -20 : sourcePosition === Position.Bottom ? 20 : 0);
+    const targetOffsetX = (targetPosition === Position.Left ? -20 : targetPosition === Position.Right ? 20 : 0);
+    const targetOffsetY = (targetPosition === Position.Top ? -20 : targetPosition === Position.Bottom ? 20 : 0);
+    
     controlPoint = {
-      x: midX + (-dy / length) * offset,
-      y: midY + (dx / length) * offset
+      x: midX + midpointOffsetX + targetOffsetX + (-dy / length) * offset,
+      y: midY + midpointOffsetY + targetOffsetY + (dx / length) * offset
     };
   }
 
