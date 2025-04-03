@@ -197,24 +197,24 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
       const defaultWeight = 0.5;
       const edgeColor = 'rgba(239, 68, 68, 0.8)';
 
+      // Find existing edges between these nodes
+      const existingEdge = edges.find(e => 
+        (e.source === connection.target && e.target === connection.source) ||
+        (e.source === connection.source && e.target === connection.target)
+      );
+
+      const offset = existingEdge ? 40 : 0;
+      const isReverse = existingEdge && existingEdge.source === connection.source;
+
       const newEdge = {
         id: `edge-${Date.now()}`,
         source: connection.source,
         target: connection.target,
-        sourceHandle: connection.sourceHandle,
-        targetHandle: connection.targetHandle,
         type: 'custom',
-        // Get positions from handles
-        sourcePosition: connection.sourceHandle?.includes('bottom') ? Position.Bottom :
-                      connection.sourceHandle?.includes('right') ? Position.Right :
-                      connection.sourceHandle?.includes('left') ? Position.Left : Position.Top,
-        targetPosition: connection.targetHandle?.includes('bottom') ? Position.Bottom :
-                      connection.targetHandle?.includes('right') ? Position.Right :
-                      connection.targetHandle?.includes('left') ? Position.Left : Position.Top,
         data: { 
           weight: defaultWeight,
-          offset: offset * (isReverse ? -1 : 1), // Opposite direction for reverse edges
-          edges: edges // Pass current edges for reference
+          offset: offset,
+          edges: edges
         },
         markerEnd: {
           type: MarkerType.ArrowClosed,
