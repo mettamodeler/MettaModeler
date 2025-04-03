@@ -46,48 +46,55 @@ export default function CustomNode({ id, data, selected }: NodeProps<CustomNodeD
       className={`node rounded-lg p-3 min-w-[150px] text-center ${selected ? 'ring-2 ring-secondary' : ''}`} 
       style={{ backgroundColor: getNodeColor() }}
     >
-      {/* All positions can be both source and target */}
-      <Handle 
-        type="target" 
-        position={Position.Top}
-        className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
-      />
       <Handle 
         type="source" 
         position={Position.Top}
+        id="top-source"
+        className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
+      />
+      <Handle 
+        type="target" 
+        position={Position.Top}
+        id="top-target"
         className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
       />
       
-      <Handle 
-        type="target" 
-        position={Position.Right}
-        className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
-      />
       <Handle 
         type="source" 
         position={Position.Right}
+        id="right-source"
+        className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
+      />
+      <Handle 
+        type="target" 
+        position={Position.Right}
+        id="right-target"
         className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
       />
       
       <Handle 
-        type="target" 
+        type="source" 
         position={Position.Bottom}
+        id="bottom-source"
         className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
       />
       <Handle 
-        type="source" 
+        type="target" 
         position={Position.Bottom}
+        id="bottom-target"
         className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
       />
       
       <Handle 
-        type="target" 
+        type="source" 
         position={Position.Left}
+        id="left-source"
         className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
       />
       <Handle 
-        type="source" 
+        type="target" 
         position={Position.Left}
+        id="left-target"
         className="w-3 h-3 !bg-white/50 hover:!bg-white cursor-crosshair"
       />
 
