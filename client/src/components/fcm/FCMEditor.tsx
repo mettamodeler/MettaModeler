@@ -23,15 +23,14 @@ import CustomEdge from './CustomEdge';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 
-// Custom node types
+// Define node and edge types outside component to prevent recreation
 const nodeTypes = {
   custom: CustomNode,
-};
+} as const;
 
-// Custom edge types
 const edgeTypes = {
   custom: CustomEdge,
-};
+} as const;
 
 interface FCMEditorProps {
   model: FCMModel;
