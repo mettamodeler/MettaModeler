@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { 
   BaseEdge,
   EdgeLabelRenderer,
@@ -64,13 +64,18 @@ export default function CustomEdge({
     [id, onChange]
   );
   
+  const [isVisible, setIsVisible] = useState(false);
+  
   return (
     <>
       <BaseEdge
         id={id}
         path={edgePath}
         style={edgeStyle}
-        // @ts-ignore
+        className="cursor-pointer"
+        onClick={() => setIsVisible(!isVisible)}
+        onMouseEnter={() => setIsVisible(true)}
+        onMouseLeave={() => setIsVisible(false)}
         markerEnd={{
           type: MarkerType.ArrowClosed,
           color: edgeColor,
@@ -79,28 +84,30 @@ export default function CustomEdge({
         }}
       />
       <EdgeLabelRenderer>
-        <div
-          className="dark-glass p-2 rounded-md shadow-glow-sm absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col min-w-[120px]"
-          style={{
-            left: labelX,
-            top: labelY,
-          }}
-        >
-          <div className="flex justify-between items-center mb-1 px-1">
-            <span className="text-xs">{weight.toFixed(1)}</span>
-            <span className={`text-xs ${isPositive ? 'text-red-500' : 'text-blue-500'}`}>
-              {isPositive ? 'Positive' : 'Negative'}
-            </span>
+        {isVisible && (
+          <div
+            className="dark-glass p-2 rounded-md shadow-glow-sm absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col min-w-[120px] transition-opacity"
+            style={{
+              left: labelX,
+              top: labelY,
+            }}
+          >
+            <div className="flex justify-between items-center mb-1 px-1">
+              <span className="text-xs">{weight.toFixed(1)}</span>
+              <span className={`text-xs ${isPositive ? 'text-red-500' : 'text-blue-500'}`}>
+                {isPositive ? 'Positive' : 'Negative'}
+              </span>
+            </div>
+            <Slider
+              value={[weight]}
+              min={-1}
+              max={1}
+              step={0.1}
+              onValueChange={handleWeightChange}
+              className={`${isPositive ? 'bg-red-950/30' : 'bg-blue-950/30'}`}
+            />
           </div>
-          <Slider
-            value={[weight]}
-            min={-1}
-            max={1}
-            step={0.1}
-            onValueChange={handleWeightChange}
-            className={`${isPositive ? 'bg-red-950/30' : 'bg-blue-950/30'}`}
-          />
-        </div>
+        )}
       </EdgeLabelRenderer>
     </>
   );
