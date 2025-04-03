@@ -200,6 +200,9 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
   // Create baseline scenario only once - using a ref to prevent recreation on each render
   const baselineScenarioRef = useRef<Scenario>();
   
+  // Reference for tracking if comparison simulation has been run
+  const isFirstRunRef = useRef(true);
+  
   // Initialize the ref if it's not already set
   if (!baselineScenarioRef.current) {
     baselineScenarioRef.current = createBaselineScenario(model);
@@ -459,8 +462,15 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
     }
     
     // Run the comparison simulations whenever the selected scenarios change
-    runComparisonSimulations();
-  }, [baselineScenarioId, comparisonScenarioId, scenarios, nodeLabelsById, model.nodes]);
+    // Using a manual simulation trigger here to avoid infinite loops
+    if (isFirstRunRef.current || 
+        (baselineScenarioId && comparisonScenarioId && 
+        allScenarios.find(s => String(s.id) === String(baselineScenarioId)) && 
+        allScenarios.find(s => String(s.id) === String(comparisonScenarioId)))) {
+      isFirstRunRef.current = false;
+      runComparisonSimulations();
+    }
+  }, [baselineScenarioId, comparisonScenarioId, scenarios]);
   
   // Group nodes by type
   const nodesByType = model.nodes.reduce<Record<string, string[]>>((acc, node) => {
