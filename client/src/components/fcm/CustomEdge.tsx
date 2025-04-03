@@ -68,21 +68,38 @@ export default function CustomEdge({
   
   return (
     <>
-      <BaseEdge
-        id={id}
-        path={edgePath}
-        style={edgeStyle}
-        className="cursor-pointer"
-        onClick={() => setIsVisible(!isVisible)}
-        onMouseEnter={() => setIsVisible(true)}
-        onMouseLeave={() => setIsVisible(false)}
-        markerEnd={{
-          type: MarkerType.ArrowClosed,
-          color: edgeColor,
-          width: 20,
-          height: 20,
-        }}
-      />
+      <>
+        <path
+          id={id}
+          className="react-flow__edge-path cursor-pointer"
+          d={edgePath}
+          style={edgeStyle}
+          onClick={() => setIsVisible(!isVisible)}
+          onMouseEnter={() => setIsVisible(true)}
+          onMouseLeave={() => setIsVisible(false)}
+          markerEnd={`url(#${id}-arrow)`}
+        />
+        <defs>
+          <marker
+            id={`${id}-arrow`}
+            markerWidth="25"
+            markerHeight="25"
+            viewBox="-10 -10 20 20"
+            orient="auto"
+            refX="0"
+            refY="0"
+          >
+            <polyline
+              stroke={edgeColor}
+              strokeWidth="1"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill={edgeColor}
+              points="-5,-4 0,0 -5,4 -5,-4"
+            />
+          </marker>
+        </defs>
+      </>
       <EdgeLabelRenderer>
         {isVisible && (
           <div
