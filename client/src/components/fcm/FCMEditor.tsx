@@ -204,12 +204,13 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
       );
 
       const offset = existingEdge ? 40 : 0;
-      const isReverse = existingEdge && existingEdge.source === connection.source;
 
       const newEdge = {
         id: `edge-${Date.now()}`,
         source: connection.source,
         target: connection.target,
+        sourceHandle: connection.sourceHandle,
+        targetHandle: connection.targetHandle,
         type: 'custom',
         data: { 
           weight: defaultWeight,
