@@ -87,7 +87,7 @@ export default function Home() {
       const newModel = {
         name: newModelName,
         description: '',
-        projectId: newModelProjectId,
+        projectId: parseInt(newModelProjectId, 10), // Convert string to number
         nodes: [],
         edges: [],
       };
@@ -148,7 +148,7 @@ export default function Home() {
                       <Button 
                         variant="ghost" 
                         onClick={() => {
-                          setNewModelProjectId(project.id);
+                          setNewModelProjectId(project.id.toString());
                           setIsCreatingModel(true);
                         }}
                         className="mr-2"

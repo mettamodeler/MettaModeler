@@ -1,0 +1,57 @@
+chunk-RPCDYKBN.js?v=f7b47af2:521 Warning: validateDOMNesting(...): <a> cannot appear as a descendant of <a>.
+    at a
+    at a
+    at https://2777cb12-af7a-4d08-8c58-3daf5821655c-00-2deaqbcgdlbo.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=f7b47af2:205:18
+    at div
+    at div
+    at div
+    at Sidebar (https://2777cb12-af7a-4d08-8c58-3daf5821655c-00-2deaqbcgdlbo.spock.replit.dev/src/components/layout/Sidebar.tsx:23:35)
+    at div
+    at div
+    at ModelEditor (https://2777cb12-af7a-4d08-8c58-3daf5821655c-00-2deaqbcgdlbo.spock.replit.dev/src/pages/ModelEditor.tsx:30:23)
+    at Route (https://2777cb12-af7a-4d08-8c58-3daf5821655c-00-2deaqbcgdlbo.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=f7b47af2:191:16)
+    at Switch (https://2777cb12-af7a-4d08-8c58-3daf5821655c-00-2deaqbcgdlbo.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=f7b47af2:247:17)
+    at App
+    at QueryClientProvider (https://2777cb12-af7a-4d08-8c58-3daf5821655c-00-2deaqbcgdlbo.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=f7b47af2:2805:3)
+    at ThemeProvider (https://2777cb12-af7a-4d08-8c58-3daf5821655c-00-2deaqbcgdlbo.spock.replit.dev/src/components/ui/theme-provider.tsx:25:3)
+printWarning @ chunk-RPCDYKBN.js?v=f7b47af2:521Understand this errorAI
+/api/models:1 
+            
+            
+           Failed to load resource: the server responded with a status of 400 (Bad Request)Understand this errorAI
+/api/models:1 
+            
+            
+           Failed to load resource: the server responded with a status of 400 (Bad Request)Understand this errorAI
+/api/models:1 
+            
+            
+           Failed to load resource: the server responded with a status of 400 (Bad Request)Understand this errorAI
+/api/models:1 
+            
+            
+           Failed to load resource: the server responded with a status of 400 (Bad Request)Understand this errorAI
+/api/models:1 
+            
+            
+           Failed to load resource: the server responded with a status of 400 (Bad Request)Understand this errorAI
+/api/models:1 
+            
+            
+           Failed to load resource: the server responded with a status of 400 (Bad Request)Understand this errorAI
+/api/models:1 
+            
+            
+           Failed to load resource: the server responded with a status of 400 (Bad Request)Understand this errorAI
+/api/models:1 
+            
+            
+           Failed to load resource: the server responded with a status of 400 (Bad Request)Understand this errorAI
+/api/models:1 
+            
+            
+           Failed to load resource: the server responded with a status of 400 (Bad Request)Understand this errorAI
+/api/models:1 
+            
+            
+           Failed to load resource: the server responded with a status of 400 (Bad Request)
