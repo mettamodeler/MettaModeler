@@ -78,24 +78,15 @@ export default function CustomEdge({
     };
   }
 
+  // Handle different source and target positions
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
-    sourcePosition,
+    sourcePosition: sourcePosition || Position.Top,
     targetX,
     targetY,
-    targetPosition,
-    curvature: isSelfLoop ? 0.8 : offset !== 0 ? 0.3 : 0.2,
-    controlPoints: isSelfLoop ? undefined : [
-      {
-        x: sourceX + (targetX - sourceX) * 0.25,
-        y: sourceY + (targetY - sourceY) * 0.25 + (offset || 0)
-      },
-      {
-        x: sourceX + (targetX - sourceX) * 0.75,
-        y: sourceY + (targetY - sourceY) * 0.75 + (offset || 0)
-      }
-    ]
+    targetPosition: targetPosition || Position.Top,
+    curvature: isSelfLoop ? 0.8 : offset !== 0 ? 0.5 : 0.2,
   });
 
   const isPositive = weight >= 0;
