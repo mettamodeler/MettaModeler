@@ -32,7 +32,7 @@ export default function CustomEdge({
 
   // Calculate if this is a self-loop or find bidirectional edges
   const isSelfLoop = source === target;
-  const hasBidirectionalEdge = edges?.some(e => 
+  const hasBidirectionalEdge = data?.edges?.some(e => 
     (e.source === target && e.target === source) || 
     (e.source === source && e.target === target && e.id !== id)
   );

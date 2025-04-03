@@ -50,13 +50,13 @@ function modelToReactFlow(model: FCMModel): { nodes: Node[], edges: Edge[] } {
       color: node.color 
     },
   }));
-  
+
   const edges = model.edges.map((edge) => {
     // Determine edge color based on weight
     const edgeColor = edge.weight >= 0 
       ? 'rgba(239, 68, 68, 0.8)' // red for positive
       : 'rgba(59, 130, 246, 0.8)'; // blue for negative
-      
+
     return {
       id: edge.id,
       source: edge.source,
@@ -71,7 +71,7 @@ function modelToReactFlow(model: FCMModel): { nodes: Node[], edges: Edge[] } {
       },
     };
   });
-  
+
   return { nodes, edges };
 }
 
@@ -93,14 +93,14 @@ function reactFlowToModel(
       color: node.data.color,
     };
   });
-  
+
   const updatedEdges = edges.map((edge) => ({
     id: edge.id,
     source: edge.source,
     target: edge.target,
     weight: edge.data?.weight || 0,
   }));
-  
+
   return {
     ...model,
     nodes: updatedNodes as FCMNode[],
@@ -110,26 +110,26 @@ function reactFlowToModel(
 
 function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
   const { toast } = useToast();
-  
+
   const { nodes: initialNodes, edges: initialEdges } = modelToReactFlow(model);
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
-  
+
   // Helper to save model changes with debounce
   const saveModelChanges = useCallback(() => {
     if (saveTimeout) clearTimeout(saveTimeout);
-    
+
     const timeout = setTimeout(async () => {
       try {
         const updatedModel = reactFlowToModel(model, nodes, edges);
-        
+
         // Save to API
         await apiRequest('PUT', `/api/models/${model.id}`, updatedModel);
-        
+
         // Update local state
         onModelUpdate(updatedModel);
-        
+
         // toast.success('Model saved');
       } catch (error) {
         toast({
@@ -139,10 +139,10 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
         });
       }
     }, 1000);
-    
+
     setSaveTimeout(timeout);
   }, [model, nodes, edges, onModelUpdate, saveTimeout, toast]);
-  
+
   // Handle node changes
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
@@ -151,14 +151,14 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
     },
     [onNodesChange, saveModelChanges]
   );
-  
+
   // Handle node deletion with keyboard
   const onKeyDown = useCallback(
     (event: KeyboardEvent) => {
       if (event.key === 'Delete' || event.key === 'Backspace') {
         const selectedNodes = nodes.filter(node => node.selected);
         const selectedEdges = edges.filter(edge => edge.selected);
-        
+
         if (selectedNodes.length > 0) {
           setNodes(nodes.filter(node => !node.selected));
           // Remove connected edges
@@ -169,7 +169,7 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
           ));
           saveModelChanges();
         }
-        
+
         if (selectedEdges.length > 0) {
           setEdges(edges.filter(edge => !edge.selected));
           saveModelChanges();
@@ -187,18 +187,18 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
     },
     [onEdgesChange, saveModelChanges]
   );
-  
+
   // Handle new connections
   const onConnect = useCallback(
     (connection: Connection) => {
       if (!connection.source || !connection.target) return;
-      
+
       // Default weight for new connections
       const defaultWeight = 0.5;
-      
+
       // Determine color based on weight (positive by default)
       const edgeColor = 'rgba(239, 68, 68, 0.8)'; // red for positive
-      
+
       // Create a new edge with default weight
       // Edge direction is determined by source -> target
       const newEdge = {
@@ -216,13 +216,13 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
           color: edgeColor,
         },
       };
-      
+
       setEdges((eds) => addEdge(newEdge, eds));
       saveModelChanges();
     },
     [setEdges, saveModelChanges]
   );
-  
+
   // Handle node label updates
   const onNodeLabelChange = useCallback(
     (id: string, label: string) => {
@@ -244,7 +244,7 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
     },
     [setNodes, saveModelChanges]
   );
-  
+
   // Handle node type updates
   const onNodeTypeChange = useCallback(
     (id: string, type: NodeType) => {
@@ -253,7 +253,7 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
           if (node.id === id) {
             // Change color based on type
             const color = type === 'driver' ? '#00C4FF' : '#A855F7';
-            
+
             return {
               ...node,
               data: {
@@ -270,7 +270,7 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
     },
     [setNodes, saveModelChanges]
   );
-  
+
   // Handle edge weight updates
   const onEdgeWeightChange = useCallback(
     (id: string, weight: number) => {
@@ -281,7 +281,7 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
             const edgeColor = weight >= 0 
               ? 'rgba(239, 68, 68, 0.8)' // red for positive
               : 'rgba(59, 130, 246, 0.8)'; // blue for negative
-            
+
             return {
               ...edge,
               data: {
@@ -305,7 +305,7 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
     },
     [setEdges, saveModelChanges]
   );
-  
+
   // Create a new node
   const onAddNode = useCallback(() => {
     const id = `node-${Date.now()}`;
@@ -322,11 +322,11 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
         onTypeChange: onNodeTypeChange,
       },
     };
-    
+
     setNodes((nds) => [...nds, newNode]);
     saveModelChanges();
   }, [setNodes, onNodeLabelChange, onNodeTypeChange, saveModelChanges]);
-  
+
   // Update node data (pass callbacks to node)
   const nodesWithCallbacks = nodes.map((node) => ({
     ...node,
@@ -336,16 +336,17 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
       onTypeChange: onNodeTypeChange,
     },
   }));
-  
+
   // Update edge data (pass callbacks to edge)
   const edgesWithCallbacks = edges.map((edge) => ({
     ...edge,
     data: {
       ...edge.data,
       onChange: onEdgeWeightChange,
+      edges: edges, // Pass all edges to enable edge styling logic
     },
   }));
-  
+
   return (
     <ReactFlow
       nodes={nodesWithCallbacks}
@@ -374,7 +375,7 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
         maskColor="rgba(30, 42, 68, 0.8)"
         className="dark-glass"
       />
-      
+
       <Panel position="top-right" className="dark-glass rounded-lg shadow-glow-sm p-1 flex flex-col space-y-1">
         <button 
           className="w-8 h-8 flex items-center justify-center rounded hover:bg-white/10"
