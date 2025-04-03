@@ -175,9 +175,6 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
                   <SelectValue placeholder="Select baseline scenario" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem key="baseline" value="baseline">
-                    Baseline (No Intervention)
-                  </SelectItem>
                   {scenarios.map((scenario) => (
                     <SelectItem key={scenario.id} value={scenario.id}>
                       {scenario.name}
@@ -197,9 +194,6 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
                   <SelectValue placeholder="Select comparison scenario" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem key="baseline" value="baseline">
-                    Baseline (No Intervention)
-                  </SelectItem>
                   {scenarios.map((scenario) => (
                     <SelectItem key={scenario.id} value={scenario.id}>
                       {scenario.name}
@@ -296,12 +290,8 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
                   <div className="mt-4">
                     <div className="h-[400px]">
                       <CompareConvergencePlot 
-                        baselineScenario={baselineScenarioId === 'baseline' 
-                          ? baselineScenario 
-                          : allScenarios.find(s => s.id === baselineScenarioId)} 
-                        comparisonScenario={comparisonScenarioId === 'baseline' 
-                          ? baselineScenario 
-                          : allScenarios.find(s => s.id === comparisonScenarioId)}
+                        baselineScenario={scenarios.find(s => s.id === baselineScenarioId)} 
+                        comparisonScenario={scenarios.find(s => s.id === comparisonScenarioId)}
                         nodeLabels={nodeLabelsById}
                       />
                     </div>
