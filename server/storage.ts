@@ -13,8 +13,16 @@ import {
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { eq, and } from 'drizzle-orm';
+import session from "express-session";
+import connectPg from "connect-pg-simple";
+import createMemoryStore from "memorystore";
+import pg from "pg";
+const { Pool } = pg;
 
 export interface IStorage {
+  // Session storage
+  sessionStore: any; // Using any to avoid complex typings with express-session
+
   // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -45,11 +53,21 @@ export interface IStorage {
 
 export class PostgresStorage implements IStorage {
   private db: ReturnType<typeof drizzle>;
+  sessionStore: any;
   
   constructor() {
     // Create a PostgreSQL connection
     const queryClient = postgres(process.env.DATABASE_URL || "");
     this.db = drizzle(queryClient);
+    
+    // Create PostgreSQL session store
+    const PostgresSessionStore = connectPg(session);
+    const pgPool = new Pool({ connectionString: process.env.DATABASE_URL });
+    this.sessionStore = new PostgresSessionStore({ 
+      pool: pgPool, 
+      tableName: 'user_sessions', 
+      createTableIfMissing: true 
+    });
   }
 
   // USER OPERATIONS
@@ -194,6 +212,7 @@ export class MemStorage implements IStorage {
   private projectId: number;
   private modelId: number;
   private scenarioId: number;
+  sessionStore: any;
 
   constructor() {
     this.users = new Map();
@@ -205,6 +224,12 @@ export class MemStorage implements IStorage {
     this.projectId = 1;
     this.modelId = 1;
     this.scenarioId = 1;
+    
+    // Create Memory session store
+    const MemoryStore = createMemoryStore(session);
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // 24 hours
+    });
     
     // Create demo data
     this.initializeDemoData();

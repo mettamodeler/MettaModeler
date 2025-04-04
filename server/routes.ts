@@ -8,11 +8,15 @@ import {
   insertModelSchema,
   insertScenarioSchema,
 } from "@shared/schema";
+import { setupAuth, isAuthenticated } from "./auth";
 
 // Python simulation service URL
 const PYTHON_SIM_URL = process.env.PYTHON_SIM_URL || 'http://localhost:5050';
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up authentication
+  setupAuth(app);
+
   // API routes
   // Projects
   app.get("/api/projects", async (_req: Request, res: Response) => {

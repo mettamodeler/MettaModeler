@@ -19,7 +19,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { FCMModel } from "@/lib/types";
+import { FCMModel } from "@shared/schema";
+import { UserProfile } from "@/components/auth/user-profile";
 
 interface AppHeaderProps {
   model?: FCMModel;
@@ -138,19 +139,7 @@ export default function AppHeader({ model }: AppHeaderProps) {
           </SheetContent>
         </Sheet>
         
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-sm cursor-pointer">
-              EW
-            </div>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="dark-glass border border-white/10">
-            <DropdownMenuLabel>Emma Wilson</DropdownMenuLabel>
-            <DropdownMenuItem disabled>Profile</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem disabled>Sign Out</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <UserProfile />
       </div>
       
       {/* Help Dialog */}
