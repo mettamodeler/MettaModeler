@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useAuth, loginSchema, registerSchema } from "@/hooks/use-auth";
-import { LoadingScreen } from "@/components/ui/loading-screen";
+import { LoadingPage } from "@/components/ui/loading-page";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -72,6 +72,11 @@ export default function AuthPage() {
   const onRegisterSubmit = (values: RegisterFormValues) => {
     registerMutation.mutate(values);
   };
+
+  // Show loading page during authentication
+  if (loginMutation.isPending || registerMutation.isPending) {
+    return <LoadingPage />;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background to-background/80">
