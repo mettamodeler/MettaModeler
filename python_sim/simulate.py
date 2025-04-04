@@ -235,7 +235,7 @@ class FCMSimulator:
         time_series = {time_series_str}
         final_state = {json.dumps(results["finalState"], indent=2)}
         iterations = {results["iterations"]}
-        converged = {results["converged"]}
+        converged = str(results["converged"]).lower()
         
         # Convert time series to DataFrame
         df = pd.DataFrame(time_series)

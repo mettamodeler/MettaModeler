@@ -86,9 +86,9 @@ def simulate():
                 if node_id in scenario_final:
                     delta_values[node_id] = scenario_final[node_id] - baseline_final[node_id]
             
-            # Convert Python boolean to JSON-serializable format
-            scenario_converged = True if scenario_results['converged'] == True else False
-            baseline_converged = True if baseline_results['converged'] == True else False
+            # Convert Python boolean to JSON-serializable format (using lowercase strings)
+            scenario_converged = str(scenario_results['converged']).lower()
+            baseline_converged = str(baseline_results['converged']).lower()
             
             # Combine results
             results = {
@@ -118,8 +118,8 @@ def simulate():
                 generate_notebook=generate_notebook
             )
             
-            # Ensure boolean is serializable
-            sim_converged = True if sim_results.get('converged') == True else False
+            # Ensure boolean is serializable (using lowercase strings)
+            sim_converged = str(sim_results.get('converged', False)).lower()
             
             # Create properly serializable results
             results = {

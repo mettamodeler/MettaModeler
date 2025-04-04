@@ -353,7 +353,7 @@ print(f"Scenario: {scenario_data.get('name', 'Untitled Scenario')}")
 print(f"Activation function: {scenario_data.get('activationFunction', 'sigmoid')}")
 print(f"Threshold: {scenario_data.get('threshold', 0.001)}")
 print(f"Max iterations: {scenario_data.get('maxIterations', 100)}")
-print(f"Converged: {results.get('converged', False)}")
+print(f"Converged: {str(results.get('converged', False)).lower()}")
 print(f"Iterations required: {len(iterations)}")
 
 # Display table of initial and final values
@@ -909,7 +909,7 @@ def scenario_to_excel(scenario: Dict) -> bytes:
             # Convergence info
             if "converged" in results or "iterations" in results:
                 convergence_info = pd.DataFrame([
-                    {"Property": "Converged", "Value": results.get("converged", False)},
+                    {"Property": "Converged", "Value": str(results.get("converged", False)).lower()},
                     {"Property": "Iterations Required", "Value": len(results.get("iterations", []))},
                     {"Property": "Delta", "Value": results.get("delta", 0)},
                 ])
