@@ -148,22 +148,47 @@ export default function Sidebar() {
     try {
       if (itemToDelete.type === 'project') {
         await apiRequest('DELETE', `/api/projects/${itemToDelete.id}`);
+        
         toast({
           title: "Project Deleted",
           description: "Project has been deleted successfully",
         });
-        refetchProjects();
+        
+        // Invalidate project and model queries to ensure proper cache updates
+        queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/models'] });
+        
+        // Also invalidate any specific model queries that might be associated with this project
+        models.forEach(model => {
+          if (model.projectId === itemToDelete.id) {
+            queryClient.invalidateQueries({ queryKey: [`/api/models/${model.id}`] });
+          }
+        });
+        
+        await refetchProjects();
+        await refetchModels();
+        
         // If we're viewing this project, go back to home
         if (currentProjectId !== null && Number(currentProjectId) === itemToDelete.id) {
           setLocation('/');
         }
       } else {
         await apiRequest('DELETE', `/api/models/${itemToDelete.id}`);
+        
         toast({
           title: "Model Deleted",
           description: "Model has been deleted successfully",
         });
-        refetchModels();
+        
+        // Invalidate all relevant queries
+        queryClient.invalidateQueries({ queryKey: ['/api/models'] });
+        queryClient.invalidateQueries({ queryKey: [`/api/models/${itemToDelete.id}`] });
+        
+        // Invalidate any scenarios associated with this model
+        queryClient.invalidateQueries({ queryKey: [`/api/models/${itemToDelete.id}/scenarios`] });
+        
+        await refetchModels();
+        
         // If we're viewing this model, go back to home
         if (currentModelId !== null && currentModelId === itemToDelete.id) {
           setLocation('/');
