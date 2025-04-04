@@ -77,6 +77,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Login successful",
         description: `Welcome back, ${user.displayName || user.username}!`,
       });
+      // Force a reload which will trigger the navigation
+      window.location.href = "/";
     },
     onError: (error: Error) => {
       toast({
@@ -98,6 +100,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Registration successful",
         description: `Welcome, ${user.displayName || user.username}!`,
       });
+      // Force a reload which will trigger the navigation
+      window.location.href = "/";
     },
     onError: (error: Error) => {
       toast({
@@ -117,6 +121,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({
         title: "Logged out successfully",
       });
+      // Force a reload which will trigger the navigation
+      window.location.href = "/auth";
     },
     onError: (error: Error) => {
       toast({
