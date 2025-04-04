@@ -375,22 +375,60 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
     saveModelChanges();
   }, [setNodes, onNodeLabelChange, onNodeTypeChange, saveModelChanges]);
   
-  // Update node data (pass callbacks to node)
+  // State to track node being hovered over
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  
+  // Find connected nodes and edges for a hovered node
+  const getConnectedElements = useCallback((nodeId: string | null) => {
+    if (!nodeId) return { connectedNodeIds: [], connectedEdgeIds: [] };
+    
+    // Find all edges that connect to or from this node
+    const connectedEdges = edges.filter(
+      edge => edge.source === nodeId || edge.target === nodeId
+    );
+    
+    // Get IDs of connected edges
+    const connectedEdgeIds = connectedEdges.map(edge => edge.id);
+    
+    // Get IDs of connected nodes (the other end of each edge)
+    const connectedNodeIds = connectedEdges.map(edge => 
+      edge.source === nodeId ? edge.target : edge.source
+    );
+    
+    return { connectedNodeIds, connectedEdgeIds };
+  }, [edges]);
+  
+  // Handle node hover
+  const onNodeHover = useCallback((nodeId: string, isHovered: boolean) => {
+    setHoveredNodeId(isHovered ? nodeId : null);
+  }, []);
+  
+  // Get connected elements based on hovered node
+  const { connectedNodeIds, connectedEdgeIds } = getConnectedElements(hoveredNodeId);
+  
+  // Update node data (pass callbacks to node and highlight connected nodes)
   const nodesWithCallbacks = nodes.map((node) => ({
     ...node,
     data: {
       ...node.data,
       onChange: onNodeLabelChange,
       onTypeChange: onNodeTypeChange,
+      onNodeHover,
+      isHighlighted: hoveredNodeId ? 
+        // Highlight if this node is connected to the hovered node or is the hovered node itself
+        (connectedNodeIds.includes(node.id) || node.id === hoveredNodeId) : false,
     },
   }));
   
-  // Update edge data (pass callbacks to edge)
+  // Update edge data (pass callbacks to edge and highlight connected edges)
   const edgesWithCallbacks = edges.map((edge) => ({
     ...edge,
     data: {
       ...edge.data,
       onChange: onEdgeWeightChange,
+      isHighlighted: hoveredNodeId ? 
+        // Highlight if this edge connects to the hovered node
+        (edge.source === hoveredNodeId || edge.target === hoveredNodeId) : false,
     },
   }));
   

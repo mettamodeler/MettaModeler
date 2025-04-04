@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Handle, Position, NodeProps, Connection } from 'reactflow';
+import { Handle, Position, NodeProps, Connection, useReactFlow } from 'reactflow';
 import { NodeType } from '@/lib/types';
 
 type CustomNodeData = {
@@ -9,10 +9,12 @@ type CustomNodeData = {
   color?: string;
   onChange?: (id: string, label: string) => void;
   onTypeChange?: (id: string, type: NodeType) => void;
+  onNodeHover?: (id: string, isHovered: boolean) => void;
+  isHighlighted?: boolean;
 };
 
 export default function CustomNode({ id, data, selected }: NodeProps<CustomNodeData>) {
-  const { label, type, value, color, onChange, onTypeChange } = data;
+  const { label, type, value, color, onChange, onTypeChange, onNodeHover, isHighlighted } = data;
   const [isHovered, setIsHovered] = useState(false);
   
   const handleLabelChange = useCallback(
@@ -33,6 +35,20 @@ export default function CustomNode({ id, data, selected }: NodeProps<CustomNodeD
     [id, onTypeChange]
   );
 
+  const handleMouseEnter = useCallback(() => {
+    setIsHovered(true);
+    if (onNodeHover) {
+      onNodeHover(id, true);
+    }
+  }, [id, onNodeHover]);
+  
+  const handleMouseLeave = useCallback(() => {
+    setIsHovered(false);
+    if (onNodeHover) {
+      onNodeHover(id, false);
+    }
+  }, [id, onNodeHover]);
+
   // Determine background color based on type or explicit color
   const getNodeColor = () => {
     if (color) return color;
@@ -48,12 +64,21 @@ export default function CustomNode({ id, data, selected }: NodeProps<CustomNodeD
     return true;
   }, []);
   
+  // Determine if node should have highlight effects
+  const shouldHighlight = isHovered || isHighlighted || selected;
+  
   return (
     <div 
-      className={`node rounded-lg p-3 min-w-[150px] text-center ${selected ? 'ring-2 ring-secondary' : ''}`} 
-      style={{ backgroundColor: getNodeColor() }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      className={`node rounded-lg p-3 min-w-[150px] text-center transition-all duration-200
+        ${selected ? 'ring-2 ring-secondary' : ''}
+        ${shouldHighlight ? 'shadow-[0_0_20px_rgba(255,255,255,0.3)]' : ''}`} 
+      style={{ 
+        backgroundColor: getNodeColor(),
+        boxShadow: shouldHighlight ? '0 0 15px rgba(255, 255, 255, 0.2)' : undefined,
+        transform: shouldHighlight ? 'scale(1.02)' : 'scale(1)',
+      }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       {/* 
         We're using all 4 positions for both source and target handles
@@ -68,28 +93,28 @@ export default function CustomNode({ id, data, selected }: NodeProps<CustomNodeD
         type="target" 
         position={Position.Top} 
         isValidConnection={isValidConnection}
-        className={`target-handle ${isHovered || selected ? 'visible' : ''}`}
+        className={`target-handle ${shouldHighlight ? 'visible' : ''}`}
       />
       <Handle 
         id={`${id}-target-right`}
         type="target" 
         position={Position.Right} 
         isValidConnection={isValidConnection}
-        className={`target-handle ${isHovered || selected ? 'visible' : ''}`}
+        className={`target-handle ${shouldHighlight ? 'visible' : ''}`}
       />
       <Handle 
         id={`${id}-target-bottom`}
         type="target" 
         position={Position.Bottom} 
         isValidConnection={isValidConnection}
-        className={`target-handle ${isHovered || selected ? 'visible' : ''}`}
+        className={`target-handle ${shouldHighlight ? 'visible' : ''}`}
       />
       <Handle 
         id={`${id}-target-left`}
         type="target" 
         position={Position.Left} 
         isValidConnection={isValidConnection}
-        className={`target-handle ${isHovered || selected ? 'visible' : ''}`}
+        className={`target-handle ${shouldHighlight ? 'visible' : ''}`}
       />
       
       <input
@@ -118,28 +143,28 @@ export default function CustomNode({ id, data, selected }: NodeProps<CustomNodeD
         type="source" 
         position={Position.Top} 
         isValidConnection={isValidConnection}
-        className={`source-handle ${isHovered || selected ? 'visible' : ''}`}
+        className={`source-handle ${shouldHighlight ? 'visible' : ''}`}
       />
       <Handle 
         id={`${id}-source-right`}
         type="source" 
         position={Position.Right} 
         isValidConnection={isValidConnection}
-        className={`source-handle ${isHovered || selected ? 'visible' : ''}`}
+        className={`source-handle ${shouldHighlight ? 'visible' : ''}`}
       />
       <Handle 
         id={`${id}-source-bottom`}
         type="source" 
         position={Position.Bottom} 
         isValidConnection={isValidConnection}
-        className={`source-handle ${isHovered || selected ? 'visible' : ''}`}
+        className={`source-handle ${shouldHighlight ? 'visible' : ''}`}
       />
       <Handle 
         id={`${id}-source-left`}
         type="source" 
         position={Position.Left} 
         isValidConnection={isValidConnection}
-        className={`source-handle ${isHovered || selected ? 'visible' : ''}`}
+        className={`source-handle ${shouldHighlight ? 'visible' : ''}`}
       />
     </div>
   );

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { 
   EdgeProps,
   getBezierPath,
@@ -12,6 +12,7 @@ interface CustomEdgeData {
   onChange?: (id: string, weight: number) => void;
   isBidirectional?: boolean;
   isReversePair?: boolean;
+  isHighlighted?: boolean;
 }
 
 export default function CustomEdge({
@@ -27,7 +28,8 @@ export default function CustomEdge({
   data,
   selected,
 }: EdgeProps<CustomEdgeData>) {
-  const { weight = 0, onChange, isBidirectional, isReversePair } = data || {};
+  const { weight = 0, onChange, isBidirectional, isReversePair, isHighlighted } = data || {};
+  const [isHovered, setIsHovered] = useState(false);
 
   const isPositive = weight >= 0;
   const edgeColor = isPositive 
@@ -38,6 +40,11 @@ export default function CustomEdge({
   const weightMagnitude = Math.abs(weight);
   const strokeWidth = Math.max(1, Math.min(5, weightMagnitude * 4 + 1));
 
+  // Increase stroke width when hovered or highlighted
+  const effectiveStrokeWidth = isHovered || isHighlighted || selected 
+    ? strokeWidth + 1.5
+    : strokeWidth;
+  
   // Simple, natural curve with a reasonable default
   // Use different curvature for bidirectional edges
   let curvature = 0.25; // Default gentle curve
@@ -67,6 +74,12 @@ export default function CustomEdge({
     [id, onChange]
   );
 
+  // Determine if any highlighting effects should be applied
+  const shouldHighlight = isHovered || isHighlighted || selected;
+  const highlightFilter = shouldHighlight 
+    ? `drop-shadow(0 0 5px ${edgeColor})` 
+    : undefined;
+
   return (
     <>
       <path
@@ -75,10 +88,13 @@ export default function CustomEdge({
         d={edgePath}
         style={{
           stroke: edgeColor,
-          strokeWidth,
+          strokeWidth: effectiveStrokeWidth,
           strokeLinejoin: 'round',
-          filter: selected ? `drop-shadow(0 0 5px ${edgeColor})` : undefined,
+          filter: highlightFilter,
+          transition: 'stroke-width 0.2s, filter 0.2s',
         }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         markerEnd={isPositive ? `url(#arrowhead-positive)` : `url(#arrowhead-negative)`}
       />
 
@@ -96,7 +112,9 @@ export default function CustomEdge({
           <Popover>
             <PopoverTrigger asChild>
               <div 
-                className="w-6 h-6 rounded-full bg-background/80 cursor-pointer hover:bg-background flex items-center justify-center border border-border"
+                className={`w-6 h-6 rounded-full bg-background/80 cursor-pointer hover:bg-background flex items-center justify-center border border-border ${shouldHighlight ? 'ring-1 ring-white shadow-glow-sm' : ''}`}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
               >
                 <span className="text-xs font-mono">{weight.toFixed(1)}</span>
               </div>
