@@ -442,14 +442,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid model ID" });
       }
 
-      // Get the model data
-      const model = await storage.getModel(id);
-      if (!model) {
-        return res.status(404).json({ message: "Model not found" });
+      // Get the model data - either from the database or from the request body
+      let model;
+      
+      if (req.body && Object.keys(req.body).length > 0) {
+        // Use the enhanced model data from the request body if available
+        console.log("Using enhanced model data from request body");
+        model = req.body;
+      } else {
+        // Fallback to database model if no request body provided
+        console.log("Using model data from database");
+        model = await storage.getModel(id);
+        if (!model) {
+          return res.status(404).json({ message: "Model not found" });
+        }
       }
 
-      // Get export options from request body
-      const format = req.body.format as ExportFormat || ExportFormat.JSON;
+      // Get export options from query parameters or request body
+      const format = (req.query.format as ExportFormat) || 
+                     (req.body.format as ExportFormat) || 
+                     ExportFormat.JSON;
       const fileName = req.body.fileName || `model_${id}`;
 
       // Generate the export file

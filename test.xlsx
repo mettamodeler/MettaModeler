@@ -1,0 +1,114 @@
+{
+  "id": 5,
+  "name": "Coffee and Anxiety",
+  "description": "",
+  "projectId": 4,
+  "nodes": [
+    {
+      "id": "node-1743734675105",
+      "type": "regular",
+      "color": "#A855F7",
+      "label": "Coffee intake",
+      "value": 0.5,
+      "positionX": 47.4052904325809,
+      "positionY": 68.14321910864484
+    },
+    {
+      "id": "node-1743734687760",
+      "type": "regular",
+      "color": "#A855F7",
+      "label": "Anxiety",
+      "value": 0.5,
+      "positionX": 259.1925942603076,
+      "positionY": 178.58602893930032
+    },
+    {
+      "id": "node-1743734708624",
+      "type": "regular",
+      "color": "#A855F7",
+      "label": "Productivity",
+      "value": 0.5,
+      "positionX": -162.09655585481374,
+      "positionY": 392.69051494889715
+    },
+    {
+      "id": "node-1743734714970",
+      "type": "regular",
+      "color": "#A855F7",
+      "label": "Work Backlog",
+      "value": 0.5,
+      "positionX": 222.06703413648893,
+      "positionY": 442.6860776876399
+    },
+    {
+      "id": "node-1743734722694",
+      "type": "regular",
+      "color": "#A855F7",
+      "label": "Boss Pressure",
+      "value": 0.5,
+      "positionX": 464.2870422070811,
+      "positionY": 334.2165278806345
+    },
+    {
+      "id": "node-1743734775639",
+      "type": "regular",
+      "color": "#A855F7",
+      "label": "Sleep",
+      "value": 0.5,
+      "positionX": -237.45388082165843,
+      "positionY": 251.12437862240927
+    }
+  ],
+  "edges": [
+    {
+      "id": "node-1743734675105-node-1743734708624",
+      "source": "node-1743734675105",
+      "target": "node-1743734708624",
+      "weight": 0.5
+    },
+    {
+      "id": "node-1743734708624-node-1743734714970",
+      "source": "node-1743734708624",
+      "target": "node-1743734714970",
+      "weight": -1
+    },
+    {
+      "id": "node-1743734722694-node-1743734687760",
+      "source": "node-1743734722694",
+      "target": "node-1743734687760",
+      "weight": 0.5
+    },
+    {
+      "id": "node-1743734722694-node-1743734708624",
+      "source": "node-1743734722694",
+      "target": "node-1743734708624",
+      "weight": 0.5
+    },
+    {
+      "id": "node-1743734775639-node-1743734708624",
+      "source": "node-1743734775639",
+      "target": "node-1743734708624",
+      "weight": 0.5
+    },
+    {
+      "id": "node-1743734687760-node-1743734708624",
+      "source": "node-1743734687760",
+      "target": "node-1743734708624",
+      "weight": -0.5
+    },
+    {
+      "id": "node-1743734722694-node-1743734714970",
+      "source": "node-1743734722694",
+      "target": "node-1743734714970",
+      "weight": 0.5
+    },
+    {
+      "id": "node-1743734775639-node-1743734675105",
+      "source": "node-1743734775639",
+      "target": "node-1743734675105",
+      "weight": -0.5
+    }
+  ],
+  "createdAt": "2025-04-04T02:44:48.231Z",
+  "updatedAt": "2025-04-04T15:39:23.118Z"
+}

@@ -117,7 +117,21 @@ export class ExportService {
         { header: 'Color', key: 'color', width: 15 },
       ];
       
-      nodesSheet.addRows(model.nodes);
+      // Format node data properly for Excel export
+      const formattedNodes = model.nodes.map(node => {
+        const data = node.data || {};
+        return {
+          id: node.id,
+          label: data.label || '',
+          type: data.type || 'regular',
+          value: data.value || 0,
+          positionX: node.position?.x || 0,
+          positionY: node.position?.y || 0,
+          color: data.color || '',
+        };
+      });
+      
+      nodesSheet.addRows(formattedNodes);
       
       // Create edges sheet
       const edgesSheet = workbook.addWorksheet('Edges');
@@ -128,7 +142,18 @@ export class ExportService {
         { header: 'Weight', key: 'weight', width: 15 },
       ];
       
-      edgesSheet.addRows(model.edges);
+      // Format edge data properly for Excel export
+      const formattedEdges = model.edges.map(edge => {
+        const data = edge.data || {};
+        return {
+          id: edge.id,
+          source: edge.source,
+          target: edge.target,
+          weight: data.weight || 0,
+        };
+      });
+      
+      edgesSheet.addRows(formattedEdges);
     } 
     else if (type === ExportType.SCENARIO) {
       const scenario = data as Scenario;
