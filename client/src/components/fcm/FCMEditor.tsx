@@ -436,11 +436,11 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
             id="arrowhead"
             markerWidth="12"
             markerHeight="12"
-            refX="7"
+            refX="8"
             refY="6"
             orient="auto"
           >
-            <path d="M 0 0 L 12 6 L 0 12 z" fill="currentColor" />
+            <path d="M 0 0 L 12 6 L 0 12 z" fill="white" fillOpacity="0.75" />
           </marker>
         </defs>
       </svg>

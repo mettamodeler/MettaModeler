@@ -86,12 +86,10 @@
   filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
 }
 
-/* Make the edges easier to select by expanding the hit area */
+/* Make the edges easier to select by expanding the hit area 
+   Only apply the invisible stroke area to the parent element */
 .react-flow__edge {
-  pointer-events: stroke;
-  stroke-width: 15;
-  stroke-opacity: 0;
-  stroke: transparent;
+  pointer-events: visibleStroke;
 }
 
 /* Animation utilities */

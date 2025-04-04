@@ -38,18 +38,14 @@ export default function CustomEdge({
   const weightMagnitude = Math.abs(weight);
   const strokeWidth = Math.max(1, Math.min(5, weightMagnitude * 4 + 1));
 
-  // Natural Bezier path with subtle curvature
-  // Add a slight offset for bidirectional edges to separate them
+  // Simple, natural curve with a reasonable default
+  // Use different curvature for bidirectional edges
   let curvature = 0.25; // Default gentle curve
   
   // For bidirectional pairs, offset the curves differently
   if (isBidirectional) {
-    curvature = isReversePair ? 0.4 : 0.25;
+    curvature = isReversePair ? 0.4 : 0.2;
   }
-  
-  // Slight randomization for unique path shapes
-  // const randomFactor = ((source.charCodeAt(0) + target.charCodeAt(0)) % 10) / 100;
-  // curvature += randomFactor;
   
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
