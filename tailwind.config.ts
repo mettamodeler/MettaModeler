@@ -79,10 +79,25 @@ export default {
             height: "0",
           },
         },
+        "loading-progress": {
+          "0%": {
+            left: "-100%",
+            width: "100%",
+          },
+          "50%": {
+            left: "0%",
+            width: "100%",
+          },
+          "100%": {
+            left: "100%",
+            width: "100%",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "loading-bar": "loading-progress 2s ease-in-out infinite",
       },
     },
   },

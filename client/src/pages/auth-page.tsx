@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useAuth, loginSchema, registerSchema } from "@/hooks/use-auth";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -37,7 +38,8 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 export default function AuthPage() {
   const [activeTab, setActiveTab] = useState("login");
   const [location, setLocation] = useLocation();
-  const { user, loginMutation, registerMutation } = useAuth();
+  const { user, loginMutation, registerMutation, isLoading } = useAuth();
+  const [redirecting, setRedirecting] = useState(false);
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -56,12 +58,21 @@ export default function AuthPage() {
     },
   });
 
-  // Redirect if already logged in
+  // Show loading screen and redirect if already logged in
   useEffect(() => {
-    if (user) {
-      setLocation("/");
+    if (user && !redirecting) {
+      setRedirecting(true);
+      // Small delay to allow loading screen to render
+      setTimeout(() => {
+        setLocation("/");
+      }, 500);
     }
-  }, [user, setLocation]);
+  }, [user, setLocation, redirecting]);
+  
+  // If we're loading user data, redirecting, or in the middle of an auth operation, show loading screen
+  if (isLoading || redirecting || loginMutation.isPending || registerMutation.isPending) {
+    return <LoadingScreen />;
+  }
 
   const onLoginSubmit = (values: LoginFormValues) => {
     loginMutation.mutate(values);

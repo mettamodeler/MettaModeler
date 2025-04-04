@@ -1,6 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
-import { Loader2 } from "lucide-react";
-import { Redirect, Route } from "wouter";
+import { LoadingScreen } from "@/components/ui/loading-screen";
+import { Redirect, Route, useLocation } from "wouter";
+import { useEffect } from "react";
 
 export function ProtectedRoute({
   path,
@@ -10,21 +11,28 @@ export function ProtectedRoute({
   component: () => React.ReactNode;
 }) {
   const { user, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  // Handle redirect to auth page when user is not logged in
+  useEffect(() => {
+    if (!isLoading && !user) {
+      setLocation("/auth");
+    }
+  }, [isLoading, user, setLocation]);
 
   if (isLoading) {
     return (
       <Route path={path}>
-        <div className="flex items-center justify-center min-h-screen">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        <LoadingScreen />
       </Route>
     );
   }
 
+  // Show loading screen instead of immediate redirect
   if (!user) {
     return (
       <Route path={path}>
-        <Redirect to="/auth" />
+        <LoadingScreen />
       </Route>
     );
   }
