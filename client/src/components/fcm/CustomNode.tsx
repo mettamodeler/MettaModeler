@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { NodeType } from '@/lib/types';
 
@@ -13,6 +13,7 @@ type CustomNodeData = {
 
 export default function CustomNode({ id, data, selected }: NodeProps<CustomNodeData>) {
   const { label, type, value, color, onChange, onTypeChange } = data;
+  const [isHovered, setIsHovered] = useState(false);
   
   const handleLabelChange = useCallback(
     (evt: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,20 +46,53 @@ export default function CustomNode({ id, data, selected }: NodeProps<CustomNodeD
   const handleStyle = {
     width: '10px',
     height: '10px',
-    background: 'rgba(255, 255, 255, 0.3)',
+    background: 'rgba(255, 255, 255, 0.4)',
     border: '1px solid rgba(255, 255, 255, 0.8)',
+    borderRadius: '50%',
+    transition: 'all 0.2s ease',
+    opacity: 0.3, // Start with low opacity
+  };
+  
+  // Handle hover style
+  const handleHoverStyle = {
+    ...handleStyle,
+    opacity: 1,
+    transform: 'scale(1.2)',
+    boxShadow: '0 0 5px rgba(255, 255, 255, 0.8)',
   };
   
   return (
     <div 
       className={`node rounded-lg p-3 min-w-[150px] text-center ${selected ? 'ring-2 ring-secondary' : ''}`} 
       style={{ backgroundColor: getNodeColor() }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       {/* Add handles on all sides to allow connections from any direction */}
-      <Handle type="target" position={Position.Top} style={handleStyle} />
-      <Handle type="target" position={Position.Left} style={handleStyle} />
-      <Handle type="target" position={Position.Right} style={handleStyle} />
-      <Handle type="target" position={Position.Bottom} style={handleStyle} />
+      <Handle 
+        type="target" 
+        position={Position.Top} 
+        style={isHovered || selected ? handleHoverStyle : handleStyle} 
+        className="handle-top"
+      />
+      <Handle 
+        type="target" 
+        position={Position.Left} 
+        style={isHovered || selected ? handleHoverStyle : handleStyle}
+        className="handle-left"
+      />
+      <Handle 
+        type="target" 
+        position={Position.Right} 
+        style={isHovered || selected ? handleHoverStyle : handleStyle}
+        className="handle-right"
+      />
+      <Handle 
+        type="target" 
+        position={Position.Bottom} 
+        style={isHovered || selected ? handleHoverStyle : handleStyle}
+        className="handle-bottom"
+      />
       
       <input
         type="text"
@@ -80,10 +114,30 @@ export default function CustomNode({ id, data, selected }: NodeProps<CustomNodeD
         <span className="ml-1">: {value.toFixed(1)}</span>
       </div>
       
-      <Handle type="source" position={Position.Top} style={handleStyle} />
-      <Handle type="source" position={Position.Left} style={handleStyle} />
-      <Handle type="source" position={Position.Right} style={handleStyle} />
-      <Handle type="source" position={Position.Bottom} style={handleStyle} />
+      <Handle 
+        type="source" 
+        position={Position.Top} 
+        style={isHovered || selected ? handleHoverStyle : handleStyle}
+        className="handle-top"
+      />
+      <Handle 
+        type="source" 
+        position={Position.Left} 
+        style={isHovered || selected ? handleHoverStyle : handleStyle}
+        className="handle-left"
+      />
+      <Handle 
+        type="source" 
+        position={Position.Right} 
+        style={isHovered || selected ? handleHoverStyle : handleStyle}
+        className="handle-right"
+      />
+      <Handle 
+        type="source" 
+        position={Position.Bottom} 
+        style={isHovered || selected ? handleHoverStyle : handleStyle}
+        className="handle-bottom"
+      />
     </div>
   );
 }

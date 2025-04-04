@@ -39,64 +39,94 @@ export default function CustomEdge({
   const [edgePath, labelX, labelY] = useMemo(() => {
     if (isSelfLoop) {
       // For self-loops, create a custom curved path that goes out and loops back
-      // Start from sourceX,sourceY, create a quadratic curve, and return to the same point
-      const radius = 40; // Radius of the loop
-      const offset = 60; // Offset from the node
+      const offset = 80; // Increased offset from the node
       
-      // Adjust starting and ending points based on source position
+      // Determine the direction of the loop based on the source position
       let startX = sourceX;
       let startY = sourceY;
       let endX = sourceX;
       let endY = sourceY;
+      let controlX1, controlY1, controlX2, controlY2;
       
-      // Direction of the loop depends on the source position
-      let controlX, controlY;
-      
+      // Adjust for different source positions to make the best loop path
       if (sourcePosition === 'top') {
-        controlX = sourceX;
-        controlY = sourceY - offset;
-        // Offset the start and end points horizontally to avoid overlapping with the node
-        startX = sourceX - 10;
-        endX = sourceX + 10;
+        // Loop above the node
+        startX = sourceX - 15;
+        endX = sourceX + 15;
+        controlX1 = sourceX - 40;
+        controlY1 = sourceY - offset;
+        controlX2 = sourceX + 40;
+        controlY2 = sourceY - offset;
       } else if (sourcePosition === 'bottom') {
-        controlX = sourceX;
-        controlY = sourceY + offset;
-        startX = sourceX + 10;
-        endX = sourceX - 10;
+        // Loop below the node
+        startX = sourceX + 15;
+        endX = sourceX - 15;
+        controlX1 = sourceX + 40;
+        controlY1 = sourceY + offset;
+        controlX2 = sourceX - 40;
+        controlY2 = sourceY + offset;
       } else if (sourcePosition === 'left') {
-        controlX = sourceX - offset;
-        controlY = sourceY;
-        startY = sourceY - 10;
-        endY = sourceY + 10;
+        // Loop to the left of the node
+        startY = sourceY - 15;
+        endY = sourceY + 15;
+        controlX1 = sourceX - offset;
+        controlY1 = sourceY - 40;
+        controlX2 = sourceX - offset;
+        controlY2 = sourceY + 40;
       } else {
-        // Default: right
-        controlX = sourceX + offset;
-        controlY = sourceY;
-        startY = sourceY + 10;
-        endY = sourceY - 10;
+        // Loop to the right of the node
+        startY = sourceY + 15;
+        endY = sourceY - 15;
+        controlX1 = sourceX + offset;
+        controlY1 = sourceY + 40;
+        controlX2 = sourceX + offset;
+        controlY2 = sourceY - 40;
       }
       
-      // Create a custom path for self-loop
-      // Use a quadratic curve for simplicity (M = move to, Q = quadratic curve)
-      const path = `M ${startX},${startY} Q ${controlX},${controlY} ${endX},${endY}`;
+      // Create a cubic bezier curve for smoother self-loops
+      // M = move to, C = cubic bezier curve
+      const path = `M ${startX},${startY} C ${controlX1},${controlY1} ${controlX2},${controlY2} ${endX},${endY}`;
       
-      // Calculate the label position in the middle of the loop
-      const labelPosX = controlX;
-      const labelPosY = controlY;
+      // Calculate the label position at the peak of the loop
+      const labelPosX = (controlX1 + controlX2) / 2;
+      const labelPosY = (controlY1 + controlY2) / 2;
       
       return [path, labelPosX, labelPosY];
     } else {
-      // For normal edges, use the standard Bezier path
-      return getBezierPath({
-        sourceX,
-        sourceY,
-        sourcePosition,
-        targetX,
-        targetY,
-        targetPosition,
-      });
+      // Check if there's a reverse connection between these nodes
+      // This helps offset bidirectional edges to prevent overlap
+      const isBidirectional = id.includes(`${source}-${target}`) && !!document.getElementById(`${target}-${source}`);
+      
+      // For normal edges between different nodes, use a curved path
+      // Apply curvature to prevent overlapping of bidirectional edges
+      const curvature = 0.3; // Adjustable curvature
+      
+      if (isBidirectional) {
+        // For bidirectional edges, use smooth step path with offset
+        return getSmoothStepPath({
+          sourceX,
+          sourceY,
+          sourcePosition,
+          targetX,
+          targetY,
+          targetPosition,
+          borderRadius: 20,
+          offset: 20, // Offset prevents overlapping
+        });
+      } else {
+        // For standard edges, use bezier path with slight curvature
+        return getBezierPath({
+          sourceX,
+          sourceY,
+          sourcePosition,
+          targetX,
+          targetY,
+          targetPosition,
+          curvature,
+        });
+      }
     }
-  }, [sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, isSelfLoop]);
+  }, [sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, isSelfLoop, id, source, target]);
 
   const isPositive = weight >= 0;
   const edgeColor = isPositive 
@@ -110,10 +140,17 @@ export default function CustomEdge({
   
   const edgeStyle = {
     stroke: edgeColor,
-    strokeWidth: strokeWidth,
+    strokeWidth,
     filter: selected 
       ? `drop-shadow(0 0 5px ${edgeColor})` 
       : `drop-shadow(0 0 3px ${edgeColor})`,
+  };
+
+  // Style for arrow marker that matches edge thickness
+  const arrowStyle = {
+    strokeWidth: Math.max(1, strokeWidth * 0.5), // Scale down slightly for arrow
+    fill: edgeColor,
+    stroke: edgeColor,
   };
 
   const handleWeightChange = useCallback(
@@ -190,19 +227,17 @@ export default function CustomEdge({
       <defs>
         <marker
           id={`${id}-arrow`}
-          markerWidth="25"
-          markerHeight="25"
+          markerWidth="28"
+          markerHeight="28"
           viewBox="-10 -10 20 20"
           orient="auto"
           refX="0"
           refY="0"
         >
           <polyline
-            stroke={edgeColor}
-            strokeWidth="1"
+            style={arrowStyle}
             strokeLinecap="round"
             strokeLinejoin="round"
-            fill={edgeColor}
             points="-5,-4 0,0 -5,4 -5,-4"
           />
         </marker>
