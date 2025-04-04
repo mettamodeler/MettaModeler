@@ -1,9 +1,11 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { 
   BaseEdge,
   EdgeLabelRenderer,
   EdgeProps,
   getBezierPath,
+  getSmoothStepPath,
+  getStraightPath,
   MarkerType,
 } from 'reactflow';
 import { Slider } from '@/components/ui/slider';
@@ -30,23 +32,85 @@ export default function CustomEdge({
 }: EdgeProps<CustomEdgeData>) {
   const { weight, onChange } = data || { weight: 0 };
 
-  const [edgePath, labelX, labelY] = getBezierPath({
-    sourceX,
-    sourceY,
-    sourcePosition,
-    targetX,
-    targetY,
-    targetPosition,
-  });
+  // Check if this is a self-loop (edge to the same node)
+  const isSelfLoop = source === target;
+  
+  // Calculate edge path based on whether it's a self-loop or not
+  const [edgePath, labelX, labelY] = useMemo(() => {
+    if (isSelfLoop) {
+      // For self-loops, create a custom curved path that goes out and loops back
+      // Start from sourceX,sourceY, create a quadratic curve, and return to the same point
+      const radius = 40; // Radius of the loop
+      const offset = 60; // Offset from the node
+      
+      // Adjust starting and ending points based on source position
+      let startX = sourceX;
+      let startY = sourceY;
+      let endX = sourceX;
+      let endY = sourceY;
+      
+      // Direction of the loop depends on the source position
+      let controlX, controlY;
+      
+      if (sourcePosition === 'top') {
+        controlX = sourceX;
+        controlY = sourceY - offset;
+        // Offset the start and end points horizontally to avoid overlapping with the node
+        startX = sourceX - 10;
+        endX = sourceX + 10;
+      } else if (sourcePosition === 'bottom') {
+        controlX = sourceX;
+        controlY = sourceY + offset;
+        startX = sourceX + 10;
+        endX = sourceX - 10;
+      } else if (sourcePosition === 'left') {
+        controlX = sourceX - offset;
+        controlY = sourceY;
+        startY = sourceY - 10;
+        endY = sourceY + 10;
+      } else {
+        // Default: right
+        controlX = sourceX + offset;
+        controlY = sourceY;
+        startY = sourceY + 10;
+        endY = sourceY - 10;
+      }
+      
+      // Create a custom path for self-loop
+      // Use a quadratic curve for simplicity (M = move to, Q = quadratic curve)
+      const path = `M ${startX},${startY} Q ${controlX},${controlY} ${endX},${endY}`;
+      
+      // Calculate the label position in the middle of the loop
+      const labelPosX = controlX;
+      const labelPosY = controlY;
+      
+      return [path, labelPosX, labelPosY];
+    } else {
+      // For normal edges, use the standard Bezier path
+      return getBezierPath({
+        sourceX,
+        sourceY,
+        sourcePosition,
+        targetX,
+        targetY,
+        targetPosition,
+      });
+    }
+  }, [sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, isSelfLoop]);
 
   const isPositive = weight >= 0;
   const edgeColor = isPositive 
     ? 'rgba(239, 68, 68, 0.8)' // red for positive
     : 'rgba(59, 130, 246, 0.8)'; // blue for negative
 
+  // Calculate stroke width based on weight magnitude
+  // Scale between 1 and 5 for visual clarity
+  const weightMagnitude = Math.abs(weight);
+  const strokeWidth = Math.max(1, Math.min(5, weightMagnitude * 4 + 1));
+  
   const edgeStyle = {
     stroke: edgeColor,
-    strokeWidth: 2,
+    strokeWidth: strokeWidth,
     filter: selected 
       ? `drop-shadow(0 0 5px ${edgeColor})` 
       : `drop-shadow(0 0 3px ${edgeColor})`,
@@ -94,7 +158,6 @@ export default function CustomEdge({
                     onClick={(e) => {
                       e.stopPropagation();
                       onChange?.(id, 0); // Reset weight to trigger deletion
-                      // setIsVisible(false); //Requires state management addition
                     }}
                     className="ml-2 p-1 hover:bg-red-500/20 rounded-sm"
                     title="Delete edge"

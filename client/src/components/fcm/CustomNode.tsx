@@ -41,12 +41,24 @@ export default function CustomNode({ id, data, selected }: NodeProps<CustomNodeD
     return '#A855F7'; // purple for regular nodes
   };
   
+  // Handle styles for better visibility
+  const handleStyle = {
+    width: '10px',
+    height: '10px',
+    background: 'rgba(255, 255, 255, 0.3)',
+    border: '1px solid rgba(255, 255, 255, 0.8)',
+  };
+  
   return (
     <div 
       className={`node rounded-lg p-3 min-w-[150px] text-center ${selected ? 'ring-2 ring-secondary' : ''}`} 
       style={{ backgroundColor: getNodeColor() }}
     >
-      <Handle type="target" position={Position.Top} className="w-3 h-3" />
+      {/* Add handles on all sides to allow connections from any direction */}
+      <Handle type="target" position={Position.Top} style={handleStyle} />
+      <Handle type="target" position={Position.Left} style={handleStyle} />
+      <Handle type="target" position={Position.Right} style={handleStyle} />
+      <Handle type="target" position={Position.Bottom} style={handleStyle} />
       
       <input
         type="text"
@@ -68,7 +80,10 @@ export default function CustomNode({ id, data, selected }: NodeProps<CustomNodeD
         <span className="ml-1">: {value.toFixed(1)}</span>
       </div>
       
-      <Handle type="source" position={Position.Bottom} className="w-3 h-3" />
+      <Handle type="source" position={Position.Top} style={handleStyle} />
+      <Handle type="source" position={Position.Left} style={handleStyle} />
+      <Handle type="source" position={Position.Right} style={handleStyle} />
+      <Handle type="source" position={Position.Bottom} style={handleStyle} />
     </div>
   );
 }
