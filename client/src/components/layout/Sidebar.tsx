@@ -4,6 +4,7 @@ import { queryClient } from "@/lib/queryClient";
 import { Link, useLocation } from "wouter";
 import { Project, FCMModel } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
 import { 
   Dialog, 
   DialogContent, 
@@ -27,6 +28,7 @@ import { apiRequest } from "@/lib/queryClient";
 export default function Sidebar() {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
   
   // Dialog states
   const [isCreatingProject, setIsCreatingProject] = useState(false);
@@ -369,15 +371,29 @@ export default function Sidebar() {
       
       {/* User Section */}
       <div className="p-3 glass border-t border-white/10">
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-sm">
-            EW
+        {user ? (
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-sm">
+              {user.displayName ? 
+                user.displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) :
+                user.username.substring(0, 2).toUpperCase()
+              }
+            </div>
+            <div>
+              <div className="text-sm font-medium">{user.displayName || user.username}</div>
+              <div className="text-xs text-gray-400">FCM Researcher</div>
+            </div>
           </div>
-          <div>
-            <div className="text-sm font-medium">Emma Wilson</div>
-            <div className="text-xs text-gray-400">Researcher</div>
+        ) : (
+          <div className="flex items-center justify-center">
+            <button
+              className="text-sm text-primary hover:underline"
+              onClick={() => setLocation("/auth")}
+            >
+              Sign In
+            </button>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Create Project Dialog */}
