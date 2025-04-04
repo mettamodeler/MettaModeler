@@ -31,7 +31,7 @@ export default function ModelEditor() {
   
   return (
     <div className="flex flex-col h-screen">
-      <AppHeader />
+      <AppHeader model={model} />
       
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
