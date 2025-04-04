@@ -201,8 +201,8 @@ print(f"Number of edges: {len(model_data.get('edges', []))}")
             "source": model_viz_code.strip().split('\n')
         })
         
-        # Add network analysis cell
-        network_analysis_code = """
+        # Add network analysis function cell
+        network_analysis_func_code = """
 # Network Analysis Functions
 def analyze_fcm(G):
     # Analyze FCM network properties
@@ -239,7 +239,17 @@ def analyze_fcm(G):
         metrics['closeness_centrality'] = "Failed to compute"
     
     return metrics
-
+"""
+        notebook["cells"].append({
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": network_analysis_func_code.strip().split('\n')
+        })
+        
+        # Add network analysis execution cell (separate cell for better execution)
+        network_analysis_exec_code = """
 # Perform network analysis
 network_metrics = analyze_fcm(G)
 
@@ -266,7 +276,17 @@ centrality_df = centrality_df.reset_index()
 
 # Display table
 display(centrality_df)
-
+"""
+        notebook["cells"].append({
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": network_analysis_exec_code.strip().split('\n')
+        })
+        
+        # Add visualization cell (separate for better rendering)
+        network_viz_code = """
 # Visualize top 5 nodes by different centrality measures
 fig, axes = plt.subplots(2, 2, figsize=(14, 10))
 axes = axes.flatten()
@@ -290,7 +310,7 @@ plt.show()
             "execution_count": None,
             "metadata": {},
             "outputs": [],
-            "source": network_analysis_code.strip().split('\n')
+            "source": network_viz_code.strip().split('\n')
         })
         
     elif export_type == 'scenario':
@@ -753,31 +773,61 @@ def model_to_excel(model: Dict) -> bytes:
         
         # Add network analysis if available
         if "analysis" in model and model["analysis"]:
-            # Centrality metrics
-            centrality_data = []
-            for metric_name, metric_data in model["analysis"].get("centrality", {}).items():
-                for node_id, value in metric_data.items():
-                    centrality_data.append({
-                        "Metric": metric_name,
-                        "Node ID": node_id,
+            # Global metrics sheet
+            global_metrics = []
+            
+            for key, value in model["analysis"].items():
+                if not isinstance(value, dict):
+                    global_metrics.append({
+                        "Metric": key,
                         "Value": value
                     })
             
+            if global_metrics:
+                metrics_df = pd.DataFrame(global_metrics)
+                metrics_df.to_excel(writer, sheet_name="Network Metrics", index=False)
+            
+            # Centrality metrics
+            centrality_data = []
+            
+            # Get all centrality metrics
+            centrality_metrics = {
+                key: value for key, value in model["analysis"].items() 
+                if isinstance(value, dict) and key in [
+                    "degree_centrality", "in_degree_centrality", "out_degree_centrality",
+                    "betweenness_centrality", "closeness_centrality"
+                ]
+            }
+            
+            # Process centrality metrics
+            for node_id in set(sum([list(metric.keys()) for metric in centrality_metrics.values()], [])):
+                node_data = {"Node ID": node_id}
+                
+                for metric_name, metric_values in centrality_metrics.items():
+                    node_data[metric_name] = metric_values.get(node_id, 0)
+                
+                centrality_data.append(node_data)
+                
             if centrality_data:
                 centrality_df = pd.DataFrame(centrality_data)
-                centrality_df.to_excel(writer, sheet_name="Node Centrality", index=False)
+                centrality_df.to_excel(writer, sheet_name="Centrality Metrics", index=False)
             
-            # Global metrics
-            global_metrics = {k: v for k, v in model["analysis"].items() 
-                             if k != "centrality" and not isinstance(v, dict)}
-            
-            if global_metrics:
-                metrics_df = pd.DataFrame([{"Metric": k, "Value": v} 
-                                         for k, v in global_metrics.items()])
-                metrics_df.to_excel(writer, sheet_name="Network Metrics", index=False)
+            # Other network metrics
+            for metric_name, metric_data in model["analysis"].items():
+                if isinstance(metric_data, dict) and metric_name not in centrality_metrics:
+                    try:
+                        metric_df = pd.DataFrame([
+                            {"Node ID": node_id, "Value": value}
+                            for node_id, value in metric_data.items()
+                        ])
+                        sheet_name = f"{metric_name.replace('_', ' ').title()}"
+                        metric_df.to_excel(writer, sheet_name=sheet_name[:31], index=False)  # Excel sheet name limit
+                    except Exception as e:
+                        print(f"Error creating sheet for {metric_name}: {str(e)}")
+                        continue
     
-    output.seek(0)
-    return output.getvalue()
+        output.seek(0)
+        return output.getvalue()
 
 def scenario_to_excel(scenario: Dict) -> bytes:
     """
@@ -883,7 +933,8 @@ def scenario_to_excel(scenario: Dict) -> bytes:
                     baseline_df.to_excel(writer, sheet_name="Baseline Values", index=False)
             
             # Delta comparison
-            if "finalValues" in baseline and "finalValues" in results:
+            if "finalValues" in baseline and "results" in scenario and "finalValues" in scenario["results"]:
+                results = scenario["results"]  # Ensure results is defined
                 baseline_final = baseline["finalValues"]
                 scenario_final = results["finalValues"]
                 

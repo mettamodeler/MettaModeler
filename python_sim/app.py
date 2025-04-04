@@ -296,8 +296,24 @@ def export_notebook():
             comparison_scenario_id
         )
         
+        # Fix booleans in Python notebook (convert 'true'/'false' to 'True'/'False')
+        def fix_json_for_python(obj):
+            if isinstance(obj, dict):
+                return {k: fix_json_for_python(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [fix_json_for_python(item) for item in obj]
+            elif obj is True:
+                return 'True'
+            elif obj is False:
+                return 'False'
+            else:
+                return obj
+        
+        # Apply Python compatibility fixes
+        fixed_notebook = fix_json_for_python(notebook)
+        
         # Convert notebook to JSON string
-        notebook_json = json.dumps(notebook)
+        notebook_json = json.dumps(fixed_notebook)
         
         # Create a file-like object from the JSON string
         notebook_file = io.BytesIO(notebook_json.encode('utf-8'))
