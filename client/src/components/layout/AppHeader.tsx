@@ -37,7 +37,7 @@ export default function AppHeader({ model }: AppHeaderProps) {
     exportJSON();
   };
 
-  const exportJSON = () => {
+  const exportJSON = async () => {
     if (!model) {
       toast({
         variant: "destructive",
@@ -47,26 +47,65 @@ export default function AppHeader({ model }: AppHeaderProps) {
       return;
     }
 
-    // Create JSON file
-    const modelData = JSON.stringify(model, null, 2);
-    const blob = new Blob([modelData], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    
-    // Create download link
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${model.name.toLowerCase().replace(/\s+/g, "_")}.json`;
-    document.body.appendChild(a);
-    a.click();
-    
-    // Clean up
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    toast({
-      title: "Model Exported",
-      description: "Your model has been exported as a JSON file",
-    });
+    try {
+      // Show loading toast
+      toast({
+        title: "Preparing JSON Export",
+        description: "Generating enhanced JSON export with analysis...",
+      });
+
+      // First, get network analysis data
+      const analyzeResponse = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          nodes: model.nodes,
+          edges: model.edges
+        }),
+      });
+      
+      if (!analyzeResponse.ok) {
+        throw new Error(`Failed to analyze model: ${analyzeResponse.statusText}`);
+      }
+
+      const analysisData = await analyzeResponse.json();
+      
+      // Enhance model with analysis data
+      const enhancedModel = {
+        ...model,
+        analysis: analysisData
+      };
+
+      // Create JSON file
+      const modelData = JSON.stringify(enhancedModel, null, 2);
+      const blob = new Blob([modelData], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      
+      // Create download link
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${model.name.toLowerCase().replace(/\s+/g, "_")}.json`;
+      document.body.appendChild(a);
+      a.click();
+      
+      // Clean up
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Model Exported",
+        description: "Your model has been exported as a JSON file with network analysis",
+      });
+    } catch (error) {
+      console.error("Export error:", error);
+      toast({
+        variant: "destructive",
+        title: "Export Failed",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+      });
+    }
   };
 
   const exportExcel = async () => {
@@ -80,9 +119,43 @@ export default function AppHeader({ model }: AppHeaderProps) {
     }
 
     try {
-      // Call the server API to get Excel file
+      // Show loading toast
+      toast({
+        title: "Preparing Excel Export",
+        description: "Generating full Excel export with network analysis...",
+      });
+
+      // First, get network analysis data
+      const analyzeResponse = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          nodes: model.nodes,
+          edges: model.edges
+        }),
+      });
+      
+      if (!analyzeResponse.ok) {
+        throw new Error(`Failed to analyze model: ${analyzeResponse.statusText}`);
+      }
+
+      const analysisData = await analyzeResponse.json();
+      
+      // Enhance model with analysis data
+      const enhancedModel = {
+        ...model,
+        analysis: analysisData
+      };
+      
+      // Call the server API to get Excel file with the enhanced model
       const response = await fetch(`/api/export/model/${model.id}?format=excel`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(enhancedModel),
       });
       
       if (!response.ok) {
@@ -116,7 +189,7 @@ export default function AppHeader({ model }: AppHeaderProps) {
       
       toast({
         title: "Model Exported",
-        description: "Your model has been exported as an Excel file",
+        description: "Your model has been exported as an Excel file with network analysis",
       });
     } catch (error) {
       console.error("Export error:", error);
@@ -142,17 +215,41 @@ export default function AppHeader({ model }: AppHeaderProps) {
       // Show loading toast
       toast({
         title: "Generating Notebook",
-        description: "Please wait while we create your Jupyter notebook...",
+        description: "Please wait while we create your Jupyter notebook with analysis...",
       });
       
-      // Call the server API to get Jupyter notebook
+      // First, get network analysis data
+      const analyzeResponse = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          nodes: model.nodes,
+          edges: model.edges
+        }),
+      });
+      
+      if (!analyzeResponse.ok) {
+        throw new Error(`Failed to analyze model: ${analyzeResponse.statusText}`);
+      }
+
+      const analysisData = await analyzeResponse.json();
+      
+      // Enhance model with analysis data
+      const enhancedModel = {
+        ...model,
+        analysis: analysisData
+      };
+      
+      // Call the server API to get Jupyter notebook with the enhanced model
       const response = await fetch('/api/export/notebook', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          data: model,
+          data: enhancedModel,
           type: 'model',
           modelId: model.id,
         }),
@@ -182,7 +279,7 @@ export default function AppHeader({ model }: AppHeaderProps) {
       
       toast({
         title: "Notebook Exported",
-        description: "Your model has been exported as a Jupyter notebook",
+        description: "Your model has been exported as a Jupyter notebook with analysis",
       });
     } catch (error) {
       console.error("Export error:", error);
