@@ -14,6 +14,7 @@ import ReactFlow, {
   EdgeChange,
   Panel,
   MarkerType,
+  Position,
   NodeTypes,
   EdgeTypes,
   ConnectionMode,
@@ -25,10 +26,9 @@ import CustomEdge from './CustomEdge';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 
-// Define node and edge types as constants outside of the component
-// to prevent unnecessary re-renders
-const nodeTypes: NodeTypes = { custom: CustomNode };
-const edgeTypes: EdgeTypes = { custom: CustomEdge };
+// Memoize node and edge types to prevent unnecessary re-renders
+const nodeTypes = { custom: CustomNode } as const;
+const edgeTypes = { custom: CustomEdge } as const;
 
 interface FCMEditorProps {
   model: FCMModel;
