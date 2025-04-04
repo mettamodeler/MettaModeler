@@ -147,54 +147,61 @@ export default function Sidebar() {
     
     try {
       if (itemToDelete.type === 'project') {
-        await apiRequest('DELETE', `/api/projects/${itemToDelete.id}`);
+        const response = await apiRequest('DELETE', `/api/projects/${itemToDelete.id}`);
         
-        toast({
-          title: "Project Deleted",
-          description: "Project has been deleted successfully",
-        });
-        
-        // Invalidate project and model queries to ensure proper cache updates
-        queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
-        queryClient.invalidateQueries({ queryKey: ['/api/models'] });
-        
-        // Also invalidate any specific model queries that might be associated with this project
-        models.forEach(model => {
-          if (model.projectId === itemToDelete.id) {
-            queryClient.invalidateQueries({ queryKey: [`/api/models/${model.id}`] });
+        // For 204 No Content responses, this is a success
+        if (response === null || response === undefined) {
+          toast({
+            title: "Project Deleted",
+            description: "Project has been deleted successfully",
+          });
+          
+          // Remove the deleted project from local state
+          const updatedProjects = projects.filter(p => Number(p.id) !== Number(itemToDelete.id));
+          queryClient.setQueryData(['/api/projects'], updatedProjects);
+          
+          // Remove any models associated with this project from local state
+          const updatedModels = models.filter(m => Number(m.projectId) !== Number(itemToDelete.id));
+          queryClient.setQueryData(['/api/models'], updatedModels);
+          
+          // Invalidate all other related queries
+          queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/models'] });
+          
+          // If we're viewing this project, go back to home
+          if (currentProjectId !== null && Number(currentProjectId) === itemToDelete.id) {
+            setLocation('/');
           }
-        });
-        
-        await refetchProjects();
-        await refetchModels();
-        
-        // If we're viewing this project, go back to home
-        if (currentProjectId !== null && Number(currentProjectId) === itemToDelete.id) {
-          setLocation('/');
         }
       } else {
-        await apiRequest('DELETE', `/api/models/${itemToDelete.id}`);
+        const response = await apiRequest('DELETE', `/api/models/${itemToDelete.id}`);
         
-        toast({
-          title: "Model Deleted",
-          description: "Model has been deleted successfully",
-        });
-        
-        // Invalidate all relevant queries
-        queryClient.invalidateQueries({ queryKey: ['/api/models'] });
-        queryClient.invalidateQueries({ queryKey: [`/api/models/${itemToDelete.id}`] });
-        
-        // Invalidate any scenarios associated with this model
-        queryClient.invalidateQueries({ queryKey: [`/api/models/${itemToDelete.id}/scenarios`] });
-        
-        await refetchModels();
-        
-        // If we're viewing this model, go back to home
-        if (currentModelId !== null && currentModelId === itemToDelete.id) {
-          setLocation('/');
+        // For 204 No Content responses, this is a success
+        if (response === null || response === undefined) {
+          toast({
+            title: "Model Deleted",
+            description: "Model has been deleted successfully",
+          });
+          
+          // Remove the deleted model from local state
+          const updatedModels = models.filter(m => Number(m.id) !== Number(itemToDelete.id));
+          queryClient.setQueryData(['/api/models'], updatedModels);
+          
+          // Invalidate all relevant queries
+          queryClient.invalidateQueries({ queryKey: ['/api/models'] });
+          queryClient.invalidateQueries({ queryKey: [`/api/models/${itemToDelete.id}`] });
+          
+          // Invalidate any scenarios associated with this model
+          queryClient.invalidateQueries({ queryKey: [`/api/models/${itemToDelete.id}/scenarios`] });
+          
+          // If we're viewing this model, go back to home
+          if (currentModelId !== null && currentModelId === itemToDelete.id) {
+            setLocation('/');
+          }
         }
       }
     } catch (error) {
+      console.error("Error during deletion:", error);
       toast({
         variant: "destructive",
         title: `Failed to Delete ${itemToDelete.type}`,
