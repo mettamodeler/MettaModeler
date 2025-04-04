@@ -173,15 +173,38 @@ def analyze():
         
         # Add nodes
         for node in nodes:
-            G.add_node(node['id'], **node.get('data', {}))
+            # Handle different node formats safely
+            node_id = node.get('id', '')
+            
+            # Handle node data attributes
+            node_attrs = {}
+            if 'data' in node and isinstance(node['data'], dict):
+                node_attrs = node['data']
+            elif isinstance(node, dict):
+                # Copy all other properties except 'id' as attributes
+                node_attrs = {k: v for k, v in node.items() if k != 'id'}
+                
+            if node_id:  # Ensure we have a valid node id
+                G.add_node(node_id, **node_attrs)
             
         # Add edges
         for edge in edges:
-            G.add_edge(
-                edge['source'], 
-                edge['target'], 
-                weight=edge['data'].get('weight', 0)
-            )
+            # Handle different edge data formats safely
+            source = edge.get('source', '')
+            target = edge.get('target', '')
+            
+            # Handle both formats of edge data
+            # Format 1: edge['data']['weight']
+            # Format 2: edge['weight']
+            if 'data' in edge and isinstance(edge['data'], dict):
+                weight = edge['data'].get('weight', 0)
+            elif 'weight' in edge:
+                weight = edge.get('weight', 0)
+            else:
+                weight = 0
+                
+            if source and target:  # Ensure we have valid source and target
+                G.add_edge(source, target, weight=weight)
             
         # Calculate network metrics
         try:
