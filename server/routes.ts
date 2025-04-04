@@ -7,6 +7,9 @@ import {
   insertProjectSchema,
   insertModelSchema,
   insertScenarioSchema,
+  FCMNode,
+  FCMEdge,
+  SimulationResult
 } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./auth";
 
@@ -145,7 +148,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/models", async (req: Request, res: Response) => {
     try {
       const validatedData = insertModelSchema.parse(req.body);
-      const model = await storage.createModel(validatedData);
+      
+      // Type assertions to help TypeScript with nodes and edges
+      const typedData = {
+        ...validatedData,
+        nodes: validatedData.nodes ? (validatedData.nodes as FCMNode[]) : undefined,
+        edges: validatedData.edges ? (validatedData.edges as FCMEdge[]) : undefined
+      };
+      
+      const model = await storage.createModel(typedData);
       res.status(201).json(model);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -163,7 +174,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const validatedData = insertModelSchema.partial().parse(req.body);
-      const model = await storage.updateModel(id, validatedData);
+      
+      // Type assertions to help TypeScript with nodes and edges
+      const typedData = {
+        ...validatedData,
+        nodes: validatedData.nodes ? (validatedData.nodes as FCMNode[]) : undefined,
+        edges: validatedData.edges ? (validatedData.edges as FCMEdge[]) : undefined
+      };
+      
+      const model = await storage.updateModel(id, typedData);
       
       if (!model) {
         return res.status(404).json({ message: "Model not found" });
@@ -247,7 +266,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const validatedData = insertScenarioSchema.parse(data);
-      const scenario = await storage.createScenario(validatedData);
+      
+      // Type assertions to help TypeScript with initialValues and results 
+      const typedData = {
+        ...validatedData,
+        initialValues: validatedData.initialValues ? 
+          (validatedData.initialValues as Record<string, number>) : undefined,
+        results: validatedData.results ? {
+          ...validatedData.results,
+          finalValues: validatedData.results.finalValues as Record<string, number>,
+          timeSeriesData: validatedData.results.timeSeriesData as Record<string, number[]>
+        } as SimulationResult : undefined
+      };
+      
+      const scenario = await storage.createScenario(typedData);
       res.status(201).json(scenario);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -297,7 +329,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create a properly formatted response object with expected structure
       // Map Python API field names to match our frontend expectations
-      const responseData = {
+      const responseData: SimulationResult & {
+        baselineFinalState?: Record<string, number>,
+        baselineTimeSeries?: Record<string, number[]>,
+        baselineIterations?: number,
+        baselineConverged?: boolean,
+        deltaState?: Record<string, number>
+      } = {
         finalValues: data.finalState || data.finalValues || {},
         timeSeriesData: data.timeSeries || data.timeSeriesData || {},
         iterations: data.iterations || 0,

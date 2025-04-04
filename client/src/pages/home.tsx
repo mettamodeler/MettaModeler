@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { Project, FCMModel } from '@/lib/types';
 import AppHeader from '@/components/layout/AppHeader';
 import Sidebar from '@/components/layout/Sidebar';
@@ -14,6 +14,7 @@ import { apiRequest } from '@/lib/queryClient';
 
 export default function Home() {
   const { toast } = useToast();
+  const [_, navigate] = useLocation();
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const [isCreatingModel, setIsCreatingModel] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
@@ -182,23 +183,23 @@ export default function Home() {
                   const project = projects.find(p => p.id === model.projectId);
                   
                   return (
-                    <Link key={model.id} href={`/models/${model.id}`}>
-                      <a className="block">
-                        <Card className="glass transition-shadow hover:shadow-glow-sm h-full">
-                          <CardHeader>
-                            <CardTitle>{model.name.toLowerCase()}</CardTitle>
-                            <CardDescription>
-                              {project?.name || 'Unknown Project'}
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="text-sm text-gray-400">
-                              {model.nodes.length} nodes · {model.edges.length} connections
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </a>
-                    </Link>
+                    <Card 
+                      key={model.id} 
+                      className="glass transition-shadow hover:shadow-glow-sm h-full cursor-pointer" 
+                      onClick={() => navigate(`/models/${model.id}`)}
+                    >
+                      <CardHeader>
+                        <CardTitle>{model.name.toLowerCase()}</CardTitle>
+                        <CardDescription>
+                          {project?.name || 'Unknown Project'}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-sm text-gray-400">
+                          {model.nodes.length} nodes · {model.edges.length} connections
+                        </div>
+                      </CardContent>
+                    </Card>
                   );
                 })}
               </div>

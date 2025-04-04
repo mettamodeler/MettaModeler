@@ -4,6 +4,7 @@ import {
   useMutation,
   UseMutationResult,
 } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { z } from "zod";
 import { User } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -37,6 +38,7 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
+  const [_, navigate] = useLocation();
   const {
     data: user,
     error,
@@ -76,8 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Login successful",
         description: `Welcome back, ${user.displayName || user.username}!`,
       });
-      // Force a reload which will trigger the navigation
-      window.location.href = "/";
+      // Navigate to home page
+      navigate("/");
     },
     onError: (error: Error) => {
       toast({
@@ -98,8 +100,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Registration successful",
         description: `Welcome, ${user.displayName || user.username}!`,
       });
-      // Force a reload which will trigger the navigation
-      window.location.href = "/";
+      // Navigate to home page
+      navigate("/");
     },
     onError: (error: Error) => {
       toast({
@@ -119,8 +121,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({
         title: "Logged out successfully",
       });
-      // Force a reload which will trigger the navigation
-      window.location.href = "/auth";
+      // Navigate to auth page
+      navigate("/auth");
     },
     onError: (error: Error) => {
       toast({

@@ -1,60 +1,17 @@
-export type NodeType = "driver" | "regular" | "outcome";
+import { NodeType as SharedNodeType, FCMNode as SharedFCMNode, FCMEdge as SharedFCMEdge, FCMModel as SharedFCMModel, Project as SharedProject, Scenario as SharedScenario, SimulationResult as SharedSimulationResult } from '@shared/schema';
 
-export interface FCMNode {
-  id: string;
-  type: NodeType;
-  label: string;
-  value: number;
-  positionX: number;
-  positionY: number;
-  color?: string;
-}
+export type NodeType = SharedNodeType;
+export type FCMNode = SharedFCMNode;
+export type FCMEdge = SharedFCMEdge;
+export type FCMModel = SharedFCMModel;
+export type Project = SharedProject;
+export type Scenario = SharedScenario;
 
-export interface FCMEdge {
-  id: string;
-  source: string;
-  target: string;
-  weight: number;
-}
-
-export interface FCMModel {
-  id: string;
-  name: string;
-  description: string;
-  nodes: FCMNode[];
-  edges: FCMEdge[];
-  projectId: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Project {
-  id: string;
-  name: string;
-  description: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Scenario {
-  id: string;
-  name: string;
-  modelId: string;
-  initialValues: Record<string, number>;
-  results?: SimulationResult;
-  createdAt: string;
-}
-
-export interface SimulationResult {
+// Extended SimulationResult with additional fields for frontend compatibility
+export interface ExtendedSimulationResult extends SharedSimulationResult {
   // Support multiple field name formats for compatibility
-  finalValues: Record<string, number>;         // Our frontend format
   finalState?: Record<string, number>;         // Python API format
-  
-  timeSeriesData: Record<string, number[]>;    // Our frontend format
   timeSeries?: Record<string, number[]>;       // Python API format
-  
-  iterations: number;
-  converged: boolean;
   
   // Baseline comparison fields
   baselineFinalState?: Record<string, number>;
@@ -63,6 +20,9 @@ export interface SimulationResult {
   baselineConverged?: boolean;
   deltaState?: Record<string, number>;
 }
+
+// Re-export the type with our extensions
+export type SimulationResult = ExtendedSimulationResult;
 
 export interface SimulationParams {
   iterations?: number;

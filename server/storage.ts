@@ -5,6 +5,7 @@ import {
   Scenario, InsertScenario,
   FCMNode,
   FCMEdge,
+  SimulationResult,
   users,
   projects,
   models,
@@ -146,13 +147,28 @@ export class PostgresStorage implements IStorage {
   }
   
   async createModel(insertModel: InsertModel): Promise<Model> {
-    const result = await this.db.insert(models).values([insertModel]).returning();
+    // Ensure nodes and edges are properly typed
+    const typedInsertModel = {
+      ...insertModel,
+      nodes: insertModel.nodes as FCMNode[],
+      edges: insertModel.edges as FCMEdge[]
+    };
+    
+    const result = await this.db.insert(models).values([typedInsertModel]).returning();
     return result[0];
   }
   
   async updateModel(id: number, updates: Partial<Model>): Promise<Model | undefined> {
+    // Ensure nodes and edges are properly typed if present
+    const typedUpdates = {
+      ...updates,
+      nodes: updates.nodes ? updates.nodes as FCMNode[] : undefined,
+      edges: updates.edges ? updates.edges as FCMEdge[] : undefined,
+      updatedAt: new Date() 
+    };
+    
     const result = await this.db.update(models)
-      .set({ ...updates, updatedAt: new Date() })
+      .set(typedUpdates)
       .where(eq(models.id, id))
       .returning();
     return result[0];
@@ -187,7 +203,17 @@ export class PostgresStorage implements IStorage {
   }
   
   async createScenario(insertScenario: InsertScenario): Promise<Scenario> {
-    const result = await this.db.insert(scenarios).values([insertScenario]).returning();
+    // Ensure timeSeries data is properly typed
+    const typedInsertScenario = {
+      ...insertScenario,
+      initialValues: insertScenario.initialValues as Record<string, number>,
+      results: insertScenario.results ? {
+        ...insertScenario.results,
+        timeSeriesData: insertScenario.results.timeSeriesData as Record<string, number[]>
+      } as SimulationResult : undefined
+    };
+    
+    const result = await this.db.insert(scenarios).values([typedInsertScenario]).returning();
     return result[0];
   }
   
@@ -333,13 +359,17 @@ export class MemStorage implements IStorage {
     const id = this.modelId++;
     const now = new Date();
     
+    // Type assertions to help TypeScript
+    const typedNodes = insertModel.nodes ? (insertModel.nodes as unknown as FCMNode[]) : [];
+    const typedEdges = insertModel.edges ? (insertModel.edges as unknown as FCMEdge[]) : [];
+    
     const model: Model = { 
       id,
       name: insertModel.name,
       description: insertModel.description || null,
       projectId: insertModel.projectId || null,
-      nodes: insertModel.nodes || [],
-      edges: insertModel.edges || [],
+      nodes: typedNodes,
+      edges: typedEdges,
       createdAt: now,
       updatedAt: now,
     };
@@ -393,12 +423,22 @@ export class MemStorage implements IStorage {
     const id = this.scenarioId++;
     const now = new Date();
     
+    // Type assertions to help TypeScript
+    const typedInitialValues = insertScenario.initialValues ? 
+      (insertScenario.initialValues as Record<string, number>) : null;
+    
+    const typedResults = insertScenario.results ? {
+      ...insertScenario.results,
+      timeSeriesData: insertScenario.results.timeSeriesData as Record<string, number[]>,
+      finalValues: insertScenario.results.finalValues as Record<string, number>,
+    } as SimulationResult : null;
+    
     const scenario: Scenario = { 
       id,
       name: insertScenario.name,
       modelId: insertScenario.modelId || null,
-      initialValues: insertScenario.initialValues || null,
-      results: insertScenario.results || null,
+      initialValues: typedInitialValues,
+      results: typedResults,
       createdAt: now,
     };
     
