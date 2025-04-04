@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Handle, Position, NodeProps } from 'reactflow';
+import { Handle, Position, NodeProps, Connection } from 'reactflow';
 import { NodeType } from '@/lib/types';
 
 type CustomNodeData = {
@@ -41,25 +41,12 @@ export default function CustomNode({ id, data, selected }: NodeProps<CustomNodeD
     if (type === 'outcome') return '#A855F7'; // purple
     return '#A855F7'; // purple for regular nodes
   };
-  
-  // Handle styles for better visibility
-  const handleStyle = {
-    width: '10px',
-    height: '10px',
-    background: 'rgba(255, 255, 255, 0.4)',
-    border: '1px solid rgba(255, 255, 255, 0.8)',
-    borderRadius: '50%',
-    transition: 'all 0.2s ease',
-    opacity: 0.3, // Start with low opacity
-  };
-  
-  // Handle hover style
-  const handleHoverStyle = {
-    ...handleStyle,
-    opacity: 1,
-    transform: 'scale(1.2)',
-    boxShadow: '0 0 5px rgba(255, 255, 255, 0.8)',
-  };
+
+  // This is a validation function to determine which connections are valid
+  // We're allowing all connections for maximum flexibility
+  const isValidConnection = useCallback((connection: Connection) => {
+    return true;
+  }, []);
   
   return (
     <div 
@@ -68,30 +55,41 @@ export default function CustomNode({ id, data, selected }: NodeProps<CustomNodeD
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Add handles on all sides to allow connections from any direction */}
+      {/* 
+        We're using all 4 positions for both source and target handles
+        to allow maximum flexibility in connections.
+        React Flow will automatically select the best connection point
+        based on proximity when making connections.
+      */}
+      
+      {/* TARGET HANDLES (Accept incoming connections) */}
       <Handle 
+        id={`${id}-target-top`}
         type="target" 
         position={Position.Top} 
-        style={isHovered || selected ? handleHoverStyle : handleStyle} 
-        className="handle-top"
+        isValidConnection={isValidConnection}
+        className={`target-handle ${isHovered || selected ? 'visible' : ''}`}
       />
       <Handle 
-        type="target" 
-        position={Position.Left} 
-        style={isHovered || selected ? handleHoverStyle : handleStyle}
-        className="handle-left"
-      />
-      <Handle 
+        id={`${id}-target-right`}
         type="target" 
         position={Position.Right} 
-        style={isHovered || selected ? handleHoverStyle : handleStyle}
-        className="handle-right"
+        isValidConnection={isValidConnection}
+        className={`target-handle ${isHovered || selected ? 'visible' : ''}`}
       />
       <Handle 
+        id={`${id}-target-bottom`}
         type="target" 
         position={Position.Bottom} 
-        style={isHovered || selected ? handleHoverStyle : handleStyle}
-        className="handle-bottom"
+        isValidConnection={isValidConnection}
+        className={`target-handle ${isHovered || selected ? 'visible' : ''}`}
+      />
+      <Handle 
+        id={`${id}-target-left`}
+        type="target" 
+        position={Position.Left} 
+        isValidConnection={isValidConnection}
+        className={`target-handle ${isHovered || selected ? 'visible' : ''}`}
       />
       
       <input
@@ -114,29 +112,34 @@ export default function CustomNode({ id, data, selected }: NodeProps<CustomNodeD
         <span className="ml-1">: {value.toFixed(1)}</span>
       </div>
       
+      {/* SOURCE HANDLES (Start outgoing connections) */}
       <Handle 
+        id={`${id}-source-top`}
         type="source" 
         position={Position.Top} 
-        style={isHovered || selected ? handleHoverStyle : handleStyle}
-        className="handle-top"
+        isValidConnection={isValidConnection}
+        className={`source-handle ${isHovered || selected ? 'visible' : ''}`}
       />
       <Handle 
-        type="source" 
-        position={Position.Left} 
-        style={isHovered || selected ? handleHoverStyle : handleStyle}
-        className="handle-left"
-      />
-      <Handle 
+        id={`${id}-source-right`}
         type="source" 
         position={Position.Right} 
-        style={isHovered || selected ? handleHoverStyle : handleStyle}
-        className="handle-right"
+        isValidConnection={isValidConnection}
+        className={`source-handle ${isHovered || selected ? 'visible' : ''}`}
       />
       <Handle 
+        id={`${id}-source-bottom`}
         type="source" 
         position={Position.Bottom} 
-        style={isHovered || selected ? handleHoverStyle : handleStyle}
-        className="handle-bottom"
+        isValidConnection={isValidConnection}
+        className={`source-handle ${isHovered || selected ? 'visible' : ''}`}
+      />
+      <Handle 
+        id={`${id}-source-left`}
+        type="source" 
+        position={Position.Left} 
+        isValidConnection={isValidConnection}
+        className={`source-handle ${isHovered || selected ? 'visible' : ''}`}
       />
     </div>
   );

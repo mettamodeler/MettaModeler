@@ -110,14 +110,67 @@
 }
 
 .react-flow__handle {
-  @apply bg-white/50 border border-white/80;
   transition: all 0.2s ease;
   z-index: 10;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  opacity: 0.85;
+}
+
+/* Customize source handles (output connectors) to be visually different */
+.source-handle {
+  background-color: rgba(0, 196, 255, 0.6) !important;
+  border: 2px solid rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Customize target handles (input connectors) to be visually different */
+.target-handle {
+  background-color: rgba(168, 85, 247, 0.6) !important;
+  border: 2px solid rgba(255, 255, 255, 0.8) !important;
 }
 
 .react-flow__handle:hover {
-  @apply bg-white border-white shadow-[0_0_5px_rgba(255,255,255,0.8)];
-  transform: scale(1.2);
+  background-color: white !important;
+  border-color: white !important;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.9);
+  transform: scale(1.3);
+  opacity: 1;
+}
+
+/* Make visible class to show handles on hover */
+.react-flow__handle.visible {
+  opacity: 1;
+}
+
+/* Make connection handles more visible during connection attempts */
+.react-flow__handle-connecting {
+  background-color: #44d7ff !important;
+  border: 2px solid white !important;
+  box-shadow: 0 0 10px #44d7ff !important;
+  transform: scale(1.5) !important;
+  opacity: 1 !important;
+}
+
+/* Make valid connection targets stand out more */
+.react-flow__handle-valid {
+  background-color: #44ff88 !important;
+  border: 2px solid white !important;
+  box-shadow: 0 0 10px #44ff88 !important;
+  opacity: 1 !important;
+}
+
+/* Add an animation to help users see where valid connection points are */
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.9; }
+}
+
+.react-flow__handle-valid {
+  animation: pulse 1s infinite;
 }
 
 .react-flow__node {

@@ -426,6 +426,15 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
       fitView
       minZoom={0.2}
       maxZoom={4}
+      // Enabling these connection features for better user experience
+      connectionMode="loose"        // More forgiving connection mode
+      connectionRadius={40}         // Increased connection radius for easier connections
+      snapToGrid={true}             // Enable snapping for more orderly layouts
+      snapGrid={[15, 15]}           // Grid size for snapping 
+      defaultEdgeOptions={{         // Default edge options
+        type: 'custom',
+        style: { strokeWidth: 2 },
+      }}
     >
       <Background color="#ffffff" gap={16} size={1} />
       <Controls className="dark-glass" />
