@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -15,7 +15,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Tabs,
   TabsContent,
@@ -40,12 +39,6 @@ export default function AuthPage() {
   const [location, setLocation] = useLocation();
   const { user, loginMutation, registerMutation } = useAuth();
 
-  // Redirect if already logged in
-  if (user) {
-    setLocation("/");
-    return null;
-  }
-
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -62,6 +55,13 @@ export default function AuthPage() {
       displayName: "",
     },
   });
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      setLocation("/");
+    }
+  }, [user, setLocation]);
 
   const onLoginSubmit = (values: LoginFormValues) => {
     loginMutation.mutate(values);
