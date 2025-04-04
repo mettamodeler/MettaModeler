@@ -45,11 +45,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: ["/api/user"],
     queryFn: async () => {
       try {
-        const res = await apiRequest("GET", "/api/user");
-        if (res.status === 401) {
+        const response = await fetch("/api/user", {
+          credentials: "include",
+        });
+        
+        if (response.status === 401) {
+          // Not authenticated, this is normal for logged out users
           return null;
         }
-        return await res.json();
+        
+        if (!response.ok) {
+          throw new Error(`${response.status}: ${await response.text()}`);
+        }
+        
+        return await response.json();
       } catch (error) {
         console.error("Error fetching user:", error);
         return null;
