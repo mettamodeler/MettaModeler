@@ -296,16 +296,16 @@ def export_notebook():
             comparison_scenario_id
         )
         
-        # Fix booleans in Python notebook (convert 'true'/'false' to 'True'/'False')
+        # Fix booleans in Python notebook (convert True/False to 'true'/'false')
         def fix_json_for_python(obj):
             if isinstance(obj, dict):
                 return {k: fix_json_for_python(v) for k, v in obj.items()}
             elif isinstance(obj, list):
                 return [fix_json_for_python(item) for item in obj]
             elif obj is True:
-                return 'True'
+                return 'true'
             elif obj is False:
-                return 'False'
+                return 'false'
             else:
                 return obj
         
