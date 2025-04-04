@@ -12,6 +12,7 @@ import {
   SimulationResult
 } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./auth";
+import { exportService, ExportFormat, ExportType } from "./export";
 
 // Python simulation service URL
 const PYTHON_SIM_URL = process.env.PYTHON_SIM_URL || 'http://localhost:5050';
@@ -428,6 +429,207 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(503).json({ 
         status: "unavailable",
         message: "Python service is not reachable",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Export Model to File
+  app.post("/api/export/model/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid model ID" });
+      }
+
+      // Get the model data
+      const model = await storage.getModel(id);
+      if (!model) {
+        return res.status(404).json({ message: "Model not found" });
+      }
+
+      // Get export options from request body
+      const format = req.body.format as ExportFormat || ExportFormat.JSON;
+      const fileName = req.body.fileName || `model_${id}`;
+
+      // Generate the export file
+      const result = await exportService.generateExport(model, {
+        format,
+        type: ExportType.MODEL,
+        modelId: id,
+        fileName
+      });
+
+      // Set appropriate headers based on format
+      res.set({
+        'Content-Disposition': `attachment; filename="${result.fileName}"`,
+        'Content-Type': result.mimeType
+      });
+
+      // Send the file
+      res.send(result.buffer);
+    } catch (error) {
+      console.error('Export model error:', error);
+      res.status(500).json({ 
+        message: "Failed to export model",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Export Scenario to File
+  app.post("/api/export/scenario/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid scenario ID" });
+      }
+
+      // Get the scenario data
+      const scenario = await storage.getScenario(id);
+      if (!scenario) {
+        return res.status(404).json({ message: "Scenario not found" });
+      }
+
+      // Get export options from request body
+      const format = req.body.format as ExportFormat || ExportFormat.JSON;
+      const fileName = req.body.fileName || `scenario_${id}`;
+
+      // Generate the export file
+      const result = await exportService.generateExport(scenario, {
+        format,
+        type: ExportType.SCENARIO,
+        modelId: scenario.modelId ? scenario.modelId : undefined,
+        scenarioId: id,
+        fileName
+      });
+
+      // Set appropriate headers based on format
+      res.set({
+        'Content-Disposition': `attachment; filename="${result.fileName}"`,
+        'Content-Type': result.mimeType
+      });
+
+      // Send the file
+      res.send(result.buffer);
+    } catch (error) {
+      console.error('Export scenario error:', error);
+      res.status(500).json({ 
+        message: "Failed to export scenario",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Export Analysis to File
+  app.post("/api/export/analysis", async (req: Request, res: Response) => {
+    try {
+      // Analysis data should be in the request body
+      const analysisData = req.body.data;
+      if (!analysisData) {
+        return res.status(400).json({ message: "Analysis data required" });
+      }
+
+      // Get export options from request body
+      const format = req.body.format as ExportFormat || ExportFormat.JSON;
+      const fileName = req.body.fileName || `analysis_${new Date().getTime()}`;
+      const modelId = parseInt(req.body.modelId as string) || undefined;
+
+      // Generate the export file
+      const result = await exportService.generateExport(analysisData, {
+        format,
+        type: ExportType.ANALYSIS,
+        modelId,
+        fileName
+      });
+
+      // Set appropriate headers based on format
+      res.set({
+        'Content-Disposition': `attachment; filename="${result.fileName}"`,
+        'Content-Type': result.mimeType
+      });
+
+      // Send the file
+      res.send(result.buffer);
+    } catch (error) {
+      console.error('Export analysis error:', error);
+      res.status(500).json({ 
+        message: "Failed to export analysis",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Export Comparison to File (between two scenarios)
+  app.post("/api/export/comparison", async (req: Request, res: Response) => {
+    try {
+      // Comparison data should be in the request body
+      const comparisonData = req.body.data;
+      if (!comparisonData) {
+        return res.status(400).json({ message: "Comparison data required" });
+      }
+
+      // Get export options from request body
+      const format = req.body.format as ExportFormat || ExportFormat.JSON;
+      const fileName = req.body.fileName || `comparison_${new Date().getTime()}`;
+      const modelId = parseInt(req.body.modelId as string) || undefined;
+      const scenarioId = parseInt(req.body.scenarioId as string) || undefined;
+      const comparisonScenarioId = parseInt(req.body.comparisonScenarioId as string) || undefined;
+
+      // Generate the export file
+      const result = await exportService.generateExport(comparisonData, {
+        format,
+        type: ExportType.COMPARISON,
+        modelId,
+        scenarioId,
+        comparisonScenarioId,
+        fileName
+      });
+
+      // Set appropriate headers based on format
+      res.set({
+        'Content-Disposition': `attachment; filename="${result.fileName}"`,
+        'Content-Type': result.mimeType
+      });
+
+      // Send the file
+      res.send(result.buffer);
+    } catch (error) {
+      console.error('Export comparison error:', error);
+      res.status(500).json({ 
+        message: "Failed to export comparison",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Export to Jupyter Notebook via Python service
+  app.post("/api/export/notebook", async (req: Request, res: Response) => {
+    try {
+      // Forward request to Python service
+      const response = await fetch(`${PYTHON_SIM_URL}/api/export/notebook`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(req.body),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json() as any;
+        console.error('Python notebook export error:', errorData);
+        return res.status(response.status).json(errorData);
+      }
+
+      // Get the notebook data
+      const data = await response.json() as any;
+      
+      // Return the notebook data
+      res.json(data);
+    } catch (error) {
+      console.error('Export notebook error:', error);
+      res.status(503).json({ 
+        message: "Python notebook export service unavailable",
         error: error instanceof Error ? error.message : String(error)
       });
     }

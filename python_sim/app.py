@@ -1,9 +1,11 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file, Response
 from flask_cors import CORS
-from simulate import run_fcm_simulation
+from simulate import run_fcm_simulation, run_baseline_scenario_comparison
 import json
 import os
 import traceback
+import io
+from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -232,6 +234,71 @@ def analyze():
         traceback.print_exc()
         return jsonify({
             'error': 'Analysis failed',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/export/notebook', methods=['POST'])
+def export_notebook():
+    """
+    Endpoint for exporting data as a Jupyter notebook.
+    
+    Expected payload format:
+    {
+        "data": { ... }, // The data to export (model, scenario, or analysis)
+        "type": "model", // Type of data: "model", "scenario", "analysis", or "comparison"
+        "modelId": 123,  // Optional model ID for reference
+        "scenarioId": 456, // Optional scenario ID for reference
+        "comparisonScenarioId": 789 // Optional comparison scenario ID for reference
+    }
+    """
+    try:
+        # Import export functions here to avoid circular imports
+        from export import generate_notebook
+        
+        data = request.get_json()
+        
+        # Extract parameters
+        export_data = data.get('data', {})
+        export_type = data.get('type', 'model')
+        model_id = data.get('modelId')
+        scenario_id = data.get('scenarioId')
+        comparison_scenario_id = data.get('comparisonScenarioId')
+        
+        # Generate notebook
+        notebook = generate_notebook(
+            export_data, 
+            export_type, 
+            model_id, 
+            scenario_id, 
+            comparison_scenario_id
+        )
+        
+        # Convert notebook to JSON string
+        notebook_json = json.dumps(notebook)
+        
+        # Create a file-like object from the JSON string
+        notebook_file = io.BytesIO(notebook_json.encode('utf-8'))
+        
+        # Set the file pointer to the beginning of the file
+        notebook_file.seek(0)
+        
+        # Get the filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{export_type}_export_{timestamp}.ipynb"
+        
+        # Return the notebook file
+        return send_file(
+            notebook_file,
+            mimetype='application/x-ipynb+json',
+            as_attachment=True,
+            download_name=filename
+        )
+        
+    except Exception as e:
+        print(f"Error generating notebook: {str(e)}")
+        traceback.print_exc()
+        return jsonify({
+            'error': 'Failed to generate notebook',
             'message': str(e)
         }), 500
 
