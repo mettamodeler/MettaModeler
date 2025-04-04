@@ -78,9 +78,8 @@ export default function CustomEdge({
           strokeWidth,
           strokeLinejoin: 'round',
           filter: selected ? `drop-shadow(0 0 5px ${edgeColor})` : undefined,
-          color: edgeColor, // Set color for the arrowhead
         }}
-        markerEnd={`url(#arrowhead)`}
+        markerEnd={isPositive ? `url(#arrowhead-positive)` : `url(#arrowhead-negative)`}
       />
 
       <EdgeLabelRenderer>

@@ -128,7 +128,7 @@
   border-radius: 50%;
   background-color: rgba(255, 255, 255, 0.6);
   border: 2px solid rgba(255, 255, 255, 0.8);
-  opacity: 0.85;
+  opacity: 0.3; /* Lower default opacity so they're visible but not distracting */
 }
 
 /* Customize source handles (output connectors) to be visually different */
@@ -153,7 +153,8 @@
 
 /* Make visible class to show handles on hover */
 .react-flow__handle.visible {
-  opacity: 1;
+  opacity: 0.7;
+  transform: scale(1.1);
 }
 
 /* Make connection handles more visible during connection attempts */

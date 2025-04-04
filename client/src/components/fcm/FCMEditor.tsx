@@ -241,6 +241,8 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
         id: edgeId,
         source: connection.source,
         target: connection.target,
+        sourceHandle: connection.sourceHandle,
+        targetHandle: connection.targetHandle,
         type: 'custom',
         data: { 
           weight: defaultWeight,
@@ -248,13 +250,7 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
           isBidirectional: reverseExists,
           // Indicate this edge's position in bidirectional pair (if applicable)
           isReversePair: reverseExists
-        },
-        markerEnd: {
-          type: MarkerType.ArrowClosed,
-          width: 20,
-          height: 20,
-          color: edgeColor,
-        },
+        }
       };
       
       // If this is a bidirectional connection, update the existing reverse edge too
@@ -347,14 +343,6 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
               data: {
                 ...edge.data,
                 weight,
-              },
-              // Update marker color
-              // @ts-ignore
-              markerEnd: {
-                type: MarkerType.ArrowClosed,
-                color: edgeColor,
-                width: 20,
-                height: 20,
               }
             };
           }
@@ -425,22 +413,33 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
       minZoom={0.2}
       maxZoom={4}
       connectionMode={ConnectionMode.Loose}
-      connectionRadius={40}
+      connectionRadius={30} 
       defaultEdgeOptions={{
         type: 'custom'
       }}
+      defaultMarkerColor="transparent"
     >
       <svg style={{position: 'absolute', width: 0, height: 0}}>
         <defs>
           <marker
-            id="arrowhead"
+            id="arrowhead-positive"
             markerWidth="12"
             markerHeight="12"
             refX="8"
             refY="6"
             orient="auto"
           >
-            <path d="M 0 0 L 12 6 L 0 12 z" fill="white" fillOpacity="0.75" />
+            <path d="M 0 0 L 12 6 L 0 12 z" fill="rgba(239, 68, 68, 0.8)" />
+          </marker>
+          <marker
+            id="arrowhead-negative"
+            markerWidth="12"
+            markerHeight="12"
+            refX="8"
+            refY="6"
+            orient="auto"
+          >
+            <path d="M 0 0 L 12 6 L 0 12 z" fill="rgba(59, 130, 246, 0.8)" />
           </marker>
         </defs>
       </svg>
