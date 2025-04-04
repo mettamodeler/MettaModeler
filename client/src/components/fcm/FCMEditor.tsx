@@ -424,15 +424,26 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
       fitView
       minZoom={0.2}
       maxZoom={4}
-      // Enabling these connection features for better user experience
-      connectionMode={ConnectionMode.Loose}        // More forgiving connection mode
-      connectionRadius={40}         // Increased connection radius for easier connections
-      snapToGrid={false}            // Disable snapping for more natural layouts
-      defaultEdgeOptions={{         // Default edge options
-        type: 'custom',
-        style: { strokeWidth: 2 },
+      connectionMode={ConnectionMode.Loose}
+      connectionRadius={40}
+      defaultEdgeOptions={{
+        type: 'custom'
       }}
     >
+      <svg style={{position: 'absolute', width: 0, height: 0}}>
+        <defs>
+          <marker
+            id="arrowhead"
+            markerWidth="12"
+            markerHeight="12"
+            refX="7"
+            refY="6"
+            orient="auto"
+          >
+            <path d="M 0 0 L 12 6 L 0 12 z" fill="currentColor" />
+          </marker>
+        </defs>
+      </svg>
       <Background color="#ffffff" gap={16} size={1} />
       <Controls className="dark-glass" />
       <MiniMap 

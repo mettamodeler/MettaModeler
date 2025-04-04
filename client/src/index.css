@@ -76,9 +76,22 @@
   /* Style is now applied dynamically based on edge weight */
 }
 
-/* Bidirectional edges should have distinct paths */
+/* Edge styling for better visibility */
 .react-flow__edge-path {
   stroke-linecap: round;
+}
+
+/* Enhance visibility of selected edges */
+.react-flow__edge.selected .react-flow__edge-path {
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
+}
+
+/* Make the edges easier to select by expanding the hit area */
+.react-flow__edge {
+  pointer-events: stroke;
+  stroke-width: 15;
+  stroke-opacity: 0;
+  stroke: transparent;
 }
 
 /* Animation utilities */
