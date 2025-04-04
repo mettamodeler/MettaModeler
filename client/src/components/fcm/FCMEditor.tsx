@@ -427,8 +427,7 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
       // Enabling these connection features for better user experience
       connectionMode={ConnectionMode.Loose}        // More forgiving connection mode
       connectionRadius={40}         // Increased connection radius for easier connections
-      snapToGrid={true}             // Enable snapping for more orderly layouts
-      snapGrid={[15, 15]}           // Grid size for snapping 
+      snapToGrid={false}            // Disable snapping for more natural layouts
       defaultEdgeOptions={{         // Default edge options
         type: 'custom',
         style: { strokeWidth: 2 },

@@ -99,18 +99,35 @@ export default function CustomEdge({
       
       // The offset determines how far the edge is curved away from the direct line
       // We use different offset values for each direction to create separation
-      const offset = isReversePair ? 30 : -30;
+      const offset = isReversePair ? 15 : -15;
       
-      // Use smooth step path for bidirectional edges with strong offset
-      return getSmoothStepPath({
-        sourceX,
-        sourceY,
+      // For bidirectional edges, we'll create a custom bezier path with offset
+      // This creates a more natural curve with good separation
+      
+      // Calculate a direction vector between source and target
+      const dx = targetX - sourceX;
+      const dy = targetY - sourceY;
+      
+      // Normalize and scale by the offset to get offset vector
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      const offsetX = -dy * offset / distance;
+      const offsetY = dx * offset / distance;
+      
+      // Apply the offset to both source and target points
+      const sX = sourceX + offsetX;
+      const sY = sourceY + offsetY;
+      const tX = targetX + offsetX;
+      const tY = targetY + offsetY;
+      
+      // Use bezier path with the offset points
+      return getBezierPath({
+        sourceX: sX,
+        sourceY: sY,
         sourcePosition,
-        targetX,
-        targetY,
+        targetX: tX,
+        targetY: tY,
         targetPosition,
-        borderRadius: 24,
-        offset: offset,
+        curvature: 0.25,
       });
     } else {
       // For standard edges, use bezier path with slight curvature for elegance
@@ -121,7 +138,7 @@ export default function CustomEdge({
         targetX,
         targetY,
         targetPosition,
-        curvature: 0.2, // Slight curvature for all edges
+        curvature: 0.25, // Slightly more curvature for better visibility
       });
     }
   }, [sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, isSelfLoop, isBidirectional, isReversePair]);
@@ -136,19 +153,28 @@ export default function CustomEdge({
   const weightMagnitude = Math.abs(weight);
   const strokeWidth = Math.max(1, Math.min(5, weightMagnitude * 4 + 1));
   
-  const edgeStyle = {
+  // Create a wider but invisible path for easier edge selection
+  const pathStyles = {
     stroke: edgeColor,
     strokeWidth,
+    // Omit strokeLinecap to avoid TypeScript error
     filter: selected 
       ? `drop-shadow(0 0 5px ${edgeColor})` 
       : `drop-shadow(0 0 3px ${edgeColor})`,
   };
+  
+  // Style for the selection hit area (wider, transparent)
+  const selectionPathStyles = {
+    stroke: 'transparent',
+    strokeWidth: Math.max(10, strokeWidth + 8), // Much wider for easier selection
+    cursor: 'pointer'
+  };
 
   // Style for arrow marker that matches edge thickness
   const arrowStyle = {
-    strokeWidth: Math.max(1, strokeWidth * 0.5), // Scale down slightly for arrow
+    // Omit strokeWidth to avoid TypeScript error
     fill: edgeColor,
-    stroke: edgeColor,
+    stroke: edgeColor
   };
 
   const handleWeightChange = useCallback(
@@ -215,11 +241,19 @@ export default function CustomEdge({
           </Popover>
         </div>
       </EdgeLabelRenderer>
+      {/* Invisible wider path for easier selection */}
+      <path
+        id={`${id}-hitarea`}
+        className="react-flow__edge-hitarea"
+        d={edgePath}
+        style={selectionPathStyles}
+      />
+      {/* Visible edge path */}
       <path
         id={id}
         className="react-flow__edge-path"
         d={edgePath}
-        style={edgeStyle}
+        style={pathStyles}
         markerEnd={`url(#${id}-arrow)`}
       />
       <defs>
@@ -234,8 +268,6 @@ export default function CustomEdge({
         >
           <polyline
             style={arrowStyle}
-            strokeLinecap="round"
-            strokeLinejoin="round"
             points="-5,-4 0,0 -5,4 -5,-4"
           />
         </marker>
