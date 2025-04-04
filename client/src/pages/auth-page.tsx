@@ -58,21 +58,12 @@ export default function AuthPage() {
     },
   });
 
-  // Show loading screen and redirect if already logged in
+  // Redirect if already logged in
   useEffect(() => {
-    if (user && !redirecting) {
-      setRedirecting(true);
-      // Small delay to allow loading screen to render
-      setTimeout(() => {
-        setLocation("/");
-      }, 500);
+    if (user) {
+      setLocation("/");
     }
-  }, [user, setLocation, redirecting]);
-  
-  // If we're loading user data, redirecting, or in the middle of an auth operation, show loading screen
-  if (isLoading || redirecting || loginMutation.isPending || registerMutation.isPending) {
-    return <LoadingScreen />;
-  }
+  }, [user, setLocation]);
 
   const onLoginSubmit = (values: LoginFormValues) => {
     loginMutation.mutate(values);
