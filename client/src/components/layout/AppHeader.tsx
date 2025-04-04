@@ -32,7 +32,12 @@ export default function AppHeader({ model }: AppHeaderProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { toast } = useToast();
 
+  // For backward compatibility with existing code
   const handleExport = () => {
+    exportJSON();
+  };
+
+  const exportJSON = () => {
     if (!model) {
       toast({
         variant: "destructive",
@@ -64,6 +69,131 @@ export default function AppHeader({ model }: AppHeaderProps) {
     });
   };
 
+  const exportExcel = async () => {
+    if (!model) {
+      toast({
+        variant: "destructive",
+        title: "No Model Selected",
+        description: "Please open a model before exporting",
+      });
+      return;
+    }
+
+    try {
+      // Call the server API to get Excel file
+      const response = await fetch(`/api/export/model/${model.id}?format=excel`, {
+        method: 'POST',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to export: ${response.statusText}`);
+      }
+      
+      // Get filename from Content-Disposition header or use default
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = `${model.name.toLowerCase().replace(/\s+/g, "_")}.xlsx`;
+      
+      if (contentDisposition) {
+        const matches = /filename="([^"]+)"/.exec(contentDisposition);
+        if (matches && matches[1]) {
+          filename = matches[1];
+        }
+      }
+      
+      // Convert response to blob and download
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      
+      // Clean up
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Model Exported",
+        description: "Your model has been exported as an Excel file",
+      });
+    } catch (error) {
+      console.error("Export error:", error);
+      toast({
+        variant: "destructive",
+        title: "Export Failed",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+      });
+    }
+  };
+
+  const exportJupyter = async () => {
+    if (!model) {
+      toast({
+        variant: "destructive",
+        title: "No Model Selected",
+        description: "Please open a model before exporting",
+      });
+      return;
+    }
+
+    try {
+      // Show loading toast
+      toast({
+        title: "Generating Notebook",
+        description: "Please wait while we create your Jupyter notebook...",
+      });
+      
+      // Call the server API to get Jupyter notebook
+      const response = await fetch('/api/export/notebook', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          data: model,
+          type: 'model',
+          modelId: model.id,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to export: ${response.statusText}`);
+      }
+      
+      // Get notebook data
+      const data = await response.json();
+      const notebookContent = JSON.stringify(data, null, 2);
+      
+      // Create download
+      const blob = new Blob([notebookContent], { type: 'application/x-ipynb+json' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${model.name.toLowerCase().replace(/\s+/g, "_")}.ipynb`;
+      document.body.appendChild(a);
+      a.click();
+      
+      // Clean up
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Notebook Exported",
+        description: "Your model has been exported as a Jupyter notebook",
+      });
+    } catch (error) {
+      console.error("Export error:", error);
+      toast({
+        variant: "destructive",
+        title: "Export Failed",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+      });
+    }
+  };
+
   return (
     <header className="h-14 glass flex items-center justify-between px-4 z-10">
       <div className="flex items-center">
@@ -81,12 +211,26 @@ export default function AppHeader({ model }: AppHeaderProps) {
           >
             help
           </button>
-          <button 
-            className="px-3 py-1 text-sm rounded-md hover:bg-white/10 transition"
-            onClick={handleExport}
-          >
-            export
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="px-3 py-1 text-sm rounded-md hover:bg-white/10 transition">
+                export
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="dark-glass border border-white/10">
+              <DropdownMenuLabel>Export Options</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={exportJSON}>
+                JSON Format
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportExcel}>
+                Excel Format
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportJupyter}>
+                Jupyter Notebook
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </nav>
       </div>
       <div className="flex items-center space-x-3">
