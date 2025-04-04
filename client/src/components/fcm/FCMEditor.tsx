@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, useMemo } from 'react';
 import ReactFlow, {
   ReactFlowProvider,
   MiniMap,
@@ -22,13 +22,13 @@ import CustomEdge from './CustomEdge';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 
-// Custom node types
-const nodeTypes = {
+// Custom node types - define outside component to prevent re-creation
+const NODE_TYPES = {
   custom: CustomNode,
 };
 
-// Custom edge types
-const edgeTypes = {
+// Custom edge types - define outside component to prevent re-creation
+const EDGE_TYPES = {
   custom: CustomEdge,
 };
 
@@ -51,18 +51,48 @@ function modelToReactFlow(model: FCMModel): { nodes: Node[], edges: Edge[] } {
     },
   }));
   
+  // First identify bidirectional edges
+  // We'll create a map of source-target pairs to find reverse connections
+  const connectionMap = new Map();
+  
+  // First pass: record all connections
+  model.edges.forEach(edge => {
+    const forward = `${edge.source}->${edge.target}`;
+    const reverse = `${edge.target}->${edge.source}`;
+    connectionMap.set(forward, true);
+    
+    // Mark if there's a reverse connection
+    if (connectionMap.has(reverse)) {
+      connectionMap.set(reverse, 'bidirectional');
+      connectionMap.set(forward, 'bidirectional');
+    }
+  });
+  
+  // Second pass: create edges with bidirectional flags
   const edges = model.edges.map((edge) => {
     // Determine edge color based on weight
     const edgeColor = edge.weight >= 0 
       ? 'rgba(239, 68, 68, 0.8)' // red for positive
       : 'rgba(59, 130, 246, 0.8)'; // blue for negative
-      
+    
+    // Check if this edge is part of a bidirectional pair
+    const connectionKey = `${edge.source}->${edge.target}`;
+    const isBidirectional = connectionMap.get(connectionKey) === 'bidirectional';
+    
+    // For bidirectional pairs, alternate which one gets the isReversePair flag
+    // We use a simple string comparison to consistently decide which edge is "first"
+    const isReversePair = isBidirectional && edge.source > edge.target;
+    
     return {
       id: edge.id,
       source: edge.source,
       target: edge.target,
       type: 'custom',
-      data: { weight: edge.weight },
+      data: { 
+        weight: edge.weight,
+        isBidirectional,
+        isReversePair
+      },
       markerEnd: {
         type: MarkerType.ArrowClosed,
         width: 20,
@@ -154,7 +184,7 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
   
   // Handle node deletion with keyboard
   const onKeyDown = useCallback(
-    (event: KeyboardEvent) => {
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
       if (event.key === 'Delete' || event.key === 'Backspace') {
         const selectedNodes = nodes.filter(node => node.selected);
         const selectedEdges = edges.filter(edge => edge.selected);
@@ -199,14 +229,28 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
       // Determine color based on weight (positive by default)
       const edgeColor = 'rgba(239, 68, 68, 0.8)'; // red for positive
       
+      // Check if there's already a connection in the reverse direction (for bidirectional edges)
+      // We need to find any edge where source and target are reversed
+      const reverseExists = edges.some(
+        edge => edge.source === connection.target && edge.target === connection.source
+      );
+      
+      // Generate a unique ID based on source and target
+      const edgeId = `${connection.source}-${connection.target}`;
+      
       // Create a new edge with default weight
-      // Edge direction is determined by source -> target
       const newEdge = {
-        id: `edge-${Date.now()}`,
+        id: edgeId,
         source: connection.source,
         target: connection.target,
         type: 'custom',
-        data: { weight: defaultWeight },
+        data: { 
+          weight: defaultWeight,
+          // Flag whether this is part of a bidirectional connection
+          isBidirectional: reverseExists,
+          // Indicate this edge's position in bidirectional pair (if applicable)
+          isReversePair: reverseExists
+        },
         markerEnd: {
           type: MarkerType.ArrowClosed,
           width: 20,
@@ -215,10 +259,30 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
         },
       };
       
+      // If this is a bidirectional connection, update the existing reverse edge too
+      if (reverseExists) {
+        setEdges(eds => 
+          eds.map(edge => {
+            if (edge.source === connection.target && edge.target === connection.source) {
+              // Update the reverse edge to indicate it's bidirectional
+              return {
+                ...edge,
+                data: {
+                  ...edge.data,
+                  isBidirectional: true,
+                  isReversePair: false
+                }
+              };
+            }
+            return edge;
+          })
+        );
+      }
+      
       setEdges((eds) => addEdge(newEdge, eds));
       saveModelChanges();
     },
-    [setEdges, saveModelChanges]
+    [edges, setEdges, saveModelChanges]
   );
   
   // Handle node label updates
@@ -351,8 +415,8 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
       onNodesChange={handleNodesChange}
       onEdgesChange={handleEdgesChange}
       onConnect={onConnect}
-      nodeTypes={nodeTypes}
-      edgeTypes={edgeTypes}
+      nodeTypes={NODE_TYPES}
+      edgeTypes={EDGE_TYPES}
       onClick={() => {
         // Close any open edge popups when clicking canvas
         setEdges(eds => eds.map(e => ({ ...e, data: { ...e.data, isVisible: false } })));

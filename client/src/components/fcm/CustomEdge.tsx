@@ -14,6 +14,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 interface CustomEdgeData {
   weight: number;
   onChange?: (id: string, weight: number) => void;
+  isBidirectional?: boolean;
+  isReversePair?: boolean;
 }
 
 export default function CustomEdge({
@@ -30,7 +32,7 @@ export default function CustomEdge({
   selected,
   markerEnd,
 }: EdgeProps<CustomEdgeData>) {
-  const { weight, onChange } = data || { weight: 0 };
+  const { weight, onChange, isBidirectional, isReversePair } = data || { weight: 0 };
 
   // Check if this is a self-loop (edge to the same node)
   const isSelfLoop = source === target;
@@ -92,41 +94,37 @@ export default function CustomEdge({
       const labelPosY = (controlY1 + controlY2) / 2;
       
       return [path, labelPosX, labelPosY];
+    } else if (isBidirectional) {
+      // For bidirectional edges, we need to create offset paths
+      
+      // The offset determines how far the edge is curved away from the direct line
+      // We use different offset values for each direction to create separation
+      const offset = isReversePair ? 30 : -30;
+      
+      // Use smooth step path for bidirectional edges with strong offset
+      return getSmoothStepPath({
+        sourceX,
+        sourceY,
+        sourcePosition,
+        targetX,
+        targetY,
+        targetPosition,
+        borderRadius: 24,
+        offset: offset,
+      });
     } else {
-      // Check if there's a reverse connection between these nodes
-      // This helps offset bidirectional edges to prevent overlap
-      const isBidirectional = id.includes(`${source}-${target}`) && !!document.getElementById(`${target}-${source}`);
-      
-      // For normal edges between different nodes, use a curved path
-      // Apply curvature to prevent overlapping of bidirectional edges
-      const curvature = 0.3; // Adjustable curvature
-      
-      if (isBidirectional) {
-        // For bidirectional edges, use smooth step path with offset
-        return getSmoothStepPath({
-          sourceX,
-          sourceY,
-          sourcePosition,
-          targetX,
-          targetY,
-          targetPosition,
-          borderRadius: 20,
-          offset: 20, // Offset prevents overlapping
-        });
-      } else {
-        // For standard edges, use bezier path with slight curvature
-        return getBezierPath({
-          sourceX,
-          sourceY,
-          sourcePosition,
-          targetX,
-          targetY,
-          targetPosition,
-          curvature,
-        });
-      }
+      // For standard edges, use bezier path with slight curvature for elegance
+      return getBezierPath({
+        sourceX,
+        sourceY,
+        sourcePosition,
+        targetX,
+        targetY,
+        targetPosition,
+        curvature: 0.2, // Slight curvature for all edges
+      });
     }
-  }, [sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, isSelfLoop, id, source, target]);
+  }, [sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, isSelfLoop, isBidirectional, isReversePair]);
 
   const isPositive = weight >= 0;
   const edgeColor = isPositive 
