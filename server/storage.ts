@@ -93,6 +93,18 @@ export class PostgresStorage implements IStorage {
   
   async deleteProject(id: number): Promise<boolean> {
     try {
+      // First, get all models associated with this project
+      const projectModels = await this.db.select().from(models).where(eq(models.projectId, id));
+      
+      // Delete all scenarios associated with these models first
+      for (const model of projectModels) {
+        await this.db.delete(scenarios).where(eq(scenarios.modelId, model.id));
+      }
+      
+      // Then delete all associated models
+      await this.db.delete(models).where(eq(models.projectId, id));
+      
+      // Finally, delete the project itself
       const result = await this.db.delete(projects).where(eq(projects.id, id)).returning({ id: projects.id });
       return result.length > 0;
     } catch (error) {
@@ -116,7 +128,7 @@ export class PostgresStorage implements IStorage {
   }
   
   async createModel(insertModel: InsertModel): Promise<Model> {
-    const result = await this.db.insert(models).values(insertModel).returning();
+    const result = await this.db.insert(models).values([insertModel]).returning();
     return result[0];
   }
   
@@ -130,6 +142,10 @@ export class PostgresStorage implements IStorage {
   
   async deleteModel(id: number): Promise<boolean> {
     try {
+      // First delete all scenarios associated with this model
+      await this.db.delete(scenarios).where(eq(scenarios.modelId, id));
+      
+      // Then delete the model
       const result = await this.db.delete(models).where(eq(models.id, id)).returning({ id: models.id });
       return result.length > 0;
     } catch (error) {
@@ -153,7 +169,7 @@ export class PostgresStorage implements IStorage {
   }
   
   async createScenario(insertScenario: InsertScenario): Promise<Scenario> {
-    const result = await this.db.insert(scenarios).values(insertScenario).returning();
+    const result = await this.db.insert(scenarios).values([insertScenario]).returning();
     return result[0];
   }
   
@@ -226,8 +242,10 @@ export class MemStorage implements IStorage {
     const now = new Date();
     
     const project: Project = { 
-      ...insertProject, 
       id,
+      name: insertProject.name,
+      description: insertProject.description || null,
+      userId: insertProject.userId || null,
       createdAt: now,
       updatedAt: now,
     };
@@ -251,6 +269,24 @@ export class MemStorage implements IStorage {
   }
   
   async deleteProject(id: number): Promise<boolean> {
+    // Get all models for this project
+    const projectModels = Array.from(this.models.values())
+      .filter(model => model.projectId === id);
+    
+    // Delete all scenarios for these models first
+    for (const model of projectModels) {
+      const scenariosToDelete = Array.from(this.scenarios.values())
+        .filter(scenario => scenario.modelId === model.id);
+      
+      for (const scenario of scenariosToDelete) {
+        this.scenarios.delete(scenario.id);
+      }
+      
+      // Delete the model
+      this.models.delete(model.id);
+    }
+    
+    // Finally delete the project
     return this.projects.delete(id);
   }
   
@@ -273,8 +309,12 @@ export class MemStorage implements IStorage {
     const now = new Date();
     
     const model: Model = { 
-      ...insertModel, 
       id,
+      name: insertModel.name,
+      description: insertModel.description || null,
+      projectId: insertModel.projectId || null,
+      nodes: insertModel.nodes || [],
+      edges: insertModel.edges || [],
       createdAt: now,
       updatedAt: now,
     };
@@ -298,6 +338,15 @@ export class MemStorage implements IStorage {
   }
   
   async deleteModel(id: number): Promise<boolean> {
+    // First delete all scenarios associated with this model
+    const scenariosToDelete = Array.from(this.scenarios.values())
+      .filter(scenario => scenario.modelId === id);
+    
+    for (const scenario of scenariosToDelete) {
+      this.scenarios.delete(scenario.id);
+    }
+    
+    // Then delete the model
     return this.models.delete(id);
   }
   
@@ -320,8 +369,11 @@ export class MemStorage implements IStorage {
     const now = new Date();
     
     const scenario: Scenario = { 
-      ...insertScenario, 
       id,
+      name: insertScenario.name,
+      modelId: insertScenario.modelId || null,
+      initialValues: insertScenario.initialValues || null,
+      results: insertScenario.results || null,
       createdAt: now,
     };
     
