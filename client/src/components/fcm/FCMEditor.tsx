@@ -14,6 +14,9 @@ import ReactFlow, {
   EdgeChange,
   Panel,
   MarkerType,
+  NodeTypes,
+  EdgeTypes,
+  ConnectionMode,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { FCMModel, FCMNode, FCMEdge, NodeType } from '@/lib/types';
@@ -22,15 +25,10 @@ import CustomEdge from './CustomEdge';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 
-// Custom node types - define outside component to prevent re-creation
-const NODE_TYPES = {
-  custom: CustomNode,
-};
-
-// Custom edge types - define outside component to prevent re-creation
-const EDGE_TYPES = {
-  custom: CustomEdge,
-};
+// Define node and edge types as constants outside of the component
+// to prevent unnecessary re-renders
+const nodeTypes: NodeTypes = { custom: CustomNode };
+const edgeTypes: EdgeTypes = { custom: CustomEdge };
 
 interface FCMEditorProps {
   model: FCMModel;
@@ -415,8 +413,8 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
       onNodesChange={handleNodesChange}
       onEdgesChange={handleEdgesChange}
       onConnect={onConnect}
-      nodeTypes={NODE_TYPES}
-      edgeTypes={EDGE_TYPES}
+      nodeTypes={nodeTypes}
+      edgeTypes={edgeTypes}
       onClick={() => {
         // Close any open edge popups when clicking canvas
         setEdges(eds => eds.map(e => ({ ...e, data: { ...e.data, isVisible: false } })));
@@ -427,7 +425,7 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
       minZoom={0.2}
       maxZoom={4}
       // Enabling these connection features for better user experience
-      connectionMode="loose"        // More forgiving connection mode
+      connectionMode={ConnectionMode.Loose}        // More forgiving connection mode
       connectionRadius={40}         // Increased connection radius for easier connections
       snapToGrid={true}             // Enable snapping for more orderly layouts
       snapGrid={[15, 15]}           // Grid size for snapping 
