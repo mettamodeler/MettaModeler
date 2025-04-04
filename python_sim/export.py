@@ -205,7 +205,7 @@ print(f"Number of edges: {len(model_data.get('edges', []))}")
         network_analysis_code = """
 # Network Analysis Functions
 def analyze_fcm(G):
-    """Analyze FCM network properties."""
+    # Analyze FCM network properties
     metrics = {}
     
     # Basic graph properties

@@ -11,6 +11,42 @@ import path from 'path';
 
 const PYTHON_SIM_URL = process.env.PYTHON_SIM_URL || 'http://localhost:5050';
 
+// Type guards for ReactFlow vs Schema formats
+interface ReactFlowNode {
+  id: string;
+  data: {
+    label?: string;
+    type?: string;
+    value?: number;
+    color?: string;
+    [key: string]: any;
+  };
+  position?: {
+    x: number;
+    y: number;
+  };
+  [key: string]: any;
+}
+
+interface ReactFlowEdge {
+  id: string;
+  source: string;
+  target: string;
+  data: {
+    weight?: number | null;
+    [key: string]: any;
+  };
+  [key: string]: any;
+}
+
+function isReactFlowNode(node: any): node is ReactFlowNode {
+  return node && typeof node === 'object' && 'data' in node;
+}
+
+function isReactFlowEdge(edge: any): edge is ReactFlowEdge {
+  return edge && typeof edge === 'object' && 'data' in edge;
+}
+
 /**
  * Export formats supported by the application
  */
@@ -117,18 +153,33 @@ export class ExportService {
         { header: 'Color', key: 'color', width: 15 },
       ];
       
-      // Format node data properly for Excel export
+      // Format node data properly for Excel export handling both ReactFlow and FCMNode formats
       const formattedNodes = model.nodes.map(node => {
-        const data = node.data || {};
-        return {
-          id: node.id,
-          label: data.label || '',
-          type: data.type || 'regular',
-          value: data.value || 0,
-          positionX: node.position?.x || 0,
-          positionY: node.position?.y || 0,
-          color: data.color || '',
-        };
+        // Handle both formats using our type guard
+        if (isReactFlowNode(node)) {
+          // ReactFlow format with data property
+          const data = node.data || {};
+          return {
+            id: node.id,
+            label: data.label || '',
+            type: data.type || 'regular',
+            value: data.value || 0,
+            positionX: 'position' in node ? node.position?.x || 0 : 0,
+            positionY: 'position' in node ? node.position?.y || 0 : 0,
+            color: data.color || '',
+          };
+        } else {
+          // Direct FCMNode format from schema
+          return {
+            id: node.id,
+            label: node.label || '',
+            type: node.type || 'regular',
+            value: node.value || 0,
+            positionX: node.positionX || 0,
+            positionY: node.positionY || 0,
+            color: node.color || '',
+          };
+        }
       });
       
       nodesSheet.addRows(formattedNodes);
@@ -142,15 +193,27 @@ export class ExportService {
         { header: 'Weight', key: 'weight', width: 15 },
       ];
       
-      // Format edge data properly for Excel export
+      // Format edge data properly for Excel export handling both ReactFlow and FCMEdge formats
       const formattedEdges = model.edges.map(edge => {
-        const data = edge.data || {};
-        return {
-          id: edge.id,
-          source: edge.source,
-          target: edge.target,
-          weight: data.weight || 0,
-        };
+        // Handle both formats using our type guard
+        if (isReactFlowEdge(edge)) {
+          // ReactFlow format with data property
+          const data = edge.data || {};
+          return {
+            id: edge.id,
+            source: edge.source,
+            target: edge.target,
+            weight: data.weight || 0,
+          };
+        } else {
+          // Direct FCMEdge format from schema
+          return {
+            id: edge.id,
+            source: edge.source,
+            target: edge.target,
+            weight: edge.weight || 0,
+          };
+        }
       });
       
       edgesSheet.addRows(formattedEdges);
