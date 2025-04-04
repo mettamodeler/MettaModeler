@@ -1,8 +1,47 @@
 import numpy as np
 import networkx as nx
 import json
-from typing import Dict, List, Literal, Optional, Tuple, Union
+from typing import Dict, List, Literal, Optional, Tuple, Union, Any
 import pandas as pd
+
+def normalize_input_data(data: Any) -> Any:
+    """
+    Normalize input data from frontend to ensure proper Python types.
+    Converts string 'true'/'false' to Python booleans and handles
+    other type conversions as needed.
+    
+    Args:
+        data: Any input data structure (dict, list, str, etc.)
+        
+    Returns:
+        Normalized data structure with proper Python types
+    """
+    if isinstance(data, dict):
+        return {k: normalize_input_data(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [normalize_input_data(item) for item in data]
+    elif data == "true" or data is True:
+        return True
+    elif data == "false" or data is False:
+        return False
+    elif data == "null" or data is None:
+        return None
+    elif isinstance(data, str):
+        # Try to convert to numeric types
+        if data.lower() in ["sigmoid", "tanh", "relu"]:
+            # Ensure activation function names are lowercase
+            return data.lower()
+        try:
+            # Try to convert to float or int if it's a numeric string
+            if '.' in data:
+                return float(data)
+            else:
+                return int(data)
+        except (ValueError, TypeError):
+            # If not numeric, just return the string
+            return data
+    else:
+        return data
 
 def sigmoid(x: float) -> float:
     """Sigmoid activation function."""
@@ -397,20 +436,32 @@ def run_fcm_simulation(
     Returns:
         Dict with simulation results
     """
+    # Normalize input data
+    normalized_nodes = normalize_input_data(nodes)
+    normalized_edges = normalize_input_data(edges)
+    normalized_activation = normalize_input_data(activation_function)
+    normalized_threshold = float(threshold)
+    normalized_max_iterations = int(max_iterations)
+    normalized_generate_notebook = normalize_input_data(generate_notebook)
+    
+    # Log input data types for debugging
+    print(f"Activation function: {normalized_activation}, type: {type(normalized_activation)}")
+    print(f"Generate notebook: {normalized_generate_notebook}, type: {type(normalized_generate_notebook)}")
+    
     # Create simulator
     simulator = FCMSimulator(
-        nodes=nodes,
-        edges=edges,
-        activation_function=activation_function,  # String type is now properly handled
-        threshold=threshold,
-        max_iterations=max_iterations
+        nodes=normalized_nodes,
+        edges=normalized_edges,
+        activation_function=normalized_activation,
+        threshold=normalized_threshold,
+        max_iterations=normalized_max_iterations
     )
     
     # Run simulation
     results = simulator.run_simulation()
     
-    # Generate notebook if requested
-    if generate_notebook:
+    # Generate notebook if requested (must check normalized value)
+    if normalized_generate_notebook:
         import nbformat as nbf
         nb = simulator.generate_notebook()
         results["notebook"] = nbf.v4.writes(nb)
@@ -444,9 +495,17 @@ def run_baseline_scenario_comparison(
     Returns:
         Dict with simulation results including baseline, scenario, and delta values
     """
+    # Normalize input data
+    normalized_nodes = normalize_input_data(nodes)
+    normalized_edges = normalize_input_data(edges)
+    normalized_activation = normalize_input_data(activation_function)
+    normalized_threshold = float(threshold)
+    normalized_max_iterations = int(max_iterations)
+    normalized_generate_notebook = normalize_input_data(generate_notebook)
+    
     # Create baseline nodes (set all nodes to a neutral starting value)
     baseline_nodes = []
-    for node in nodes:
+    for node in normalized_nodes:
         # Create a deep copy of the node to avoid modifying the original
         baseline_node = {
             'id': node['id'],
@@ -463,20 +522,20 @@ def run_baseline_scenario_comparison(
     # Run baseline simulation
     baseline_simulator = FCMSimulator(
         nodes=baseline_nodes,
-        edges=edges,
-        activation_function=activation_function,  # String type is now properly handled
-        threshold=threshold,
-        max_iterations=max_iterations
+        edges=normalized_edges,
+        activation_function=normalized_activation,
+        threshold=normalized_threshold,
+        max_iterations=normalized_max_iterations
     )
     baseline_results = baseline_simulator.run_simulation()
     
     # Run scenario simulation
     scenario_simulator = FCMSimulator(
-        nodes=nodes,
-        edges=edges,
-        activation_function=activation_function,  # String type is now properly handled
-        threshold=threshold,
-        max_iterations=max_iterations
+        nodes=normalized_nodes,
+        edges=normalized_edges,
+        activation_function=normalized_activation,
+        threshold=normalized_threshold,
+        max_iterations=normalized_max_iterations
     )
     scenario_results = scenario_simulator.run_simulation()
     
@@ -508,8 +567,8 @@ def run_baseline_scenario_comparison(
         'deltaState': delta_values,
     }
     
-    # Generate notebook if requested
-    if generate_notebook:
+    # Generate notebook if requested (must check normalized value)
+    if normalized_generate_notebook:
         import nbformat as nbf
         nb = scenario_simulator.generate_notebook()
         combined_results["notebook"] = nbf.v4.writes(nb)

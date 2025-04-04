@@ -6,6 +6,46 @@ import os
 from typing import Dict, List, Any, Optional, Union, Tuple
 from datetime import datetime
 
+def transform_json_for_python(data):
+    """
+    Transform JSON data structure so it's compatible with Python.
+    Replaces string 'true' and 'false' with Python booleans True and False.
+    Handles nested dictionaries and lists recursively.
+    
+    Args:
+        data: Any JSON-compatible data structure (dict, list, str, int, float, bool, None)
+        
+    Returns:
+        Transformed data structure with proper Python types
+    """
+    if isinstance(data, dict):
+        return {k: transform_json_for_python(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [transform_json_for_python(item) for item in data]
+    elif data == "true" or data is True:
+        return True
+    elif data == "false" or data is False:
+        return False
+    elif data == "null" or data is None:
+        return None
+    elif isinstance(data, str):
+        # Try to convert to numeric types if it's a numeric string
+        try:
+            if '.' in data:
+                return float(data)
+            else:
+                try:
+                    return int(data)
+                except ValueError:
+                    # Special case for activation functions
+                    if data.lower() in ['sigmoid', 'tanh', 'relu']:
+                        return data.lower()
+                    return data
+        except (ValueError, TypeError):
+            return data
+    else:
+        return data
+
 def generate_notebook(data: Dict, export_type: str, model_id: Optional[int] = None,
                      scenario_id: Optional[int] = None, comparison_scenario_id: Optional[int] = None) -> Dict:
     """
@@ -21,6 +61,9 @@ def generate_notebook(data: Dict, export_type: str, model_id: Optional[int] = No
     Returns:
         Jupyter notebook as a dictionary
     """
+    # First, transform data to use proper Python types
+    transformed_data = transform_json_for_python(data)
+    
     # Create a simple notebook structure
     notebook = {
         "metadata": {
@@ -91,7 +134,7 @@ def generate_notebook(data: Dict, export_type: str, model_id: Optional[int] = No
                 "outputs": [],
                 "source": [
                     f"# Load data\n",
-                    f"{export_type}_data = {json.dumps(data, indent=2)}\n",
+                    f"{export_type}_data = " + json.dumps(transformed_data, indent=2) + "\n",
                     "\n",
                     f"# Display basic information\n",
                     f"print(f\"Data type: {export_type}\")"
@@ -1064,7 +1107,9 @@ def export_to_json(data: Dict) -> bytes:
     Returns:
         JSON file as bytes
     """
-    return json.dumps(data, indent=2).encode('utf-8')
+    # Transform data to ensure consistent Python boolean types
+    transformed_data = transform_json_for_python(data)
+    return json.dumps(transformed_data, indent=2).encode('utf-8')
 
 def export_to_csv(data: Dict, export_type: str) -> bytes:
     """
@@ -1077,5 +1122,9 @@ def export_to_csv(data: Dict, export_type: str) -> bytes:
     Returns:
         CSV file as bytes
     """
+    # Transform data to ensure consistent Python boolean types
+    transformed_data = transform_json_for_python(data)
+    
     # Simple stub for now - returns JSON instead of CSV
-    return json.dumps(data, indent=2).encode('utf-8')
+    # When CSV implementation is added, still use the transformed_data
+    return json.dumps(transformed_data, indent=2).encode('utf-8')

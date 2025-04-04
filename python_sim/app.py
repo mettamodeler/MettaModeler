@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, send_file, Response
 from flask_cors import CORS
-from simulate import run_fcm_simulation, run_baseline_scenario_comparison
+from simulate import run_fcm_simulation, run_baseline_scenario_comparison, normalize_input_data
+from export import generate_notebook, transform_json_for_python
 import json
 import os
 import traceback
@@ -37,6 +38,19 @@ def simulate():
         max_iterations = data.get('maxIterations', 100)
         generate_notebook = data.get('generateNotebook', False)
         compare_to_baseline = data.get('compareToBaseline', False)
+        
+        # Normalize input parameters
+        nodes = normalize_input_data(nodes)
+        edges = normalize_input_data(edges)
+        activation = normalize_input_data(activation)
+        threshold = float(threshold)
+        max_iterations = int(max_iterations)
+        generate_notebook = normalize_input_data(generate_notebook)
+        compare_to_baseline = normalize_input_data(compare_to_baseline)
+        
+        print(f"Activation: {activation}, type: {type(activation)}")
+        print(f"Generate notebook: {generate_notebook}, type: {type(generate_notebook)}")
+        print(f"Compare to baseline: {compare_to_baseline}, type: {type(compare_to_baseline)}")
         
         # Validate inputs
         if not nodes:
@@ -164,6 +178,13 @@ def analyze():
         nodes = data.get('nodes', [])
         edges = data.get('edges', [])
         
+        # Normalize input data
+        nodes = normalize_input_data(nodes)
+        edges = normalize_input_data(edges)
+        
+        print(f"Analyze nodes count: {len(nodes)}")
+        print(f"Analyze edges count: {len(edges)}")
+        
         # Validate inputs
         if not nodes:
             return jsonify({'error': 'No nodes provided'}), 400
@@ -275,8 +296,7 @@ def export_notebook():
     }
     """
     try:
-        # Import export functions here to avoid circular imports
-        from export import generate_notebook
+        # We already imported generate_notebook at the top of the file
         
         data = request.get_json()
         
@@ -287,42 +307,36 @@ def export_notebook():
         scenario_id = data.get('scenarioId')
         comparison_scenario_id = data.get('comparisonScenarioId')
         
+        # For the generate_notebook function, data must be a Dictionary
+        # But for safety, let's wrap this in an explicit dictionary for type safety
+        if not isinstance(export_data, dict):
+            print(f"Warning: export_data is not a dictionary, converting to wrapped dict. Type: {type(export_data)}")
+            # Wrap non-dict data in a dictionary with a 'data' key
+            export_data = {'data': export_data}
+        else:
+            # Apply transform_json_for_python to convert JS/TS data types to Python while preserving dict structure
+            export_data = transform_json_for_python(export_data)
+        if not isinstance(export_type, str):
+            export_type = 'model'
+        else:
+            export_type = normalize_input_data(export_type)
+        
         # Generate notebook
+        # Convert IDs to integers if they are provided
+        model_id_int = int(model_id) if model_id is not None else None
+        scenario_id_int = int(scenario_id) if scenario_id is not None else None
+        comparison_scenario_id_int = int(comparison_scenario_id) if comparison_scenario_id is not None else None
+        
         notebook = generate_notebook(
-            export_data, 
-            export_type, 
-            model_id, 
-            scenario_id, 
-            comparison_scenario_id
+            data=export_data, 
+            export_type=export_type, 
+            model_id=model_id_int, 
+            scenario_id=scenario_id_int, 
+            comparison_scenario_id=comparison_scenario_id_int
         )
         
-        # Fix booleans in Python notebook (convert True/False to 'true'/'false')
-        def fix_json_for_python(obj):
-            """
-            Fix JSON data for Python notebooks to handle serialization issues.
-            This function recursively processes dict, list, and primitive values.
-            """
-            if isinstance(obj, dict):
-                return {k: fix_json_for_python(v) for k, v in obj.items()}
-            elif isinstance(obj, list):
-                return [fix_json_for_python(item) for item in obj]
-            elif obj is True:
-                # Use actual string literals instead of Boolean values
-                return "true"
-            elif obj is False:
-                # Use actual string literals instead of Boolean values
-                return "false"
-            elif obj is None:
-                # Explicitly handle None values
-                return "null"
-            else:
-                return obj
-        
-        # Apply Python compatibility fixes
-        fixed_notebook = fix_json_for_python(notebook)
-        
         # Convert notebook to JSON string
-        notebook_json = json.dumps(fixed_notebook)
+        notebook_json = json.dumps(notebook)
         
         # Create a file-like object from the JSON string
         notebook_file = io.BytesIO(notebook_json.encode('utf-8'))

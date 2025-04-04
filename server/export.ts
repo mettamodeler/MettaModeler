@@ -467,38 +467,51 @@ export class ExportService {
       
       // Transform ReactFlow formatted data to a consistent format expected by the Python service
       if (type === ExportType.MODEL) {
-        normalizedData = {
-          ...data,
-          nodes: data.nodes?.map((node: any) => {
-            // Check if we have ReactFlow format or direct format
-            if (isReactFlowNode(node)) {
-              // Extract data from ReactFlow format
-              return {
-                id: node.id,
-                label: node.data?.label || node.id,
-                type: node.data?.type || 'regular',
-                value: node.data?.value || 0,
-                positionX: node.position?.x || 0,
-                positionY: node.position?.y || 0,
-                color: node.data?.color || ''
-              };
-            }
-            return node; // Already in the correct format
-          }),
-          edges: data.edges?.map((edge: any) => {
-            // Check if we have ReactFlow format or direct format
-            if (isReactFlowEdge(edge)) {
-              // Extract data from ReactFlow format
-              return {
-                id: edge.id,
-                source: edge.source,
-                target: edge.target,
-                weight: edge.data?.weight || 0
-              };
-            }
-            return edge; // Already in the correct format
-          })
-        };
+        // Ensure data has the proper format for Python simulation and export
+        console.log('Normalizing model data for export');
+        
+        // Make a deep copy first and preserve all metadata
+        normalizedData = JSON.parse(JSON.stringify(data));
+        
+        // Transform the nodes and edges to ensure they're in the expected format
+        normalizedData.nodes = data.nodes?.map((node: any) => {
+          // Check if we have ReactFlow format or direct format
+          if (isReactFlowNode(node)) {
+            // Extract data from ReactFlow format
+            return {
+              id: node.id,
+              label: node.data?.label || node.id,
+              type: node.data?.type || 'regular',
+              value: node.data?.value || 0,
+              positionX: node.position?.x || 0,
+              positionY: node.position?.y || 0,
+              color: node.data?.color || ''
+            };
+          }
+          return node; // Already in the correct format
+        });
+        
+        normalizedData.edges = data.edges?.map((edge: any) => {
+          // Check if we have ReactFlow format or direct format
+          if (isReactFlowEdge(edge)) {
+            // Extract data from ReactFlow format
+            return {
+              id: edge.id,
+              source: edge.source,
+              target: edge.target,
+              weight: edge.data?.weight || 0
+            };
+          }
+          return edge; // Already in the correct format
+        });
+        
+        // Make sure analysis data is included if available
+        if (data.analysis) {
+          normalizedData.analysis = data.analysis;
+        }
+        
+        // Log data structure
+        console.log(`Normalized ${normalizedData.nodes.length} nodes and ${normalizedData.edges.length} edges`);
       }
       
       console.log('Sending formatted data to Python service for Jupyter export');
