@@ -298,14 +298,23 @@ def export_notebook():
         
         # Fix booleans in Python notebook (convert True/False to 'true'/'false')
         def fix_json_for_python(obj):
+            """
+            Fix JSON data for Python notebooks to handle serialization issues.
+            This function recursively processes dict, list, and primitive values.
+            """
             if isinstance(obj, dict):
                 return {k: fix_json_for_python(v) for k, v in obj.items()}
             elif isinstance(obj, list):
                 return [fix_json_for_python(item) for item in obj]
             elif obj is True:
-                return 'true'
+                # Use actual string literals instead of Boolean values
+                return "true"
             elif obj is False:
-                return 'false'
+                # Use actual string literals instead of Boolean values
+                return "false"
+            elif obj is None:
+                # Explicitly handle None values
+                return "null"
             else:
                 return obj
         
@@ -351,4 +360,5 @@ if __name__ == '__main__':
     port = int(os.environ.get('PYTHON_SIM_PORT', 5050))
     
     # Run the Flask app
+    print("Starting Flask app")
     app.run(host='0.0.0.0', port=port, debug=True)

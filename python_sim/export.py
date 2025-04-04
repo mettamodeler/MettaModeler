@@ -720,6 +720,10 @@ def model_to_excel(model: Dict) -> bytes:
     
     output = io.BytesIO()
     
+    # Print debug info
+    print(f"Processing model for Excel export: {model.get('name', 'Unnamed')}")
+    print(f"Model has {len(model.get('nodes', []))} nodes and {len(model.get('edges', []))} edges")
+    
     # Create Excel writer
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         # Model info sheet
@@ -735,23 +739,34 @@ def model_to_excel(model: Dict) -> bytes:
         if "nodes" in model and model["nodes"]:
             nodes_data = []
             for node in model["nodes"]:
-                # Extract position data safely
-                position = node.get("position", {})
-                pos_x = position.get("x", 0) if isinstance(position, dict) else 0
-                pos_y = position.get("y", 0) if isinstance(position, dict) else 0
-                
-                # Extract node data safely
-                node_data = node.get("data", {})
-                
-                nodes_data.append({
-                    "ID": node.get("id", ""),
-                    "Label": node_data.get("label", ""),
-                    "Type": node_data.get("type", ""),
-                    "Value": node_data.get("value", 0),
-                    "Position X": pos_x,
-                    "Position Y": pos_y,
-                })
+                # Handle both direct format and ReactFlow format
+                if "data" in node and isinstance(node["data"], dict):
+                    # ReactFlow format
+                    node_data = node.get("data", {})
+                    position = node.get("position", {})
+                    pos_x = position.get("x", 0) if isinstance(position, dict) else 0
+                    pos_y = position.get("y", 0) if isinstance(position, dict) else 0
+                    
+                    nodes_data.append({
+                        "ID": node.get("id", ""),
+                        "Label": node_data.get("label", ""),
+                        "Type": node_data.get("type", ""),
+                        "Value": node_data.get("value", 0),
+                        "Position X": pos_x,
+                        "Position Y": pos_y,
+                    })
+                else:
+                    # Direct format (matching FCMNode schema)
+                    nodes_data.append({
+                        "ID": node.get("id", ""),
+                        "Label": node.get("label", ""),
+                        "Type": node.get("type", "regular"),
+                        "Value": node.get("value", 0),
+                        "Position X": node.get("positionX", 0),
+                        "Position Y": node.get("positionY", 0),
+                    })
             
+            print(f"Processed {len(nodes_data)} nodes for Excel export")
             nodes_df = pd.DataFrame(nodes_data)
             nodes_df.to_excel(writer, sheet_name="Nodes", index=False)
         
@@ -759,14 +774,25 @@ def model_to_excel(model: Dict) -> bytes:
         if "edges" in model and model["edges"]:
             edges_data = []
             for edge in model["edges"]:
-                # Extract edge data safely
-                edge_data = edge.get("data", {})
-                
-                edges_data.append({
-                    "Source": edge.get("source", ""),
-                    "Target": edge.get("target", ""),
-                    "Weight": edge_data.get("weight", 0),
-                })
+                # Handle both direct format and ReactFlow format
+                if "data" in edge and isinstance(edge["data"], dict):
+                    # ReactFlow format
+                    edge_data = edge.get("data", {})
+                    
+                    edges_data.append({
+                        "ID": edge.get("id", ""),
+                        "Source": edge.get("source", ""),
+                        "Target": edge.get("target", ""),
+                        "Weight": edge_data.get("weight", 0),
+                    })
+                else:
+                    # Direct format (matching FCMEdge schema)
+                    edges_data.append({
+                        "ID": edge.get("id", ""),
+                        "Source": edge.get("source", ""),
+                        "Target": edge.get("target", ""),
+                        "Weight": edge.get("weight", 0),
+                    })
             
             edges_df = pd.DataFrame(edges_data)
             edges_df.to_excel(writer, sheet_name="Edges", index=False)

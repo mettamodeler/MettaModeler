@@ -462,6 +462,47 @@ export class ExportService {
     mimeType: string;
   }> {
     try {
+      // Normalize data to ensure consistency for Python service
+      let normalizedData = data;
+      
+      // Transform ReactFlow formatted data to a consistent format expected by the Python service
+      if (type === ExportType.MODEL) {
+        normalizedData = {
+          ...data,
+          nodes: data.nodes?.map((node: any) => {
+            // Check if we have ReactFlow format or direct format
+            if (isReactFlowNode(node)) {
+              // Extract data from ReactFlow format
+              return {
+                id: node.id,
+                label: node.data?.label || node.id,
+                type: node.data?.type || 'regular',
+                value: node.data?.value || 0,
+                positionX: node.position?.x || 0,
+                positionY: node.position?.y || 0,
+                color: node.data?.color || ''
+              };
+            }
+            return node; // Already in the correct format
+          }),
+          edges: data.edges?.map((edge: any) => {
+            // Check if we have ReactFlow format or direct format
+            if (isReactFlowEdge(edge)) {
+              // Extract data from ReactFlow format
+              return {
+                id: edge.id,
+                source: edge.source,
+                target: edge.target,
+                weight: edge.data?.weight || 0
+              };
+            }
+            return edge; // Already in the correct format
+          })
+        };
+      }
+      
+      console.log('Sending formatted data to Python service for Jupyter export');
+      
       // Call the Python service to generate the notebook
       const response = await fetch(`${PYTHON_SIM_URL}/api/export/notebook`, {
         method: 'POST',
@@ -469,7 +510,7 @@ export class ExportService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          data,
+          data: normalizedData,
           type,
           modelId,
           scenarioId,
@@ -479,6 +520,7 @@ export class ExportService {
       
       if (!response.ok) {
         const errorData = await response.json() as { message?: string };
+        console.error('Python service error response:', errorData);
         throw new Error(`Failed to generate Jupyter Notebook: ${errorData.message || response.statusText}`);
       }
       

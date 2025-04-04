@@ -23,7 +23,7 @@ class FCMSimulator:
         self, 
         nodes: List[Dict], 
         edges: List[Dict], 
-        activation_function: Literal["sigmoid", "tanh", "relu"] = "sigmoid",
+        activation_function: Union[Literal["sigmoid", "tanh", "relu"], str] = "sigmoid",
         threshold: float = 0.001,
         max_iterations: int = 100
     ):
@@ -229,13 +229,15 @@ class FCMSimulator:
         
         # Add time series visualization
         time_series_str = json.dumps(results["timeSeries"], indent=2)
+        iterations_count = results["iterations"]
+        converged_status = str(results["converged"]).lower()
         
         nb.cells.append(nbf.v4.new_code_cell(f"""
         # Simulation results
         time_series = {time_series_str}
         final_state = {json.dumps(results["finalState"], indent=2)}
-        iterations = {results["iterations"]}
-        converged = str(results["converged"]).lower()
+        iterations = {iterations_count}
+        converged = "{converged_status}"
         
         # Convert time series to DataFrame
         df = pd.DataFrame(time_series)
@@ -247,7 +249,7 @@ class FCMSimulator:
             node_label = next((node["data"].get("label", column) for node in nodes if node["id"] == column), column)
             plt.plot(df[column], marker='o', markersize=4, label=node_label)
             
-        plt.title(f"FCM Simulation Convergence (Iterations: {iterations}, Converged: {converged})", fontsize=15)
+        plt.title(f"FCM Simulation Convergence (Iterations: {{iterations}}, Converged: {{converged}})", fontsize=15)
         plt.xlabel("Iteration", fontsize=12)
         plt.ylabel("Node Value", fontsize=12)
         plt.grid(True, alpha=0.3)
@@ -399,7 +401,7 @@ def run_fcm_simulation(
     simulator = FCMSimulator(
         nodes=nodes,
         edges=edges,
-        activation_function=activation_function,
+        activation_function=activation_function,  # String type is now properly handled
         threshold=threshold,
         max_iterations=max_iterations
     )
@@ -409,6 +411,7 @@ def run_fcm_simulation(
     
     # Generate notebook if requested
     if generate_notebook:
+        import nbformat as nbf
         nb = simulator.generate_notebook()
         results["notebook"] = nbf.v4.writes(nb)
     
@@ -461,7 +464,7 @@ def run_baseline_scenario_comparison(
     baseline_simulator = FCMSimulator(
         nodes=baseline_nodes,
         edges=edges,
-        activation_function=activation_function,
+        activation_function=activation_function,  # String type is now properly handled
         threshold=threshold,
         max_iterations=max_iterations
     )
@@ -471,7 +474,7 @@ def run_baseline_scenario_comparison(
     scenario_simulator = FCMSimulator(
         nodes=nodes,
         edges=edges,
-        activation_function=activation_function,
+        activation_function=activation_function,  # String type is now properly handled
         threshold=threshold,
         max_iterations=max_iterations
     )
@@ -507,6 +510,7 @@ def run_baseline_scenario_comparison(
     
     # Generate notebook if requested
     if generate_notebook:
+        import nbformat as nbf
         nb = scenario_simulator.generate_notebook()
         combined_results["notebook"] = nbf.v4.writes(nb)
     
