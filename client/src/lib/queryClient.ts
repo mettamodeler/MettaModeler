@@ -20,6 +20,13 @@ export async function apiRequest<T = any>(
   });
 
   await throwIfResNotOk(res);
+  
+  // For 204 No Content responses or empty bodies
+  const contentType = res.headers.get('content-type');
+  if (res.status === 204 || !contentType || !contentType.includes('application/json')) {
+    return null as T;
+  }
+  
   return await res.json() as T;
 }
 
