@@ -47,23 +47,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: ["/api/user"],
     queryFn: async () => {
       try {
-        const response = await fetch("/api/user", {
-          credentials: "include",
-        });
-        
-        if (response.status === 401) {
-          // Not authenticated, this is normal for logged out users
-          return null;
-        }
-        
-        if (!response.ok) {
-          throw new Error(`${response.status}: ${await response.text()}`);
-        }
-        
-        return await response.json();
+        return await apiRequest("GET", "/api/user");
       } catch (error) {
         console.error("Error fetching user:", error);
-        return null;
+        if (error instanceof Error && error.message.startsWith("401:")) {
+          return null;
+        }
+        throw error;
       }
     },
   });
@@ -78,7 +68,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Login successful",
         description: `Welcome back, ${user.displayName || user.username}!`,
       });
-      // Navigate to home page
       navigate("/");
     },
     onError: (error: Error) => {
@@ -100,7 +89,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Registration successful",
         description: `Welcome, ${user.displayName || user.username}!`,
       });
-      // Navigate to home page
       navigate("/");
     },
     onError: (error: Error) => {
@@ -121,7 +109,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({
         title: "Logged out successfully",
       });
-      // Navigate to auth page
       navigate("/auth");
     },
     onError: (error: Error) => {

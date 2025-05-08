@@ -15,13 +15,32 @@ import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { useSimulation } from "@/hooks/use-simulation";
 import { format } from "date-fns";
-import { Scenario, SimulationParams, FCMModel } from "@/lib/types";
+import { FCMModel, FCMNode } from "@/lib/types";
 import { apiRequest } from "@/lib/queryClient";
 import ScenarioComparison from "./ScenarioComparison";
+import { FaLock, FaLockOpen, FaInfoCircle } from 'react-icons/fa';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
+
+interface Scenario {
+  id: string;
+  name: string;
+  initialValues: Record<string, number>;
+  clampedNodes?: string[];
+  results: any;
+  createdAt: string;
+}
 
 interface ScenarioManagerProps {
   model: FCMModel;
 }
+
+// Export validation function
+export const validateInitialValues = (values: Record<string, number>, nodes: FCMNode[]) => {
+  const missingNodes = nodes.filter(node => values[node.id] === undefined);
+  if (missingNodes.length > 0) {
+    throw new Error(`Missing initial values for nodes: ${missingNodes.map(n => n.label).join(', ')}`);
+  }
+};
 
 export default function ScenarioManager({ model }: ScenarioManagerProps) {
   const { toast } = useToast();
@@ -31,10 +50,13 @@ export default function ScenarioManager({ model }: ScenarioManagerProps) {
   const [createScenarioLoading, setCreateScenarioLoading] = useState(false);
   const [deleteScenarioId, setDeleteScenarioId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [selectedScenarios, setSelectedScenarios] = useState<Set<string>>(new Set());
   const [newScenarioName, setNewScenarioName] = useState("");
   const [initialValues, setInitialValues] = useState<Record<string, number>>({});
   const { runSimulation, updateParams } = useSimulation(model);
+  const [clampedNodes, setClampedNodes] = useState<string[]>([]);
+  const [showClampHelp, setShowClampHelp] = useState(false);
 
   // Fetch scenarios when model changes
   useEffect(() => {
@@ -58,6 +80,7 @@ export default function ScenarioManager({ model }: ScenarioManagerProps) {
       if (!response.ok) throw new Error("Failed to fetch scenarios");
       
       const data = await response.json();
+      console.log("Fetched scenarios:", data);
       setScenarios(data);
     } catch (error) {
       console.error("Error fetching scenarios:", error);
@@ -71,6 +94,13 @@ export default function ScenarioManager({ model }: ScenarioManagerProps) {
     }
   };
 
+  // Toggle clamping for a node
+  const toggleClamp = (nodeId: string) => {
+    setClampedNodes(prev =>
+      prev.includes(nodeId) ? prev.filter(id => id !== nodeId) : [...prev, nodeId]
+    );
+  };
+
   // Create new scenario
   const createScenario = async () => {
     if (!newScenarioName.trim()) {
@@ -81,35 +111,41 @@ export default function ScenarioManager({ model }: ScenarioManagerProps) {
       });
       return;
     }
-
-    setCreateScenarioLoading(true);
-    
     try {
-      // Update the simulation parameters with current initial values
-      updateParams({ initialValues });
-      
-      // Run the simulation
-      const results = await runSimulation();
-      
-      // Create scenario in database
+      validateInitialValues(initialValues, model.nodes);
+      setCreateScenarioLoading(true);
+      // Update simulation parameters with initial values and clamped nodes
+      updateParams({ 
+        initialValues, 
+        clampedNodes,
+        activation: 'sigmoid',
+        threshold: 0.001,
+        maxIterations: 20
+      });
+      // Run the simulation with clampedNodes
+      const results = await runSimulation({ clampedNodes });
+      if (!results) {
+        throw new Error("Simulation failed to complete");
+      }
       const response = await apiRequest(
-        "POST", 
-        "/api/scenarios", 
+        "POST",
+        "/api/scenarios",
         {
           name: newScenarioName,
           modelId: model.id,
           initialValues,
-          results
+          clampedNodes,
+          results,
+          simulationParams: {
+            activation: 'sigmoid',
+            threshold: 0.001,
+            maxIterations: 20
+          }
         }
       );
-      
-      // Add new scenario to the list
       setScenarios(prev => [...prev, response]);
-      
-      // Reset form and close dialog
       setNewScenarioName("");
       setNewScenarioDialogOpen(false);
-      
       toast({
         title: "Success",
         description: "Scenario created successfully"
@@ -118,7 +154,7 @@ export default function ScenarioManager({ model }: ScenarioManagerProps) {
       console.error("Error creating scenario:", error);
       toast({
         title: "Error",
-        description: "Failed to create scenario. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to create scenario. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -128,8 +164,9 @@ export default function ScenarioManager({ model }: ScenarioManagerProps) {
 
   // Delete scenario
   const deleteScenario = async () => {
-    if (!deleteScenarioId) return;
+    if (!deleteScenarioId || deleteLoading) return;
     
+    setDeleteLoading(true);
     try {
       await apiRequest(
         "DELETE", 
@@ -161,6 +198,8 @@ export default function ScenarioManager({ model }: ScenarioManagerProps) {
         description: "Failed to delete scenario. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -276,6 +315,14 @@ export default function ScenarioManager({ model }: ScenarioManagerProps) {
               <ScenarioComparison 
                 scenarios={selectedScenariosList}
                 model={model}
+                nodeLabelsById={model.nodes.reduce((acc, node) => {
+                  acc[node.id] = node.label;
+                  return acc;
+                }, {} as Record<string, string>)}
+                nodeTypesById={model.nodes.reduce((acc, node) => {
+                  acc[node.id] = node.type || 'regular';
+                  return acc;
+                }, {} as Record<string, string>)}
               />
             </div>
           )}
@@ -284,67 +331,98 @@ export default function ScenarioManager({ model }: ScenarioManagerProps) {
       
       {/* New Scenario Dialog */}
       <Dialog open={newScenarioDialogOpen} onOpenChange={setNewScenarioDialogOpen}>
-        <DialogContent className="glass border border-white/10 max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Create New Scenario</DialogTitle>
-            <DialogDescription>
-              Set initial node values for your simulation scenario.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-4">
-            <div className="grid gap-4">
-              <div>
-                <Label htmlFor="scenario-name">Scenario Name</Label>
-                <Input
-                  id="scenario-name"
-                  className="mt-1"
-                  value={newScenarioName}
-                  onChange={(e) => setNewScenarioName(e.target.value)}
-                  placeholder="Enter a name for this scenario"
-                />
-              </div>
-              
-              <div className="mt-4">
-                <Label>Initial Node Values</Label>
-                <div className="mt-2 grid gap-6">
-                  {model.nodes.map((node) => (
-                    <div key={node.id} className="space-y-2">
-                      <div className="flex justify-between">
-                        <Label>{node.label}</Label>
-                        <span className="text-muted-foreground">
-                          {initialValues[node.id]?.toFixed(2) || "0.00"}
-                        </span>
-                      </div>
-                      <Slider
-                        min={0}
-                        max={1}
-                        step={0.01}
-                        value={[initialValues[node.id] || 0]}
-                        onValueChange={(values) => handleInitialValueChange(node.id, values[0])}
-                      />
+        <TooltipProvider>
+          <DialogContent className="glass border border-white/10 max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Create New Scenario</DialogTitle>
+              <DialogDescription>
+                Set initial node values for your simulation scenario.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="py-4">
+              <div className="grid gap-4">
+                <div>
+                  <Label htmlFor="scenario-name">Scenario Name</Label>
+                  <Input
+                    id="scenario-name"
+                    className="mt-1"
+                    value={newScenarioName}
+                    onChange={(e) => setNewScenarioName(e.target.value)}
+                    placeholder="Enter a name for this scenario"
+                  />
+                </div>
+                
+                <div className="mt-4">
+                  <Label>Initial Node Values
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button type="button" className="ml-2 text-blue-400 hover:text-blue-600" onClick={() => setShowClampHelp(h => !h)}>
+                          <FaInfoCircle />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>What is clamping?</TooltipContent>
+                    </Tooltip>
+                  </Label>
+                  {showClampHelp && (
+                    <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded text-blue-900 text-sm">
+                      <b>Clamping</b> means holding a variable at your chosen value for the entire simulation. Use this to model interventions where a variable is externally controlled (e.g., a policy or sustained external input).
                     </div>
-                  ))}
+                  )}
+                  <div className="mt-2 grid gap-6">
+                    {model.nodes.map((node) => {
+                      const isClamped = clampedNodes.includes(node.id);
+                      return (
+                        <div key={node.id} className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                              <Label>{node.label}</Label>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button type="button" onClick={() => toggleClamp(node.id)} className={isClamped ? 'text-blue-500' : 'text-gray-400 hover:text-blue-400'}>
+                                    {isClamped ? <FaLock /> : <FaLockOpen />}
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {isClamped ? 'This variable is clamped and will be held constant during the scenario simulation.' : 'Click to clamp this variable (hold it constant during the scenario simulation).'}
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                            <span className={isClamped ? 'text-blue-500' : 'text-muted-foreground'}>
+                              {initialValues[node.id]?.toFixed(2) || "0.00"}
+                            </span>
+                          </div>
+                          <Slider
+                            min={0}
+                            max={1}
+                            step={0.01}
+                            value={[initialValues[node.id] || 0]}
+                            onValueChange={(values) => handleInitialValueChange(node.id, values[0])}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setNewScenarioDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={createScenario} 
-              disabled={createScenarioLoading}
-            >
-              {createScenarioLoading ? "Creating..." : "Create Scenario"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
+            
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => setNewScenarioDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={createScenario} 
+                disabled={createScenarioLoading}
+              >
+                {createScenarioLoading ? "Creating..." : "Create Scenario"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </TooltipProvider>
       </Dialog>
       
       {/* Delete Confirmation Dialog */}
@@ -361,14 +439,16 @@ export default function ScenarioManager({ model }: ScenarioManagerProps) {
             <Button 
               variant="outline" 
               onClick={() => setDeleteDialogOpen(false)}
+              disabled={deleteLoading}
             >
               Cancel
             </Button>
             <Button 
               variant="destructive" 
               onClick={deleteScenario}
+              disabled={deleteLoading}
             >
-              Delete
+              {deleteLoading ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>

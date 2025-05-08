@@ -1,88 +1,4 @@
-import { FCMEdge, FCMModel, FCMNode, SimulationParams, SimulationResult } from "./types";
-
-// Activation function (sigmoid)
-export function sigmoid(x: number): number {
-  return 1 / (1 + Math.exp(-x));
-}
-
-// Run a simulation on an FCM model
-export function runSimulation(
-  model: FCMModel,
-  params: SimulationParams = {}
-): SimulationResult {
-  const {
-    iterations = 20,
-    threshold = 0.001,
-    initialValues = {},
-  } = params;
-
-  // Initialize node values
-  const nodeValues: Record<string, number[]> = {};
-  model.nodes.forEach((node) => {
-    // Use initial value from params if available, otherwise use node's value
-    nodeValues[node.id] = [initialValues[node.id] ?? node.value];
-  });
-
-  let isConverged = false;
-  let iterationCount = 0;
-
-  // Run the simulation until convergence or max iterations
-  while (!isConverged && iterationCount < iterations) {
-    const newValues: Record<string, number> = {};
-    
-    // For each node, calculate its new value
-    model.nodes.forEach((node) => {
-      // Driver nodes keep their initial value throughout the simulation
-      if (node.type === "driver") {
-        newValues[node.id] = nodeValues[node.id][0];
-      } else {
-        // Calculate new value based on connected nodes
-        let sum = 0;
-        model.edges.forEach((edge) => {
-          if (edge.target === node.id) {
-            const sourceNodeValue = nodeValues[edge.source][iterationCount];
-            sum += sourceNodeValue * edge.weight;
-          }
-        });
-        
-        // Apply activation function
-        newValues[node.id] = sigmoid(sum);
-      }
-    });
-
-    // Store new values
-    model.nodes.forEach((node) => {
-      nodeValues[node.id].push(newValues[node.id]);
-    });
-
-    // Check for convergence
-    isConverged = true;
-    model.nodes.forEach((node) => {
-      if (node.type !== "driver") {
-        const current = nodeValues[node.id][iterationCount + 1];
-        const prev = nodeValues[node.id][iterationCount];
-        if (Math.abs(current - prev) > threshold) {
-          isConverged = false;
-        }
-      }
-    });
-
-    iterationCount++;
-  }
-
-  // Extract final values
-  const finalValues: Record<string, number> = {};
-  model.nodes.forEach((node) => {
-    finalValues[node.id] = nodeValues[node.id][nodeValues[node.id].length - 1];
-  });
-
-  return {
-    finalValues,
-    timeSeriesData: nodeValues,
-    iterations: iterationCount,
-    converged: isConverged,
-  };
-}
+import { FCMModel, SimulationResult, SimulationParameters, FCMNode, FCMEdge } from "./types";
 
 // Calculate change between initial and final values
 export function calculateChange(
@@ -91,3 +7,87 @@ export function calculateChange(
 ): number {
   return finalValue - initialValue;
 }
+
+export interface ExtendedSimulationResult extends SimulationResult {
+  iterations: number;
+  converged: boolean;
+  timeSeriesData: Record<string, number[]>;
+  finalValues: Record<string, number>;
+  params: Partial<SimulationParameters>;
+}
+
+export async function runSimulation(
+  model: FCMModel,
+  initialValues: Record<string, number> = {},
+  params: Partial<SimulationParameters> & { clampedNodes?: string[] } = { 
+    activation: 'sigmoid',
+    threshold: 0.01,
+    maxIterations: 100
+  }
+): Promise<ExtendedSimulationResult> {
+  // Prepare data for Python simulation API
+  const nodes = model.nodes.map((node: FCMNode) => ({
+    id: node.id,
+    value: initialValues[node.id] ?? node.value,
+    label: node.label,
+    type: node.type
+  }));
+  
+  const edges = model.edges.map((edge: FCMEdge) => ({
+    source: edge.source,
+    target: edge.target,
+    weight: edge.weight
+  }));
+
+  // Build payload with type assertion since compareToBaseline is a valid parameter
+  const payload = {
+    nodes,
+    edges,
+    activation: params.activation || 'sigmoid',
+    threshold: params.threshold || 0.01,
+    maxIterations: params.maxIterations || 100,
+    compareToBaseline: Boolean(params.compareToBaseline),
+    ...(params.compareToBaseline
+      ? {
+          modelInitialValues: Object.fromEntries(model.nodes.map(n => [n.id, n.value])),
+          scenarioInitialValues: initialValues
+        }
+      : {
+          initialValues
+        }
+    ),
+    ...(params.clampedNodes ? { clampedNodes: params.clampedNodes } : {})
+  };
+
+  console.log('Simulation API payload:', payload);
+
+  const response = await fetch('/api/simulate', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to run simulation');
+  }
+
+  const result = await response.json();
+
+  // Log the raw result for debugging
+  console.log('Raw simulation result:', result);
+
+  // Format the result to include both timeSeries and timeSeriesData for compatibility
+  const formattedResult: ExtendedSimulationResult = {
+    ...result,
+    timeSeriesData: result.timeSeries || result.timeSeriesData || {},
+    timeSeries: result.timeSeries || result.timeSeriesData || {},
+    iterations: result.iterations || 0,
+    converged: result.converged || false,
+    finalValues: result.finalState || {},
+    params
+  };
+
+  return formattedResult;
+} 

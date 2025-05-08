@@ -70,8 +70,8 @@ function modelToReactFlow(model: FCMModel): { nodes: Node[], edges: Edge[] } {
   const edges = model.edges.map((edge) => {
     // Determine edge color based on weight
     const edgeColor = edge.weight >= 0 
-      ? 'rgba(239, 68, 68, 0.8)' // red for positive
-      : 'rgba(59, 130, 246, 0.8)'; // blue for negative
+      ? 'rgba(59, 130, 246, 0.8)' // blue for positive
+      : 'rgba(239, 68, 68, 0.8)'; // red for negative
     
     // Check if this edge is part of a bidirectional pair
     const connectionKey = `${edge.source}->${edge.target}`;
@@ -183,21 +183,28 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
   // Handle node deletion with keyboard
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {
+      // Prevent node/edge deletion if an input, textarea, or contenteditable is focused
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      if (
+        tag === 'input' ||
+        tag === 'textarea' ||
+        (document.activeElement && (document.activeElement as HTMLElement).isContentEditable)
+      ) {
+        return;
+      }
       if (event.key === 'Delete' || event.key === 'Backspace') {
         const selectedNodes = nodes.filter(node => node.selected);
         const selectedEdges = edges.filter(edge => edge.selected);
-        
         if (selectedNodes.length > 0) {
           setNodes(nodes.filter(node => !node.selected));
           // Remove connected edges
-          setEdges(edges.filter(edge => 
-            !selectedNodes.some(node => 
+          setEdges(edges.filter(edge =>
+            !selectedNodes.some(node =>
               node.id === edge.source || node.id === edge.target
             )
           ));
           saveModelChanges();
         }
-        
         if (selectedEdges.length > 0) {
           setEdges(edges.filter(edge => !edge.selected));
           saveModelChanges();
@@ -225,7 +232,7 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
       const defaultWeight = 0.5;
       
       // Determine color based on weight (positive by default)
-      const edgeColor = 'rgba(239, 68, 68, 0.8)'; // red for positive
+      const edgeColor = 'rgba(59, 130, 246, 0.8)'; // blue for positive
       
       // Check if there's already a connection in the reverse direction (for bidirectional edges)
       // We need to find any edge where source and target are reversed
@@ -335,8 +342,8 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
           if (edge.id === id) {
             // Determine color based on updated weight
             const edgeColor = weight >= 0 
-              ? 'rgba(239, 68, 68, 0.8)' // red for positive
-              : 'rgba(59, 130, 246, 0.8)'; // blue for negative
+              ? 'rgba(59, 130, 246, 0.8)' // blue for positive
+              : 'rgba(239, 68, 68, 0.8)'; // red for negative
             
             return {
               ...edge,
@@ -467,7 +474,7 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
             refY="6"
             orient="auto"
           >
-            <path d="M 0 0 L 12 6 L 0 12 z" fill="rgba(239, 68, 68, 0.8)" />
+            <path d="M 0 0 L 12 6 L 0 12 z" fill="rgba(59, 130, 246, 0.8)" />
           </marker>
           <marker
             id="arrowhead-negative"
@@ -477,7 +484,7 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
             refY="6"
             orient="auto"
           >
-            <path d="M 0 0 L 12 6 L 0 12 z" fill="rgba(59, 130, 246, 0.8)" />
+            <path d="M 0 0 L 12 6 L 0 12 z" fill="rgba(239, 68, 68, 0.8)" />
           </marker>
         </defs>
       </svg>

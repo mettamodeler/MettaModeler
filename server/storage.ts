@@ -6,6 +6,7 @@ import {
   FCMNode,
   FCMEdge,
   SimulationResult,
+  SimulationParameters,
   users,
   projects,
   models,
@@ -190,31 +191,38 @@ export class PostgresStorage implements IStorage {
   
   // SCENARIO OPERATIONS
   async getScenarios(): Promise<Scenario[]> {
-    return await this.db.select().from(scenarios);
+    const results = await this.db.select().from(scenarios);
+    return results.map(s => ({ ...s, clampedNodes: s.clampedNodes || [] }));
   }
   
   async getScenariosByModel(modelId: number): Promise<Scenario[]> {
-    return await this.db.select().from(scenarios).where(eq(scenarios.modelId, modelId));
+    const results = await this.db.select().from(scenarios).where(eq(scenarios.modelId, modelId));
+    return results.map(s => ({ ...s, clampedNodes: s.clampedNodes || [] }));
   }
   
   async getScenario(id: number): Promise<Scenario | undefined> {
     const result = await this.db.select().from(scenarios).where(eq(scenarios.id, id));
-    return result[0];
+    if (!result[0]) return undefined;
+    return { ...result[0], clampedNodes: result[0].clampedNodes || [] };
   }
   
   async createScenario(insertScenario: InsertScenario): Promise<Scenario> {
-    // Ensure timeSeries data is properly typed
     const typedInsertScenario = {
       ...insertScenario,
       initialValues: insertScenario.initialValues as Record<string, number>,
+      clampedNodes: (insertScenario.clampedNodes || []) as string[],
+      simulationParams: {
+        activation: 'sigmoid' as const,
+        threshold: 0.001,
+        maxIterations: 20
+      },
       results: insertScenario.results ? {
         ...insertScenario.results,
-        timeSeriesData: insertScenario.results.timeSeriesData as Record<string, number[]>
+        timeSeries: insertScenario.results.timeSeries as Record<string, number[]>
       } as SimulationResult : undefined
     };
-    
-    const result = await this.db.insert(scenarios).values([typedInsertScenario]).returning();
-    return result[0];
+    const result = await this.db.insert(scenarios).values(typedInsertScenario).returning();
+    return { ...result[0], clampedNodes: result[0].clampedNodes || [] };
   }
   
   async deleteScenario(id: number): Promise<boolean> {
@@ -407,41 +415,45 @@ export class MemStorage implements IStorage {
   
   // SCENARIO OPERATIONS
   async getScenarios(): Promise<Scenario[]> {
-    return Array.from(this.scenarios.values());
+    return Array.from(this.scenarios.values()).map(s => ({
+      ...s,
+      clampedNodes: Array.isArray(s.clampedNodes) ? s.clampedNodes : [],
+      simulationParams: s.simulationParams ?? null,
+    }));
   }
   
   async getScenariosByModel(modelId: number): Promise<Scenario[]> {
     return Array.from(this.scenarios.values())
-      .filter(scenario => scenario.modelId === modelId);
+      .filter(scenario => scenario.modelId === modelId)
+      .map(s => ({
+        ...s,
+        clampedNodes: Array.isArray(s.clampedNodes) ? s.clampedNodes : [],
+        simulationParams: s.simulationParams ?? null,
+      }));
   }
   
   async getScenario(id: number): Promise<Scenario | undefined> {
-    return this.scenarios.get(id);
+    const s = this.scenarios.get(id);
+    if (!s) return undefined;
+    return { ...s, clampedNodes: Array.isArray(s.clampedNodes) ? s.clampedNodes : [], simulationParams: s.simulationParams ?? null };
   }
   
   async createScenario(insertScenario: InsertScenario): Promise<Scenario> {
     const id = this.scenarioId++;
     const now = new Date();
-    
     // Type assertions to help TypeScript
     const typedInitialValues = insertScenario.initialValues ? 
       (insertScenario.initialValues as Record<string, number>) : null;
-    
-    const typedResults = insertScenario.results ? {
-      ...insertScenario.results,
-      timeSeriesData: insertScenario.results.timeSeriesData as Record<string, number[]>,
-      finalValues: insertScenario.results.finalValues as Record<string, number>,
-    } as SimulationResult : null;
-    
     const scenario: Scenario = { 
       id,
       name: insertScenario.name,
       modelId: insertScenario.modelId || null,
       initialValues: typedInitialValues,
-      results: typedResults,
+      results: insertScenario.results || null,
       createdAt: now,
+      clampedNodes: Array.isArray(insertScenario.clampedNodes) ? insertScenario.clampedNodes : [],
+      simulationParams: insertScenario.simulationParams ?? null,
     };
-    
     this.scenarios.set(id, scenario);
     return scenario;
   }

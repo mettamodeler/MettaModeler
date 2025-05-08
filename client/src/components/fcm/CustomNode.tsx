@@ -71,10 +71,10 @@ export default function CustomNode({ id, data, selected }: NodeProps<CustomNodeD
     <div 
       className={`node rounded-lg p-3 min-w-[150px] text-center transition-all duration-200
         ${selected ? 'ring-2 ring-secondary' : ''}
-        ${shouldHighlight ? 'shadow-[0_0_20px_rgba(255,255,255,0.3)]' : ''}`} 
+        ${shouldHighlight ? 'shadow-[0_0_20px_rgba(255,255,255,0.3)]' : ''}`}
       style={{ 
         backgroundColor: getNodeColor(),
-        boxShadow: shouldHighlight ? '0 0 15px rgba(255, 255, 255, 0.2)' : undefined,
+        boxShadow: shouldHighlight ? '0 0 15px rgba(255, 255, 255, 0.2)' : 'none',
         transform: shouldHighlight ? 'scale(1.02)' : 'scale(1)',
       }}
       onMouseEnter={handleMouseEnter}

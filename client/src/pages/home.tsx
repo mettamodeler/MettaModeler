@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link, useLocation } from 'wouter';
+import { Link, useLocation, useParams } from 'wouter';
 import { Project, FCMModel } from '@/lib/types';
 import AppHeader from '@/components/layout/AppHeader';
 import Sidebar from '@/components/layout/Sidebar';
@@ -11,15 +11,26 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { cn } from '@/lib/utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Home() {
   const { toast } = useToast();
-  const [_, navigate] = useLocation();
+  const [location, navigate] = useLocation();
+  const params = useParams();
+  
+  // Dialog states
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const [isCreatingModel, setIsCreatingModel] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
   const [newModelName, setNewModelName] = useState('');
   const [newModelProjectId, setNewModelProjectId] = useState('');
+  
+  // Get current project ID from URL params
+  const currentProjectId = params.projectId || null;
+  
+  console.log('Home: Current Project ID:', currentProjectId);
+  console.log('Home: Current Location:', location);
   
   // Get projects and models
   const { data: projects = [], refetch: refetchProjects } = useQuery<Project[]>({
@@ -29,7 +40,30 @@ export default function Home() {
   const { data: models = [], refetch: refetchModels } = useQuery<FCMModel[]>({
     queryKey: ['/api/models'],
   });
-  
+
+  console.log('Home: All Models:', models);
+
+  // Filter models based on selected project
+  const filteredModels = currentProjectId 
+    ? models.filter(m => {
+        console.log('Home filtering model:', m.id, m.projectId, 'against currentProjectId:', currentProjectId);
+        return m.projectId?.toString() === currentProjectId;
+      })
+    : models;
+
+  console.log('Home: Filtered Models:', filteredModels);
+
+  // Handle View All click for a project
+  const handleViewAll = (projectId: string) => {
+    console.log('View All clicked for project:', projectId);
+    navigate(`/project/${projectId}`);
+  };
+
+  // Force a re-render when location changes
+  useEffect(() => {
+    console.log('Home: Location changed to:', location);
+  }, [location]);
+
   // Create a new project
   const handleCreateProject = async () => {
     if (!newProjectName.trim()) {
@@ -117,92 +151,91 @@ export default function Home() {
       <AppHeader />
       
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
+        <Sidebar currentProjectId={currentProjectId} />
         
         <div className="flex-1 overflow-auto">
           <div className="p-6">
-            <div className="mb-8">
-              <div className="flex items-center justify-between mb-4">
-                <h1 className="text-2xl font-semibold">projects</h1>
-                <Button 
-                  variant="secondary" 
-                  onClick={() => setIsCreatingProject(true)}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                  </svg>
-                  New Project
-                </Button>
+            <div className="max-w-6xl mx-auto space-y-6">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h1 className="text-3xl font-bold tracking-tight">
+                    {currentProjectId 
+                      ? projects.find(p => p.id.toString() === currentProjectId)?.name || 'Project'
+                      : 'All Projects'}
+                  </h1>
+                  <p className="text-muted-foreground">
+                    {currentProjectId 
+                      ? `Viewing models in project`
+                      : 'Recent models and projects'}
+                  </p>
+                </div>
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {projects.map((project) => (
-                  <Card key={project.id} className="glass transition-shadow hover:shadow-glow-sm">
-                    <CardHeader>
-                      <CardTitle>{project.name.toLowerCase()}</CardTitle>
-                      <CardDescription>
-                        {models.filter(m => m.projectId === project.id).length} models
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <Button 
-                        variant="ghost" 
-                        onClick={() => {
-                          setNewModelProjectId(project.id.toString());
-                          setIsCreatingModel(true);
-                        }}
-                        className="mr-2"
-                      >
-                        Add Model
-                      </Button>
-                      <Button variant="ghost">View All</Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-            
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h1 className="text-2xl font-semibold">recent models</h1>
-                <Button 
-                  variant="secondary"
-                  onClick={() => setIsCreatingModel(true)}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                  </svg>
-                  New Model
-                </Button>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {models.slice(0, 6).map((model) => {
-                  const project = projects.find(p => p.id === model.projectId);
-                  
-                  return (
+
+              {currentProjectId ? (
+                // Show only models for selected project
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredModels.map((model) => (
                     <Card 
-                      key={model.id} 
-                      className="glass transition-shadow hover:shadow-glow-sm h-full cursor-pointer" 
+                      key={model.id}
+                      className="dark-glass cursor-pointer hover:shadow-glow-sm transition-all"
                       onClick={() => navigate(`/models/${model.id}`)}
                     >
                       <CardHeader>
-                        <CardTitle>{model.name.toLowerCase()}</CardTitle>
+                        <CardTitle>{model.name}</CardTitle>
                         <CardDescription>
-                          {project?.name || 'Unknown Project'}
+                          {model.nodes.length} nodes · {model.edges.length} connections
                         </CardDescription>
                       </CardHeader>
-                      <CardContent>
-                        <div className="text-sm text-gray-400">
-                          {model.nodes.length} nodes · {model.edges.length} connections
-                        </div>
-                      </CardContent>
                     </Card>
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                // Show projects and recent models
+                <Tabs defaultValue="projects" className="space-y-4">
+                  <TabsList>
+                    <TabsTrigger value="projects">Projects</TabsTrigger>
+                    <TabsTrigger value="recent">Recent Models</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="projects" className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {projects.map((project) => (
+                        <Card 
+                          key={project.id}
+                          className="dark-glass cursor-pointer hover:shadow-glow-sm transition-all"
+                          onClick={() => navigate(`/project/${project.id}`)}
+                        >
+                          <CardHeader>
+                            <CardTitle>{project.name}</CardTitle>
+                            <CardDescription>
+                              {models.filter(m => m.projectId === project.id).length} models
+                            </CardDescription>
+                          </CardHeader>
+                        </Card>
+                      ))}
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="recent" className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {models.slice(0, 6).map((model) => (
+                        <Card 
+                          key={model.id}
+                          className="dark-glass cursor-pointer hover:shadow-glow-sm transition-all"
+                          onClick={() => navigate(`/models/${model.id}`)}
+                        >
+                          <CardHeader>
+                            <CardTitle>{model.name}</CardTitle>
+                            <CardDescription>
+                              {model.nodes.length} nodes · {model.edges.length} connections
+                            </CardDescription>
+                          </CardHeader>
+                        </Card>
+                      ))}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              )}
             </div>
           </div>
         </div>

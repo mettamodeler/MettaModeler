@@ -223,6 +223,10 @@
   .shadow-node {
     @apply shadow-[0_0_20px_rgba(0,196,255,0.3)];
   }
+
+  .border-border {
+    border-color: hsl(var(--border));
+  }
 }
 
 /* Font customizations */

@@ -1,15 +1,16 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { spawn, ChildProcess } from "child_process";
 import path from "path";
-
-// Python simulation service process
-let pythonProcess: ChildProcess | null = null;
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Set the Python service URL for API communication
+const pythonPort = 5050;
+process.env.PYTHON_SIM_URL = `http://localhost:${pythonPort}`;
+process.env.PYTHON_SIM_PORT = pythonPort.toString();
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -41,51 +42,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Function to start the Python simulation service
-function startPythonService() {
-  // Set the default port for the Python service
-  const pythonPort = 5050;
-  process.env.PYTHON_SIM_URL = `http://localhost:${pythonPort}`;
-  process.env.PYTHON_SIM_PORT = pythonPort.toString();
-
-  log(`Starting Python simulation service on port ${pythonPort}...`);
-  
-  // Start the Python service
-  pythonProcess = spawn('python', ['app.py'], {
-    cwd: path.join(process.cwd(), 'python_sim'),
-    env: {
-      ...process.env,
-      PYTHONUNBUFFERED: '1',  // Force Python to print to stdout without buffering
-    }
-  });
-
-  // Log Python process output
-  pythonProcess.stdout?.on('data', (data) => {
-    log(`Python service: ${data.toString().trim()}`, 'python');
-  });
-
-  pythonProcess.stderr?.on('data', (data) => {
-    log(`Python service error: ${data.toString().trim()}`, 'python');
-  });
-
-  pythonProcess.on('close', (code) => {
-    log(`Python service exited with code ${code}`, 'python');
-    
-    // Restart the service if it crashes
-    if (code !== 0) {
-      setTimeout(() => {
-        log('Restarting Python simulation service...', 'python');
-        startPythonService();
-      }, 5000);
-    }
-  });
-}
-
 (async () => {
   const server = await registerRoutes(app);
-
-  // Start the Python simulation service
-  startPythonService();
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -104,25 +62,15 @@ function startPythonService() {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
+  // Start the server
+  const PORT = process.env.PORT || 3000;
+  server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Expecting Python service at ${process.env.PYTHON_SIM_URL}`);
   });
   
   // Handle cleanup on exit
   const exitHandler = () => {
-    if (pythonProcess) {
-      log('Shutting down Python simulation service...', 'python');
-      pythonProcess.kill();
-      pythonProcess = null;
-    }
     process.exit(0);
   };
   

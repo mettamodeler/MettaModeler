@@ -1,160 +1,70 @@
 from flask import Flask, request, jsonify, send_file, Response
 from flask_cors import CORS
-from simulate import run_fcm_simulation, run_baseline_scenario_comparison, normalize_input_data
-from export import generate_notebook, transform_json_for_python
+from simulate import run_simulation, run_baseline_scenario_comparison, normalize_input_data
+from export import generate_notebook, transform_json_for_python, model_to_excel, scenario_to_excel, analysis_to_excel
+from typing import Dict, List, Union, TypedDict, Literal
 import json
 import os
 import traceback
 import io
 from datetime import datetime
+import nbformat
+from simulation_schema import SimulationInputSchema
+import logging
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
 @app.route('/api/simulate', methods=['POST'])
 def simulate():
-    """
-    Endpoint for running FCM simulations.
-    
-    Expected payload format:
-    {
-        "nodes": [{ "id": "...", "data": { "value": ..., "type": ... } }],
-        "edges": [{ "source": "...", "target": "...", "data": { "weight": ... } }],
-        "activation": "sigmoid", // or "tanh", "relu"
-        "threshold": 0.001, // optional
-        "maxIterations": 100, // optional
-        "generateNotebook": false, // optional
-        "compareToBaseline": false // optional
-    }
-    """
+    """Run FCM simulation with validated input."""
     try:
         data = request.get_json()
-        
-        # Extract parameters
-        nodes = data.get('nodes', [])
-        edges = data.get('edges', [])
-        activation = data.get('activation', 'sigmoid')
-        threshold = data.get('threshold', 0.001)
-        max_iterations = data.get('maxIterations', 100)
-        generate_notebook = data.get('generateNotebook', False)
-        compare_to_baseline = data.get('compareToBaseline', False)
-        
-        # Normalize input parameters
-        nodes = normalize_input_data(nodes)
-        edges = normalize_input_data(edges)
-        activation = normalize_input_data(activation)
-        threshold = float(threshold)
-        max_iterations = int(max_iterations)
-        generate_notebook = normalize_input_data(generate_notebook)
-        compare_to_baseline = normalize_input_data(compare_to_baseline)
-        
-        print(f"Activation: {activation}, type: {type(activation)}")
-        print(f"Generate notebook: {generate_notebook}, type: {type(generate_notebook)}")
-        print(f"Compare to baseline: {compare_to_baseline}, type: {type(compare_to_baseline)}")
-        
-        # Validate inputs
-        if not nodes:
-            return jsonify({'error': 'No nodes provided'}), 400
-        
-        if compare_to_baseline:
-            # Create baseline scenario (original nodes with default values)
-            # Get a deep copy of the original nodes
-            baseline_nodes = []
-            for node in nodes:
-                baseline_node = {
-                    'id': node['id'],
-                    'data': {
-                        **{k: v for k, v in node.get('data', {}).items() if k != 'value'},
-                        'value': 0.0 if node['data'].get('type') != 'driver' else node['data'].get('value', 0.0)
-                    }
-                }
-                baseline_nodes.append(baseline_node)
-                
-            # Run baseline simulation
-            baseline_results = run_fcm_simulation(
-                nodes=baseline_nodes,
-                edges=edges,
-                activation_function=activation,
-                threshold=threshold,
-                max_iterations=max_iterations,
-                generate_notebook=False
+        logging.info("Received simulation request: %s", json.dumps(data, indent=2))
+
+        # Validate and parse input using Pydantic schema
+        sim_input = SimulationInputSchema(**data)
+        sim_input.log_unknown_fields()
+
+        # Extract both sets of initial values if present
+        model_initial_values = data.get('modelInitialValues', {})
+        scenario_initial_values = data.get('scenarioInitialValues', {})
+
+        # Prepare arguments for simulation logic
+        sim_args = sim_input.dict()
+
+        # Run appropriate simulation based on compareToBaseline flag
+        if sim_input.compareToBaseline:
+            results = run_baseline_scenario_comparison(
+                nodes=sim_args['nodes'],
+                edges=sim_args['edges'],
+                activation_function=sim_args.get('activation', 'sigmoid'),
+                threshold=sim_args.get('threshold', 0.001),
+                max_iterations=sim_args.get('maxIterations', 100),
+                model_initial_values=model_initial_values,
+                scenario_initial_values=scenario_initial_values,
+                clamped_nodes=sim_args.get('clampedNodes', [])
             )
-            
-            # Run scenario simulation
-            scenario_results = run_fcm_simulation(
-                nodes=nodes,
-                edges=edges,
-                activation_function=activation,
-                threshold=threshold,
-                max_iterations=max_iterations,
-                generate_notebook=generate_notebook
-            )
-            
-            # Calculate delta between baseline and scenario
-            baseline_final = baseline_results['finalState']
-            scenario_final = scenario_results['finalState']
-            
-            # Calculate delta values (scenario - baseline)
-            delta_values = {}
-            for node_id in baseline_final:
-                if node_id in scenario_final:
-                    delta_values[node_id] = scenario_final[node_id] - baseline_final[node_id]
-            
-            # Convert Python boolean to JSON-serializable format (using lowercase strings)
-            scenario_converged = str(scenario_results['converged']).lower()
-            baseline_converged = str(baseline_results['converged']).lower()
-            
-            # Combine results
-            results = {
-                # Standard scenario results
-                'finalState': scenario_results['finalState'],
-                'timeSeries': scenario_results['timeSeries'],
-                'iterations': int(scenario_results['iterations']),
-                'converged': scenario_converged,
-                
-                # Baseline and comparison data
-                'baselineFinalState': baseline_results['finalState'],
-                'baselineTimeSeries': baseline_results['timeSeries'],
-                'baselineIterations': int(baseline_results['iterations']),
-                'baselineConverged': baseline_converged,
-                
-                # Delta values
-                'deltaState': delta_values,
-            }
         else:
-            # Run standard simulation
-            sim_results = run_fcm_simulation(
-                nodes=nodes,
-                edges=edges,
-                activation_function=activation,
-                threshold=threshold,
-                max_iterations=max_iterations,
-                generate_notebook=generate_notebook
+            results = run_simulation(
+                nodes=sim_args['nodes'],
+                edges=sim_args['edges'],
+                activation_function=sim_args.get('activation', 'sigmoid'),
+                threshold=sim_args.get('threshold', 0.001),
+                max_iterations=sim_args.get('maxIterations', 100),
+                clamped_nodes=sim_args.get('clampedNodes', [])
             )
-            
-            # Ensure boolean is serializable (using lowercase strings)
-            sim_converged = str(sim_results.get('converged', False)).lower()
-            
-            # Create properly serializable results
-            results = {
-                'finalState': sim_results['finalState'],
-                'timeSeries': sim_results['timeSeries'],
-                'iterations': int(sim_results['iterations']),
-                'converged': sim_converged
-            }
-        
-        # Return results
+
+        # Return simulation results
         return jsonify(results)
-        
+
     except Exception as e:
-        # Log error details
-        print(f"Error in simulation: {str(e)}")
-        traceback.print_exc()
-        
-        # Return error to client
+        logging.error(f"Error in simulation: {str(e)}")
+        logging.error(f"Error type: {type(e).__name__}")
+        logging.error(f"Traceback: {traceback.format_exc()}")
         return jsonify({
             'error': 'Simulation failed',
-            'message': str(e)
+            'message': str(e),
         }), 500
 
 @app.route('/api/analyze', methods=['POST'])
@@ -182,8 +92,8 @@ def analyze():
         nodes = normalize_input_data(nodes)
         edges = normalize_input_data(edges)
         
-        print(f"Analyze nodes count: {len(nodes)}")
-        print(f"Analyze edges count: {len(edges)}")
+        logging.info(f"Analyze nodes count: {len(nodes)}")
+        logging.info(f"Analyze edges count: {len(edges)}")
         
         # Validate inputs
         if not nodes:
@@ -266,16 +176,16 @@ def analyze():
             return jsonify(metrics)
             
         except Exception as e:
-            print(f"Error calculating metrics: {str(e)}")
-            traceback.print_exc()
+            logging.error(f"Error calculating metrics: {str(e)}")
+            logging.error(f"Traceback: {traceback.format_exc()}")
             return jsonify({
                 'error': 'Error calculating metrics',
                 'message': str(e)
             }), 500
             
     except Exception as e:
-        print(f"Error in analysis: {str(e)}")
-        traceback.print_exc()
+        logging.error(f"Error in analysis: {str(e)}")
+        logging.error(f"Traceback: {traceback.format_exc()}")
         return jsonify({
             'error': 'Analysis failed',
             'message': str(e)
@@ -296,8 +206,6 @@ def export_notebook():
     }
     """
     try:
-        # We already imported generate_notebook at the top of the file
-        
         data = request.get_json()
         
         # Extract parameters
@@ -310,23 +218,24 @@ def export_notebook():
         # For the generate_notebook function, data must be a Dictionary
         # But for safety, let's wrap this in an explicit dictionary for type safety
         if not isinstance(export_data, dict):
-            print(f"Warning: export_data is not a dictionary, converting to wrapped dict. Type: {type(export_data)}")
+            logging.warning(f"Warning: export_data is not a dictionary, converting to wrapped dict. Type: {type(export_data)}")
             # Wrap non-dict data in a dictionary with a 'data' key
             export_data = {'data': export_data}
         else:
             # Apply transform_json_for_python to convert JS/TS data types to Python while preserving dict structure
             export_data = transform_json_for_python(export_data)
+        
         if not isinstance(export_type, str):
             export_type = 'model'
         else:
             export_type = normalize_input_data(export_type)
         
-        # Generate notebook
         # Convert IDs to integers if they are provided
         model_id_int = int(model_id) if model_id is not None else None
         scenario_id_int = int(scenario_id) if scenario_id is not None else None
         comparison_scenario_id_int = int(comparison_scenario_id) if comparison_scenario_id is not None else None
         
+        # Generate notebook
         notebook = generate_notebook(
             data=export_data, 
             export_type=export_type, 
@@ -335,18 +244,29 @@ def export_notebook():
             comparison_scenario_id=comparison_scenario_id_int
         )
         
-        # Convert notebook to JSON string
-        notebook_json = json.dumps(notebook)
-        
-        # Create a file-like object from the JSON string
-        notebook_file = io.BytesIO(notebook_json.encode('utf-8'))
-        
-        # Set the file pointer to the beginning of the file
-        notebook_file.seek(0)
-        
         # Get the filename
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{export_type}_export_{timestamp}.ipynb"
+        if export_type == 'model':
+            # Use model name if available, fallback to timestamp if not
+            model_name = export_data.get('name', '').strip()
+            if model_name:
+                # Replace spaces with underscores and remove special characters
+                safe_name = ''.join(c if c.isalnum() or c in ' _-' else '' for c in model_name)
+                safe_name = safe_name.replace(' ', '_')
+                filename = f"{safe_name}.ipynb"
+            else:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"model_export_{timestamp}.ipynb"
+        else:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"{export_type}_export_{timestamp}.ipynb"
+        
+        # Convert notebook to proper format using nbformat
+        nb = nbformat.from_dict(notebook)
+        notebook_json = nbformat.writes(nb)
+        
+        # Create a file-like object from the notebook JSON
+        notebook_file = io.BytesIO(notebook_json.encode('utf-8'))
+        notebook_file.seek(0)
         
         # Return the notebook file
         return send_file(
@@ -357,12 +277,57 @@ def export_notebook():
         )
         
     except Exception as e:
-        print(f"Error generating notebook: {str(e)}")
-        traceback.print_exc()
+        logging.error(f"Error generating notebook: {str(e)}")
+        logging.error(f"Traceback: {traceback.format_exc()}")
         return jsonify({
             'error': 'Failed to generate notebook',
             'message': str(e)
         }), 500
+
+@app.route('/api/export/excel', methods=['POST'])
+def export_excel():
+    try:
+        data = request.json.get('data')
+        export_type = request.json.get('type')
+        file_name = request.json.get('fileName')
+        
+        logging.info(f"[FILENAME DEBUG] Received fileName from request: {file_name}")
+        
+        if not data or not export_type:
+            return jsonify({'error': 'Missing required data'}), 400
+
+        # Convert model to Excel format
+        if export_type == 'model':
+            output = model_to_excel(data)
+        elif export_type == 'scenario':
+            output = scenario_to_excel(data)
+        elif export_type == 'analysis':
+            output = analysis_to_excel(data)
+        else:
+            return jsonify({'error': f'Invalid export type: {export_type}'}), 400
+
+        # Ensure .xlsx extension
+        filename = file_name if file_name else 'export'
+        if not filename.endswith('.xlsx'):
+            filename = f"{filename}.xlsx"
+        
+        logging.info(f"[FILENAME DEBUG] Using final filename: {filename}")
+        
+        # Return Excel file
+        output.seek(0)
+        response = send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=filename
+        )
+        logging.info(f"[FILENAME DEBUG] Response headers: {dict(response.headers)}")
+        return response
+
+    except Exception as e:
+        logging.error(f"Error in export_excel: {str(e)}")
+        logging.error(f"Traceback: {traceback.format_exc()}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
@@ -374,5 +339,5 @@ if __name__ == '__main__':
     port = int(os.environ.get('PYTHON_SIM_PORT', 5050))
     
     # Run the Flask app
-    print("Starting Flask app")
+    logging.info(f"Starting Flask app on port {port}")
     app.run(host='0.0.0.0', port=port, debug=True)

@@ -49,18 +49,14 @@ export default function ModelAnalysis({ model }: ModelAnalysisProps) {
       const data = {
         nodes: model.nodes.map(node => ({
           id: node.id,
-          data: {
-            value: node.value,
-            type: node.type,
-            label: node.label
-          }
+          value: node.value,
+          type: node.type,
+          label: node.label
         })),
         edges: model.edges.map(edge => ({
           source: edge.source,
           target: edge.target,
-          data: {
-            weight: edge.weight
-          }
+          weight: edge.weight
         }))
       };
       

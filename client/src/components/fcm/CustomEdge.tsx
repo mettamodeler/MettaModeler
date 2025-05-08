@@ -31,10 +31,10 @@ export default function CustomEdge({
   const { weight = 0, onChange, isBidirectional, isReversePair, isHighlighted } = data || {};
   const [isHovered, setIsHovered] = useState(false);
 
-  const isPositive = weight >= 0;
-  const edgeColor = isPositive 
-    ? 'rgba(239, 68, 68, 0.8)' // red for positive
-    : 'rgba(59, 130, 246, 0.8)'; // blue for negative
+  // Determine edge color based on weight
+  const edgeColor = weight >= 0 
+    ? 'rgba(59, 130, 246, 0.8)' // blue for positive
+    : 'rgba(239, 68, 68, 0.8)'; // red for negative
 
   // Calculate stroke width based on weight magnitude
   const weightMagnitude = Math.abs(weight);
@@ -95,7 +95,7 @@ export default function CustomEdge({
         }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        markerEnd={isPositive ? `url(#arrowhead-positive)` : `url(#arrowhead-negative)`}
+        markerEnd={weight >= 0 ? `url(#arrowhead-positive)` : `url(#arrowhead-negative)`}
       />
 
       <EdgeLabelRenderer>
@@ -123,8 +123,8 @@ export default function CustomEdge({
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-xs">{weight.toFixed(1)}</span>
-                  <span className={`text-xs ${isPositive ? 'text-red-500' : 'text-blue-500'}`}>
-                    {isPositive ? 'Positive' : 'Negative'}
+                  <span className={`text-xs ${weight >= 0 ? 'text-blue-500' : 'text-red-500'}`}>
+                    {weight >= 0 ? 'Positive' : 'Negative'}
                   </span>
                   <button
                     onClick={(e) => {
@@ -145,7 +145,7 @@ export default function CustomEdge({
                   max={1}
                   step={0.1}
                   onValueChange={handleWeightChange}
-                  className={`${isPositive ? 'bg-red-950/30' : 'bg-blue-950/30'}`}
+                  className={`${weight >= 0 ? 'bg-blue-950/30' : 'bg-red-950/30'}`}
                 />
               </div>
             </PopoverContent>

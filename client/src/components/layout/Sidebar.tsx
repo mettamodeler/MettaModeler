@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Link, useLocation } from "wouter";
@@ -25,10 +25,14 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
-export default function Sidebar() {
-  const [location, setLocation] = useLocation();
+interface SidebarProps {
+  currentProjectId: string | null;
+}
+
+export default function Sidebar({ currentProjectId }: SidebarProps) {
   const { toast } = useToast();
   const { user } = useAuth();
+  const [location, setLocation] = useLocation();
   
   // Dialog states
   const [isCreatingProject, setIsCreatingProject] = useState(false);
@@ -39,25 +43,71 @@ export default function Sidebar() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{type: 'project' | 'model', id: number} | null>(null);
   
-  // Fetch projects
-  const { data: projects = [], refetch: refetchProjects } = useQuery<Project[]>({
-    queryKey: ["/api/projects"],
-  });
-  
   // Extract current model ID from URL if on model page
   const modelIdMatch = location.match(/\/models\/([^/]+)/);
   const currentModelId = modelIdMatch ? parseInt(modelIdMatch[1], 10) : null;
   
-  // Find the current model to determine project
-  const { data: models = [], refetch: refetchModels } = useQuery<FCMModel[]>({
-    queryKey: ["/api/models"],
+  // Fetch projects and models
+  const { data: projects = [], refetch: refetchProjects } = useQuery<Project[]>({
+    queryKey: ['/api/projects'],
   });
   
+  const { data: models = [], refetch: refetchModels } = useQuery<FCMModel[]>({
+    queryKey: ['/api/models'],
+  });
+  
+  // Find the current model to determine project
   const currentModel = models.find(model => {
     if (currentModelId === null) return false;
     return Number(model.id) === currentModelId;
   });
-  const currentProjectId = currentModel?.projectId;
+  
+  // Get the current project ID from the URL if available
+  const urlProjectId = location.startsWith('/project/') ? location.split('/')[2] : null;
+  
+  // Determine the effective project ID (URL takes precedence over prop)
+  const effectiveProjectId = urlProjectId || currentProjectId;
+  console.log('Sidebar: Effective Project ID:', effectiveProjectId);
+  console.log('Sidebar: Current Model:', currentModel);
+
+  // Filter models based on selected project
+  const filteredModels = effectiveProjectId
+    ? models.filter(m => {
+        // Ensure both IDs are strings for comparison
+        const modelProjectId = m.projectId?.toString();
+        const targetProjectId = effectiveProjectId.toString();
+        return modelProjectId === targetProjectId;
+      })
+    : models;
+
+  console.log('Sidebar: Filtered Models:', filteredModels);
+
+  // Handle project selection
+  const handleProjectClick = (projectId: string) => {
+    if (effectiveProjectId === projectId) {
+      // If clicking the same project, clear the filter
+      setLocation('/');
+    } else {
+      // Navigate to the project's URL
+      setLocation(`/project/${projectId}`);
+    }
+  };
+
+  // Force a re-render when location changes or when currentProjectId changes
+  useEffect(() => {
+    console.log('Sidebar: Location changed to:', location);
+    console.log('Sidebar: Current Project ID:', currentProjectId);
+    // Refetch data when location changes or project selection changes
+    refetchModels();
+    refetchProjects();
+  }, [location, currentProjectId, refetchModels, refetchProjects]);
+
+  // Force a re-render when projects or models change
+  useEffect(() => {
+    console.log('Sidebar: Data updated');
+    console.log('Projects:', projects);
+    console.log('Models:', models);
+  }, [projects, models]);
 
   // Create a new project
   const handleCreateProject = async () => {
@@ -214,7 +264,7 @@ export default function Sidebar() {
       setItemToDelete(null);
     }
   };
-  
+
   return (
     <div className="dark-glass w-64 flex-shrink-0 flex flex-col border-r border-white/10 z-10">
       {/* Projects Section */}
@@ -223,7 +273,10 @@ export default function Sidebar() {
           <h2 className="text-sm font-semibold text-gray-300">projects</h2>
           <button 
             className="text-secondary hover:text-white p-1 rounded-md hover:bg-white/10"
-            onClick={() => setIsCreatingProject(true)}
+            onClick={() => {
+              console.log('Create Project clicked');
+              setIsCreatingProject(true);
+            }}
             title="Create New Project"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -233,60 +286,19 @@ export default function Sidebar() {
           </button>
         </div>
         
-        {/* Project List */}
-        <div className="space-y-2">
+        {/* Projects List */}
+        <div className="space-y-1">
           {projects.map((project) => (
-            <div 
+            <button
               key={project.id}
+              onClick={() => handleProjectClick(project.id.toString())}
               className={cn(
-                "glass rounded-md p-2 cursor-pointer group transition-all",
-                Number(project.id) === Number(currentProjectId) 
-                  ? "bg-white/10 shadow-glow-sm border border-secondary/20" 
-                  : "hover:shadow-glow-sm"
+                "w-full flex items-center py-2 px-3 text-sm font-medium rounded-md hover:bg-secondary",
+                effectiveProjectId === project.id.toString() ? "bg-secondary" : "transparent"
               )}
-              onClick={() => setLocation(`/?project=${project.id}`)}
             >
-              <div className="flex justify-between items-center">
-                <div className="text-sm font-medium">{project.name.toLowerCase()}</div>
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button 
-                        className="text-xs p-1 hover:bg-white/10 rounded"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <circle cx="12" cy="12" r="1"></circle>
-                          <circle cx="19" cy="12" r="1"></circle>
-                          <circle cx="5" cy="12" r="1"></circle>
-                        </svg>
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="dark-glass border border-white/10">
-                      <DropdownMenuItem 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setNewModelProjectId(project.id.toString());
-                          setIsCreatingModel(true);
-                        }}
-                      >
-                        Add Model
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-red-500 focus:text-red-500"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setItemToDelete({type: 'project', id: Number(project.id)});
-                          setDeleteConfirmOpen(true);
-                        }}
-                      >
-                        Delete Project
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-            </div>
+              {project.name}
+            </button>
           ))}
         </div>
       </div>
@@ -297,12 +309,23 @@ export default function Sidebar() {
       {/* Models Section */}
       <div className="p-4 flex-1 overflow-auto">
         <div className="flex justify-between items-center mb-3">
-          <h2 className="text-sm font-semibold text-gray-300">models</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-gray-300">models</h2>
+            {effectiveProjectId && (
+              <button
+                onClick={() => setLocation('/')}
+                className="text-xs text-secondary hover:text-white"
+                title="Clear project filter"
+              >
+                clear
+              </button>
+            )}
+          </div>
           <button 
             className="text-secondary hover:text-white p-1 rounded-md hover:bg-white/10"
             onClick={() => {
-              if (currentProjectId) {
-                setNewModelProjectId(currentProjectId.toString());
+              if (effectiveProjectId) {
+                setNewModelProjectId(effectiveProjectId);
               }
               setIsCreatingModel(true);
             }}
@@ -315,57 +338,20 @@ export default function Sidebar() {
           </button>
         </div>
         
-        {/* Model List */}
-        <div className="space-y-2">
-          {models
-            .filter(model => !currentProjectId || Number(model.projectId) === Number(currentProjectId))
-            .map((model) => (
-              <div 
-                key={model.id}
-                className={cn(
-                  "glass rounded-md p-2 cursor-pointer group transition-all",
-                  Number(model.id) === currentModelId 
-                    ? "bg-white/10 shadow-glow-sm border border-secondary/20" 
-                    : "hover:shadow-glow-sm"
-                )}
-                onClick={() => setLocation(`/models/${model.id}`)}
-              >
-                <div className="flex justify-between items-center">
-                  <div className="text-sm font-medium">{model.name.toLowerCase()}</div>
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button 
-                          className="text-xs p-1 hover:bg-white/10 rounded" 
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="12" cy="12" r="1"></circle>
-                            <circle cx="19" cy="12" r="1"></circle>
-                            <circle cx="5" cy="12" r="1"></circle>
-                          </svg>
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="dark-glass border border-white/10">
-                        <DropdownMenuItem 
-                          className="text-red-500 focus:text-red-500"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setItemToDelete({type: 'model', id: Number(model.id)});
-                            setDeleteConfirmOpen(true);
-                          }}
-                        >
-                          Delete Model
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
-                <div className="text-xs text-gray-400 mt-1">
-                  {model.nodes.length} nodes · {model.edges.length} connections
-                </div>
-              </div>
-            ))}
+        {/* Models List */}
+        <div className="space-y-1">
+          {filteredModels.map((model) => (
+            <Link
+              key={model.id}
+              href={`/models/${model.id}`}
+              className={cn(
+                "block py-2 px-3 text-sm font-medium rounded-md hover:bg-secondary",
+                currentModelId === model.id ? "bg-secondary" : "transparent"
+              )}
+            >
+              {model.name}
+            </Link>
+          ))}
         </div>
       </div>
       

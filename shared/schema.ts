@@ -33,6 +33,13 @@ export const models = pgTable("models", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Simulation parameters type
+export interface SimulationParameters {
+  activation: 'sigmoid' | 'tanh' | 'relu' | 'linear';
+  threshold: number;
+  maxIterations: number;
+}
+
 // Scenarios table
 export const scenarios = pgTable("scenarios", {
   id: serial("id").primaryKey(),
@@ -40,6 +47,12 @@ export const scenarios = pgTable("scenarios", {
   modelId: integer("model_id").references(() => models.id),
   initialValues: jsonb("initial_values").$type<Record<string, number>>().default({}),
   results: jsonb("results").$type<SimulationResult>(),
+  simulationParams: jsonb("simulation_params").$type<SimulationParameters>().default({
+    activation: 'sigmoid',
+    threshold: 0.001,
+    maxIterations: 20
+  }),
+  clampedNodes: jsonb("clamped_nodes").$type<string[]>().default([]),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -63,11 +76,23 @@ export interface FCMEdge {
   weight: number;
 }
 
+export interface SimulationNode {
+  id: string;
+  label: string;
+  value: number;
+}
+
 export interface SimulationResult {
-  finalValues: Record<string, number>;
-  timeSeriesData: Record<string, number[]>;
+  finalState: Record<string, SimulationNode>;
+  timeSeries: Record<string, number[]>;
   iterations: number;
   converged: boolean;
+  initialValues: Record<string, number>;
+  baselineFinalState?: Record<string, SimulationNode>;
+  baselineTimeSeries?: Record<string, number[]>;
+  baselineIterations?: number;
+  baselineConverged?: boolean;
+  deltaState?: Record<string, number>;
 }
 
 export interface FCMModel {
@@ -108,6 +133,8 @@ export const insertScenarioSchema = createInsertSchema(scenarios).pick({
   modelId: true,
   initialValues: true,
   results: true,
+  simulationParams: true,
+  clampedNodes: true
 });
 
 // Select types

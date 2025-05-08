@@ -7,12 +7,16 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+// In development, we'll use relative URLs which will be proxied by Vite
+// In production, we'll use absolute URLs
+const API_BASE_URL = import.meta.env.PROD ? '' : '';
+
 export async function apiRequest<T = any>(
   method: string,
   url: string,
   data?: unknown | undefined,
 ): Promise<T> {
-  const res = await fetch(url, {
+  const res = await fetch(`${API_BASE_URL}${url}`, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
@@ -36,7 +40,7 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey[0] as string, {
+    const res = await fetch(`${API_BASE_URL}${queryKey[0] as string}`, {
       credentials: "include",
     });
 

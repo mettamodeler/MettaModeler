@@ -149,28 +149,24 @@ export default function AppHeader({ model }: AppHeaderProps) {
         analysis: analysisData
       };
       
+      // Generate filename
+      const filename = `${model.name.toLowerCase().replace(/[^a-zA-Z0-9_-]/g, '_')}.xlsx`;
+      
       // Call the server API to get Excel file with the enhanced model
-      const response = await fetch(`/api/export/model/${model.id}?format=excel`, {
+      const response = await fetch('/api/export/excel', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(enhancedModel),
+        body: JSON.stringify({
+          data: enhancedModel,
+          type: 'model',
+          fileName: filename
+        }),
       });
       
       if (!response.ok) {
         throw new Error(`Failed to export: ${response.statusText}`);
-      }
-      
-      // Get filename from Content-Disposition header or use default
-      const contentDisposition = response.headers.get('Content-Disposition');
-      let filename = `${model.name.toLowerCase().replace(/\s+/g, "_")}.xlsx`;
-      
-      if (contentDisposition) {
-        const matches = /filename="([^"]+)"/.exec(contentDisposition);
-        if (matches && matches[1]) {
-          filename = matches[1];
-        }
       }
       
       // Convert response to blob and download
@@ -242,6 +238,9 @@ export default function AppHeader({ model }: AppHeaderProps) {
         analysis: analysisData
       };
       
+      // Generate filename
+      const filename = `${model.name.toLowerCase().replace(/[^a-zA-Z0-9_-]/g, '_')}.ipynb`;
+      
       // Call the server API to get Jupyter notebook with the enhanced model
       const response = await fetch('/api/export/notebook', {
         method: 'POST',
@@ -252,6 +251,7 @@ export default function AppHeader({ model }: AppHeaderProps) {
           data: enhancedModel,
           type: 'model',
           modelId: model.id,
+          fileName: filename
         }),
       });
       
@@ -259,17 +259,13 @@ export default function AppHeader({ model }: AppHeaderProps) {
         throw new Error(`Failed to export: ${response.statusText}`);
       }
       
-      // Get notebook data
-      const data = await response.json();
-      const notebookContent = JSON.stringify(data, null, 2);
-      
-      // Create download
-      const blob = new Blob([notebookContent], { type: 'application/x-ipynb+json' });
+      // Get notebook data as blob directly
+      const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${model.name.toLowerCase().replace(/\s+/g, "_")}.ipynb`;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       

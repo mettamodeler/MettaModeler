@@ -9,13 +9,23 @@ import {
   insertScenarioSchema,
   FCMNode,
   FCMEdge,
-  SimulationResult
+  SimulationResult,
+  SimulationNode
 } from "@shared/schema";
 import { setupAuth, isAuthenticated } from "./auth";
 import { exportService, ExportFormat, ExportType } from "./export";
+import { SimulationResult as PythonSimulationResult } from './types';
+import axios, { AxiosError } from "axios";
 
 // Python simulation service URL
 const PYTHON_SIM_URL = process.env.PYTHON_SIM_URL || 'http://localhost:5050';
+
+interface SimulationResponse {
+  finalState: Record<string, number>;
+  timeSeries: Record<string, number[]>;
+  iterations: number;
+  converged: boolean;
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
@@ -275,8 +285,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           (validatedData.initialValues as Record<string, number>) : undefined,
         results: validatedData.results ? {
           ...validatedData.results,
-          finalValues: validatedData.results.finalValues as Record<string, number>,
-          timeSeriesData: validatedData.results.timeSeriesData as Record<string, number[]>
+          finalState: validatedData.results.finalState as Record<string, SimulationNode>,
+          baselineFinalState: validatedData.results.baselineFinalState as Record<string, SimulationNode> | undefined,
+          timeSeries: validatedData.results.timeSeries as Record<string, number[]>,
+          baselineTimeSeries: validatedData.results.baselineTimeSeries as Record<string, number[]> | undefined,
+          iterations: validatedData.results.iterations,
+          converged: validatedData.results.converged,
+          initialValues: validatedData.results.initialValues || {},
+          deltaState: validatedData.results.deltaState
         } as SimulationResult : undefined
       };
       
@@ -312,49 +328,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Python Simulation API Proxy
   app.post("/api/simulate", async (req: Request, res: Response) => {
     try {
-      const response = await fetch(`${PYTHON_SIM_URL}/api/simulate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(req.body),
-      });
-
-      const data = await response.json() as any;
-      
-      // If Python service returns an error
-      if (!response.ok) {
-        console.error('Python simulation error:', data);
-        return res.status(response.status).json(data);
-      }
-      
-      // Create a properly formatted response object with expected structure
-      // Map Python API field names to match our frontend expectations
-      const responseData: SimulationResult & {
-        baselineFinalState?: Record<string, number>,
-        baselineTimeSeries?: Record<string, number[]>,
-        baselineIterations?: number,
-        baselineConverged?: boolean,
-        deltaState?: Record<string, number>
-      } = {
-        finalValues: data.finalState || data.finalValues || {},
-        timeSeriesData: data.timeSeries || data.timeSeriesData || {},
-        iterations: data.iterations || 0,
-        converged: data.converged || false,
-        // Include baseline data if available
-        baselineFinalState: data.baselineFinalState || {},
-        baselineTimeSeries: data.baselineTimeSeries || {},
-        baselineIterations: data.baselineIterations || 0,
-        baselineConverged: data.baselineConverged || false,
-        deltaState: data.deltaState || {}
+      // Build payload for Python backend
+      const payload: any = {
+        nodes: req.body.nodes,
+        edges: req.body.edges,
+        activation: req.body.activation,
+        threshold: req.body.threshold,
+        maxIterations: req.body.maxIterations,
+        clampedNodes: req.body.clampedNodes,
+        // Include initial values for baseline comparison
+        ...(req.body.compareToBaseline
+          ? {
+              compareToBaseline: true,
+              modelInitialValues: req.body.modelInitialValues,
+              scenarioInitialValues: req.body.scenarioInitialValues
+            }
+          : {
+              initialValues: req.body.initialValues
+            }
+        )
       };
-      
-      res.json(responseData);
+      const response = await axios.post(`${PYTHON_SIM_URL}/api/simulate`, payload);
+      return res.json(response.data);
     } catch (error) {
-      console.error('Failed to connect to Python simulation service:', error);
-      res.status(503).json({ 
-        message: "Python simulation service unavailable",
-        error: error instanceof Error ? error.message : String(error)
+      console.error('Simulation error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      return res.status(500).json({
+        error: 'Failed to run simulation',
+        message: errorMessage
       });
     }
   });
@@ -431,6 +432,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Python service is not reachable",
         error: error instanceof Error ? error.message : String(error)
       });
+    }
+  });
+
+  // Direct Excel Export
+  app.post("/api/export/excel", async (req: Request, res: Response) => {
+    try {
+      const { data, type, fileName } = req.body;
+      
+      // Validate input
+      if (!data || !type) {
+        return res.status(400).json({ error: 'Missing required data' });
+      }
+
+      // Call Python service
+      const response = await fetch(`${PYTHON_SIM_URL}/api/export/excel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ data, type }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Python service responded with status: ${response.status}`);
+      }
+
+      const buffer = await response.arrayBuffer();
+      
+      // Set filename in Content-Disposition header
+      const safeFileName = fileName || 'model_export';
+      res.setHeader('Content-Disposition', `attachment; filename="${safeFileName}.xlsx"`);
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      
+      res.send(Buffer.from(buffer));
+    } catch (error) {
+      console.error('Error in /api/export/excel:', error);
+      res.status(500).json({ error: 'Failed to export to Excel' });
     }
   });
 
@@ -644,6 +682,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Python notebook export service unavailable",
         error: error instanceof Error ? error.message : String(error)
       });
+    }
+  });
+
+  // Update the export route to use correct field names
+  app.post("/api/export", async (req: Request, res: Response) => {
+    try {
+      const { format, type, data } = req.body as {
+        format: ExportFormat;
+        type: ExportType;
+        data: SimulationResult;
+      };
+
+      const result = await exportService.generateExport(data, {
+        format,
+        type,
+        fileName: `export_${new Date().getTime()}`
+      });
+
+      res.set({
+        'Content-Disposition': `attachment; filename="${result.fileName}"`,
+        'Content-Type': result.mimeType
+      });
+
+      res.send(result.buffer);
+    } catch (error) {
+      console.error("Export error:", error);
+      res.status(500).json({ error: "Failed to export data" });
     }
   });
 

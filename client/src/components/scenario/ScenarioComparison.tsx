@@ -1,487 +1,291 @@
-import { useState, useEffect, useRef } from 'react';
-import { Scenario, FCMModel, SimulationResult } from '@/lib/types';
+import React from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { 
+  FCMModel, 
+  SimulationResult,
+  SimulationNode
+} from '@shared/schema';
+import { SimulationResultWithComparison, isComparisonSimulationResult, ComparisonSimulationResult, FCMNode } from '@/lib/types';
 import { toStringId } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import ScenarioSelector from './ScenarioSelector';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Line } from 'react-chartjs-2';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line, Cell, Legend } from 'recharts';
+import { CompareConvergencePlot } from './CompareConvergencePlot';
+import * as Select from '@radix-ui/react-select';
+import { ChevronDownIcon, InfoCircledIcon } from '@radix-ui/react-icons';
+import { runSimulation as runSimulationApi } from '@/lib/simulation';
+import { FaLock } from 'react-icons/fa';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Bar as ChartJsBar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
-  PointElement,
-  LineElement,
+  BarElement,
   Title,
-  Tooltip as ChartTooltip,
-  Legend,
-  ChartOptions
+  Tooltip as ChartJsTooltip,
+  Legend as ChartJsLegend,
+  ChartData as ChartJsData,
+  ChartOptions as ChartJsOptions,
 } from 'chart.js';
-
-// Register Chart.js components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  ChartTooltip,
-  Legend
-);
+import * as Popover from '@radix-ui/react-popover';
+import * as TooltipPrimitive from '@radix-ui/react-tooltip';
 
 interface ScenarioComparisonProps {
   model: FCMModel;
-  scenarios: Scenario[];
+  scenarios: Array<{
+    id: string;
+    name: string;
+    initialValues: Record<string, number>;
+    clampedNodes?: string[];
+  }>;
+  nodeLabelsById?: Record<string, string>;
+  nodeTypesById?: Record<string, string>;
 }
 
-// Create a baseline scenario by running the FCM simulation with model's original node values
-function createBaselineScenario(model: FCMModel): Scenario {
-  // Variables to hold simulation results - will be populated by runRealBaseline
-  let baselineResult: SimulationResult | null = null;
-  
-  // Unique ID for this model to avoid re-running simulations
-  const simulationId = `baseline-${model.id}`;
-  
-  // Create default initialValues from the model
-  const defaultInitialValues = model.nodes.reduce<Record<string, number>>((acc, node) => {
-    acc[node.id] = node.value;
-    return acc;
-  }, {});
-  
-  // Function to run a real simulation for the baseline
-  const runRealBaseline = async () => {
-    console.log("Running real baseline simulation for chart/table views");
-    
-    // Check if we've already run this simulation in the session
-    const cachedResult = sessionStorage.getItem(simulationId);
-    if (cachedResult) {
-      try {
-        return JSON.parse(cachedResult) as SimulationResult;
-      } catch (e) {
-        console.error('Failed to parse cached simulation result', e);
-        // Fall through to run the simulation again
-      }
-    }
-    
-    try {
-      // Prepare data for Python simulation API using the model's default values
-      const reactFlowNodes = model.nodes.map(node => ({
-        id: node.id,
-        data: {
-          label: node.label,
-          value: node.value, // Use the model's default values for baseline
-          type: node.type
-        }
-      }));
-      
-      const reactFlowEdges = model.edges.map(edge => ({
-        source: edge.source,
-        target: edge.target,
-        data: {
-          weight: edge.weight
-        }
-      }));
-      
-      // Prepare payload
-      const payload = {
-        nodes: reactFlowNodes,
-        edges: reactFlowEdges,
-        activation: 'sigmoid',
-        threshold: 0.001,
-        maxIterations: 20,
-      };
-      
-      // Call the simulation API
-      const response = await fetch('/api/simulate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`API error: ${response.statusText}`);
-      }
-      
-      const result = await response.json();
-      
-      // Convert API response to our format
-      const formattedResult = {
-        finalValues: result.finalState || result.finalValues || {},
-        timeSeriesData: result.timeSeries || result.timeSeriesData || {},
-        iterations: result.iterations || 0,
-        converged: result.converged || false
-      };
-      
-      // Cache the result in session storage
-      try {
-        sessionStorage.setItem(simulationId, JSON.stringify(formattedResult));
-      } catch (e) {
-        console.error('Failed to cache simulation result', e);
-      }
-      
-      return formattedResult;
-    } catch (error) {
-      console.error('Failed to run baseline simulation:', error);
-      // Return fallback result with just the original values as final
-      const fallbackFinalValues: Record<string, number> = {};
-      const fallbackTimeSeries: Record<string, number[]> = {};
-      
-      model.nodes.forEach(node => {
-        const nodeId = toStringId(node.id);
-        fallbackFinalValues[nodeId] = node.value;
-        fallbackTimeSeries[nodeId] = [node.value]; // Just one data point
-      });
-      
-      return {
-        finalValues: fallbackFinalValues,
-        timeSeriesData: fallbackTimeSeries,
-        iterations: 0,
-        converged: false
-      };
-    }
-  };
-  
-  // Synchronously create and return the scenario object
-  // (The actual simulation will be run when needed)
-  const modelId = toStringId(model.id);
-  
-  console.log('Creating baseline scenario for model:', { 
-    modelId, 
-    type: typeof model.id, 
-    nodeCount: model.nodes.length 
-  });
-  
-  // Create a unique baseline ID for each model to prevent cross-contamination
-  // Use the unique model ID for this to ensure different models have different baselines
-  const uniqueBaselineId = `baseline-${modelId}`;
-  
-  // Initialize a stub of the baseline scenario
-  // We'll replace the results when the simulation finishes
-  return {
-    id: uniqueBaselineId,
-    name: 'Baseline (No Intervention)',
-    modelId: modelId,
-    // Empty initialValues differentiates this from comparison scenarios
-    initialValues: {},
-    createdAt: new Date().toISOString(),
-    // We'll use the fallback initially, but replace it with the actual results when they're ready
-    results: {
-      finalValues: {},
-      timeSeriesData: {},
-      iterations: 0,
-      converged: false,
-      baselineFinalState: {},
-      baselineTimeSeries: {},
-      baselineIterations: 0,
-      baselineConverged: false,
-      deltaState: {}
-    },
-    // Attach the async function that will fetch the real simulation results
-    // This will be called when the scenario is selected
-    runRealBaseline,
-    // Flag to track if the simulation has been requested
-    simulationRequested: false
-  } as Scenario & { 
-    runRealBaseline: () => Promise<SimulationResult>;
-    simulationRequested: boolean;
-  };
-}
+const CHART_COLOR_PALETTE = [
+  '#60a5fa', // blue-400
+  '#f472b6', // pink-400
+  '#34d399', // emerald-400
+  '#fbbf24', // amber-400
+  '#f87171', // red-400
+  '#a78bfa', // purple-400
+  '#38bdf8', // sky-400
+  '#facc15', // yellow-400
+  '#4ade80', // green-400
+  '#f472b6', // rose-400
+];
 
-export default function ScenarioComparison({ model, scenarios }: ScenarioComparisonProps) {
-  // Create state variables first
-  const [comparisonScenarioId, setComparisonScenarioId] = useState<string>('');
-  const [deltaData, setDeltaData] = useState<any[]>([]);
+const ScenarioComparison: React.FC<ScenarioComparisonProps> = ({ model, scenarios, nodeLabelsById, nodeTypesById }) => {
+  const [selectedScenarioId, setSelectedScenarioId] = useState<string>("");
+  const [comparisonResult, setComparisonResult] = useState<SimulationResult | ComparisonSimulationResult | null>(null);
   const [selectedTab, setSelectedTab] = useState('chart');
-  const [baselineHasRun, setBaselineHasRun] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  type ActivationType = 'sigmoid' | 'tanh' | 'relu' | 'linear';
+  const [activation, setActivation] = useState<ActivationType>('sigmoid');
   
-  // Create baseline scenario only once - using a ref to prevent recreation on each render
-  const baselineScenarioRef = useRef<Scenario>();
-  
-  // Reference for tracking if comparison simulation has been run
-  const isFirstRunRef = useRef(true);
-  
-  // Initialize the ref if it's not already set
-  if (!baselineScenarioRef.current) {
-    baselineScenarioRef.current = createBaselineScenario(model);
-  }
-  
-  // Create a more specific ID that changes with each model
-  const uniqueBaselineId = baselineScenarioRef.current?.id || 'baseline';
-  const [baselineScenarioId, setBaselineScenarioId] = useState<string>(uniqueBaselineId);
-  
-  // Use the memoized baselineScenario
-  const baselineScenario = baselineScenarioRef.current;
-  
-  // Run the baseline simulation once when the component mounts
+  const selectedScenario = useMemo(() => 
+    scenarios.find((s: { id: string }) => s.id.toString() === selectedScenarioId),
+    [scenarios, selectedScenarioId]
+  );
+
+  // Initialize selected scenario
   useEffect(() => {
-    async function runBaselineSimulation() {
-      if (baselineScenario && !baselineHasRun && (baselineScenario as any).runRealBaseline) {
-        console.log('Running real baseline simulation for chart/table views');
-        try {
-          const results = await (baselineScenario as any).runRealBaseline();
-          // Update the scenario's results
-          baselineScenario.results = {
-            ...baselineScenario.results,
-            finalValues: results.finalValues,
-            timeSeriesData: results.timeSeriesData,
-            iterations: results.iterations,
-            converged: results.converged
-          };
-          setBaselineHasRun(true);
-        } catch (error) {
-          console.error('Failed to run baseline simulation:', error);
-        }
-      }
-    }
-    
-    runBaselineSimulation();
-  }, [baselineScenario]);
-  
-  // Add baseline to scenarios for selection
-  const allScenarios = [baselineScenario, ...scenarios];
-  
-  // Get node labels
-  const nodeLabelsById = model.nodes.reduce<Record<string, string>>((acc, node) => {
-    const nodeId = toStringId(node.id);
-    acc[nodeId] = node.label;
-    return acc;
-  }, {});
-  
-  // Initialize with baseline and first actual scenario if available
-  useEffect(() => {
-    if (scenarios.length >= 1) {
-      // Use the actual ID from the baseline scenario object rather than the string 'baseline'
-      setBaselineScenarioId(baselineScenarioRef.current?.id || 'baseline');
-      setComparisonScenarioId(scenarios[0].id);
+    if (scenarios.length > 0) {
+      setSelectedScenarioId(scenarios[0].id.toString());
     }
   }, [scenarios]);
-  
-  // Function to run a simulation with given initial values
-  const runScenarioSimulation = async (initialValues: Record<string, number> = {}) => {
-    try {
-      // Prepare data for Python simulation API using the model's current structure
-      // but with customized initial values from the scenario
-      const reactFlowNodes = model.nodes.map(node => ({
-        id: node.id,
-        data: {
-          label: node.label,
-          // Use the scenario's initial value if available, otherwise use model default
-          value: initialValues[node.id] !== undefined ? initialValues[node.id] : node.value,
-          type: node.type
-        }
-      }));
-      
-      const reactFlowEdges = model.edges.map(edge => ({
-        source: edge.source,
-        target: edge.target,
-        data: {
-          weight: edge.weight
-        }
-      }));
-      
-      // Prepare payload
-      const payload = {
-        nodes: reactFlowNodes,
-        edges: reactFlowEdges,
-        activation: 'sigmoid',
-        threshold: 0.001,
-        maxIterations: 20,
-      };
-      
-      // Call the simulation API
-      const response = await fetch('/api/simulate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`API error: ${response.statusText}`);
-      }
-      
-      const result = await response.json();
-      console.log('Raw API response structure:', Object.keys(result));
-      
-      // Check if time series data exists in the response
-      if (!result.timeSeries && !result.timeSeriesData) {
-        console.warn('No time series data in API response. Raw result:', result);
-      }
-      
-      // Convert API response to our format with both field names for compatibility
-      const formattedResult = {
-        finalValues: result.finalState || result.finalValues || {},
-        finalState: result.finalState || result.finalValues || {},
-        timeSeriesData: result.timeSeries || result.timeSeriesData || {},
-        timeSeries: result.timeSeries || result.timeSeriesData || {},
-        iterations: result.iterations || 0,
-        converged: result.converged || false
-      };
-      
-      console.log('Formatted result structure:', {
-        hasTimeSeriesData: !!formattedResult.timeSeriesData,
-        timeSeriesDataKeys: Object.keys(formattedResult.timeSeriesData).length,
-        hasFinalValues: !!formattedResult.finalValues,
-        finalValuesKeys: Object.keys(formattedResult.finalValues).length
-      });
-      
-      return formattedResult;
-    } catch (error) {
-      console.error('Failed to run scenario simulation:', error);
-      return null;
-    }
-  };
 
-  // Calculate delta when scenarios change
+  // Get node labels and colors
+  const { nodeLabels, nodeColors } = useMemo<{
+    nodeLabels: Record<string, string>;
+    nodeColors: Record<string, string>;
+  }>(() => {
+    const labels: Record<string, string> = {};
+    const colors: Record<string, string> = {};
+    model.nodes.forEach((node: FCMNode, index: number) => {
+      const nodeId = toStringId(node.id);
+      labels[nodeId] = node.label;
+      colors[nodeId] = CHART_COLOR_PALETTE[index % CHART_COLOR_PALETTE.length];
+    });
+    return { nodeLabels: labels, nodeColors: colors };
+  }, [model.nodes]);
+
+  // Run simulation when scenario changes
   useEffect(() => {
-    if (!baselineScenarioId || !comparisonScenarioId) {
-      console.log('Missing scenario IDs', { baselineScenarioId, comparisonScenarioId });
+    if (!selectedScenario) {
+      setComparisonResult(null);
       return;
     }
-    
-    // Debug the available scenario IDs vs what we're looking for
-    console.log('Scenario ID verification:', {
-      lookingForBaselineId: baselineScenarioId,
-      lookingForComparisonId: comparisonScenarioId,
-      availableScenarioIds: allScenarios.map(s => ({ id: s.id, type: typeof s.id })),
-      baselineMatches: allScenarios.filter(s => String(s.id) === String(baselineScenarioId)).length,
-      comparisonMatches: allScenarios.filter(s => String(s.id) === String(comparisonScenarioId)).length
-    });
-    
-    // Use string comparison for safer ID matching to handle number vs string ID issues
-    const selectedBaselineScenario = allScenarios.find(s => String(s.id) === String(baselineScenarioId)) || baselineScenarioRef.current;
-      
-    // Get the comparison scenario using string comparison for ID matching
-    const comparisonScenario = allScenarios.find(s => String(s.id) === String(comparisonScenarioId));
-    
-    console.log('Scenarios found:', { 
-      baselineScenario: !!selectedBaselineScenario, 
-      comparisonScenario: !!comparisonScenario,
-      baselineId: selectedBaselineScenario?.id,
-      comparisonId: comparisonScenario?.id,
-      baselineResults: !!selectedBaselineScenario?.results,
-      comparisonResults: !!comparisonScenario?.results
-    });
-    
-    // Early return if either scenario is missing
-    if (!selectedBaselineScenario || !comparisonScenario) {
-      console.log('Cannot proceed: Missing one or both scenarios');
-      setDeltaData([]); // Clear delta data when scenarios are missing
-      return;
+
+    // Log selected scenario for audit
+    console.log('Selected scenario for comparison:', selectedScenario);
+
+    const runComparison = async () => {
+      setIsLoading(true);
+      try {
+        // Extract model's default node values
+        const modelDefaults = Object.fromEntries(
+          model.nodes.map(node => [toStringId(node.id), node.value])
+        );
+        // Extract scenario's node values
+        const scenarioValues = Object.fromEntries(
+          model.nodes.map(node => [
+            toStringId(node.id),
+            selectedScenario.initialValues[toStringId(node.id)] ?? node.value
+          ])
+        );
+        // Log for audit
+        console.log('runComparison: modelInitialValues', modelDefaults);
+        console.log('runComparison: scenarioInitialValues', scenarioValues);
+        console.log('runComparison: clampedNodes', selectedScenario.clampedNodes);
+        // Call simulation API with both sets
+        const result = await runSimulationApi(
+          model,
+          scenarioValues,
+          {
+            compareToBaseline: true,
+            modelInitialValues: modelDefaults,
+            scenarioInitialValues: scenarioValues,
+            clampedNodes: selectedScenario.clampedNodes,
+            activation
+          }
+        );
+        
+        console.log('Received comparison result:', result);
+        
+        // Ensure the result is a comparison result
+        if (isComparisonSimulationResult(result)) {
+          console.log('Baseline time series:', result.baselineTimeSeries);
+          console.log('Scenario time series:', result.comparisonTimeSeries);
+          setComparisonResult(result);
+        } else {
+          console.error('Expected a comparison result, but received a single result.');
+          setComparisonResult(null);
+        }
+      } catch (error) {
+        console.error('Failed to run scenario comparison:', error);
+        setComparisonResult(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    runComparison();
+  }, [selectedScenario, model, activation]);
+
+  // Debug: log when comparisonResult changes
+  useEffect(() => {
+    console.log('comparisonResult changed:', comparisonResult);
+  }, [comparisonResult]);
+
+  // Calculate delta data for the bar chart
+  const deltaData = useMemo(() => {
+    if (!comparisonResult || !isComparisonSimulationResult(comparisonResult)) {
+      return [];
     }
-    
-    // Run simulations with the correct initial values for each scenario
-    async function runComparisonSimulations() {
-      // Get the default initial values (from the model's current node values)
-      const defaultInitialValues = model.nodes.reduce<Record<string, number>>((acc, node) => {
-        acc[node.id] = node.value;
-        return acc;
-      }, {});
+
+    return model.nodes.map((node: FCMNode) => {
+      const nodeId = toStringId(node.id);
+      const baselineNode = comparisonResult.baselineFinalState[nodeId];
+      const comparisonNode = comparisonResult.comparisonFinalState[nodeId];
       
-      // Run baseline simulation with model default values (or special baseline values if provided)
-      const baselineInitialValues = selectedBaselineScenario?.id === 'baseline-' + model.id 
-        ? defaultInitialValues 
-        : (selectedBaselineScenario?.initialValues || defaultInitialValues);
-        
-      console.log('Running baseline simulation with initial values:', baselineInitialValues);
-      const baselineResults = await runScenarioSimulation(baselineInitialValues);
+      const baselineValue = baselineNode?.value;
+      const comparisonValue = comparisonNode?.value;
       
-      // Run comparison simulation with the scenario's initial values
-      const comparisonInitialValues = comparisonScenario?.initialValues || defaultInitialValues;
-      console.log('Running comparison simulation with initial values:', comparisonInitialValues);
-      const comparisonResults = await runScenarioSimulation(comparisonInitialValues);
-      
-      console.log('Ran live simulations with scenario initial values:', {
-        baselineHasCustomValues: Object.keys(selectedBaselineScenario?.initialValues || {}).length > 0,
-        comparisonHasCustomValues: Object.keys(comparisonScenario?.initialValues || {}).length > 0,
-        baselineResults: !!baselineResults,
-        comparisonResults: !!comparisonResults
-      });
-      
-      // If either simulation failed, return early
-      if (!baselineResults || !comparisonResults) return;
-      
-      // Get final values from simulation results
-      const baselineFinal = baselineResults.finalValues;
-      const comparisonFinal = comparisonResults.finalValues;
-      
-      // Update the results in the scenario objects for the chart and table to use
-      if (selectedBaselineScenario) {
-        selectedBaselineScenario.results = {
-          ...selectedBaselineScenario.results || {},
-          ...baselineResults
-        };
+      if (baselineValue === undefined || comparisonValue === undefined) {
+        return null;
       }
-      
-      if (comparisonScenario) {
-        comparisonScenario.results = {
-          ...comparisonScenario.results || {},
-          ...comparisonResults
-        };
-      }
-      
-      console.log('Final values:', { 
-        baselineFinal: baselineResults?.finalValues && Object.keys(baselineResults.finalValues).length > 0 ? 'has data' : 'empty', 
-        comparisonFinal: comparisonResults?.finalValues && Object.keys(comparisonResults.finalValues).length > 0 ? 'has data' : 'empty'
+            
+      return {
+        name: node.label,
+        nodeId,
+        baseline: baselineValue,
+        comparison: comparisonValue,
+        delta: comparisonValue - baselineValue,
+        type: node.type || 'regular'
+      };
+    }).filter((row: any): row is NonNullable<typeof row> => row !== null);
+  }, [comparisonResult, model.nodes]);
+
+  // Calculate delta over time data
+  const deltaOverTimeData = useMemo(() => {
+    if (!comparisonResult || !isComparisonSimulationResult(comparisonResult)) {
+      console.log('No valid comparison result available');
+      return [];
+    }
+
+    const comparisonTimeSeries = comparisonResult.comparisonTimeSeries;
+    const baselineTimeSeries = comparisonResult.baselineTimeSeries;
+
+    // Debug: Log the raw time series data with more detail
+    console.log('DEBUG: Raw Time Series Data', {
+      baseline: baselineTimeSeries,
+      comparison: comparisonTimeSeries,
+      nodeCount: model.nodes.length,
+      baselineNodeCount: Object.keys(baselineTimeSeries).length,
+      comparisonNodeCount: Object.keys(comparisonTimeSeries).length
+    });
+
+    // Log each node's data separately for clarity
+    model.nodes.forEach((node: FCMNode) => {
+      const nodeId = toStringId(node.id);
+      console.log(`Node ${node.label} (${nodeId}) data:`, {
+        baseline: baselineTimeSeries[nodeId] || [],
+        comparison: comparisonTimeSeries[nodeId] || [],
+        baselineLength: (baselineTimeSeries[nodeId] || []).length,
+        comparisonLength: (comparisonTimeSeries[nodeId] || []).length
       });
-    
-      // Create comparison data
-      const nodes = Object.keys(nodeLabelsById);
-      console.log('Node IDs found:', nodes);
+    });
+
+    const maxIterations = Math.max(
+      ...Object.values(comparisonTimeSeries).map((arr: number[]) => arr.length),
+      ...Object.values(baselineTimeSeries).map((arr: number[]) => arr.length)
+    );
+
+    console.log('Max iterations:', maxIterations);
+
+    const result = Array.from({ length: maxIterations }, (_, iteration) => {
+      const dataPoint: any = { iteration };
       
-      const newDeltaData = nodes.filter(nodeId => nodeLabelsById[nodeId]).map(nodeId => {
-        // Safely access values with fallbacks
-        const baselineValue = baselineResults?.finalValues && typeof baselineResults.finalValues[nodeId] === 'number' 
-          ? baselineResults.finalValues[nodeId] 
-          : 0;
+      model.nodes.forEach((node: FCMNode) => {
+        const nodeId = toStringId(node.id);
+        const baselineValues = baselineTimeSeries[nodeId] || [];
+        const comparisonValues = comparisonTimeSeries[nodeId] || [];
         
-        const comparisonValue = comparisonResults?.finalValues && typeof comparisonResults.finalValues[nodeId] === 'number'
-          ? comparisonResults.finalValues[nodeId]
-          : 0;
+        // Calculate delta for this iteration
+        if (baselineValues[iteration] !== undefined && comparisonValues[iteration] !== undefined) {
+          const baselineValue = baselineValues[iteration];
+          const comparisonValue = comparisonValues[iteration];
+          dataPoint[nodeId] = comparisonValue - baselineValue;
           
-        const delta = comparisonValue - baselineValue;
-        
-        return {
-          name: nodeLabelsById[nodeId] || `Node ${nodeId}`,
-          nodeId,
-          baseline: baselineValue,
-          comparison: comparisonValue,
-          delta: delta,
-          type: model.nodes.find(n => toStringId(n.id) === nodeId)?.type || 'regular'
-        };
+          // Debug log for this node's delta calculation
+          console.log(`Iteration ${iteration}, Node ${node.label}:`, {
+            baseline: baselineValue,
+            comparison: comparisonValue,
+            delta: dataPoint[nodeId],
+            nodeId: nodeId
+          });
+        } else {
+          // If we're beyond the available data, use the last known values
+          const lastBaseline = baselineValues[baselineValues.length - 1] || 0;
+          const lastComparison = comparisonValues[comparisonValues.length - 1] || 0;
+          dataPoint[nodeId] = lastComparison - lastBaseline;
+          
+          // Debug log for extrapolated values
+          console.log(`Iteration ${iteration}, Node ${node.label} (extrapolated):`, {
+            baseline: lastBaseline,
+            comparison: lastComparison,
+            delta: dataPoint[nodeId],
+            nodeId: nodeId
+          });
+        }
       });
       
-      console.log('Delta data generated:', newDeltaData.length > 0 ? 'has data' : 'empty', newDeltaData);
-      
-      // Update state
-      setDeltaData(newDeltaData);
-    }
-    
-    // Run the comparison simulations whenever the selected scenarios change
-    // Using a manual simulation trigger here to avoid infinite loops
-    if (isFirstRunRef.current || 
-        (baselineScenarioId && comparisonScenarioId && 
-        allScenarios.find(s => String(s.id) === String(baselineScenarioId)) && 
-        allScenarios.find(s => String(s.id) === String(comparisonScenarioId)))) {
-      isFirstRunRef.current = false;
-      runComparisonSimulations();
-    }
-  }, [baselineScenarioId, comparisonScenarioId, scenarios]);
-  
-  // Group nodes by type
-  const nodesByType = model.nodes.reduce<Record<string, string[]>>((acc, node) => {
-    const type = node.type || 'regular';
-    const nodeId = toStringId(node.id);
-    acc[type] = acc[type] || [];
-    acc[type].push(nodeId);
-    return acc;
-  }, {});
-  
-  if (scenarios.length < 1) {
+      return dataPoint;
+    });
+
+    // Debug: Log the calculated delta data with more detail
+    console.log('DEBUG: Calculated Delta Over Time Data', {
+      length: result.length,
+      firstPoint: result[0],
+      lastPoint: result[result.length - 1],
+      allPoints: result
+    });
+
+    return result;
+  }, [model.nodes, comparisonResult]);
+
+  // Extract impact metrics from comparisonResult
+  const impactMetrics = useMemo(() => {
+    if (!comparisonResult || !(comparisonResult as any).impactMetrics) return [];
+    const metrics = (comparisonResult as any).impactMetrics;
+    return model.nodes.map((node: FCMNode) => {
+      const nodeId = toStringId(node.id);
+      return metrics[nodeId] || null;
+    }).filter(Boolean);
+  }, [comparisonResult, model.nodes]);
+
+  if (scenarios.length === 0) {
     return (
       <Card className="dark-glass border border-white/10">
         <CardHeader>
@@ -491,422 +295,465 @@ export default function ScenarioComparison({ model, scenarios }: ScenarioCompari
       </Card>
     );
   }
-  
+
+  // Debug: log the simulation result for troubleshooting
+  console.log('ScenarioComparison: comparisonResult', comparisonResult);
+  if (comparisonResult) {
+    const cr = comparisonResult as SimulationResultWithComparison;
+    const nodeIds = Object.keys(cr.comparisonTimeSeries || {});
+    if (nodeIds.length > 0) {
+      const firstNode = nodeIds[0];
+      const secondNode = nodeIds[1];
+      console.log('comparisonTimeSeries[firstNode]', firstNode, cr.comparisonTimeSeries?.[firstNode]);
+      console.log('baselineTimeSeries[firstNode]', firstNode, cr.baselineTimeSeries?.[firstNode]);
+      if (secondNode) {
+        console.log('comparisonTimeSeries[secondNode]', secondNode, cr.comparisonTimeSeries?.[secondNode]);
+        console.log('baselineTimeSeries[secondNode]', secondNode, cr.baselineTimeSeries?.[secondNode]);
+      }
+    }
+  }
+
+  ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    BarElement,
+    Title,
+    ChartJsTooltip,
+    ChartJsLegend
+  );
+
   return (
-    <Card className="dark-glass border border-white/10">
-      <CardHeader>
-        <CardTitle>scenario comparison</CardTitle>
-        <CardDescription>Compare results between different scenarios</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-6">
-          {/* Scenario selectors */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <ScenarioSelector 
-              value={baselineScenarioId}
-              onValueChange={setBaselineScenarioId}
-              scenarios={scenarios}
-              baselineId={uniqueBaselineId}
-              label="Baseline Scenario"
-              placeholder="Select baseline scenario"
-            />
-            
-            <ScenarioSelector 
-              value={comparisonScenarioId}
-              onValueChange={setComparisonScenarioId}
-              scenarios={scenarios}
-              baselineId={uniqueBaselineId}
-              label="Comparison Scenario"
-              placeholder="Select comparison scenario"
-            />
-          </div>
-          
-          {/* Check if both scenarios are selected */}
-          {(!baselineScenarioId || !comparisonScenarioId) ? (
-            <div className="flex flex-col items-center justify-center p-8 text-center">
-              <p className="text-amber-400 mb-2">Please select both baseline and comparison scenarios</p>
-              <p className="text-gray-400 text-sm">The comparison view will show differences between scenarios</p>
-            </div>
-          ) : (
-            <Tabs defaultValue="chart" onValueChange={setSelectedTab}>
-              <TabsList>
-                <TabsTrigger value="chart" disabled={deltaData.length === 0}>chart view</TabsTrigger>
-                <TabsTrigger value="table" disabled={deltaData.length === 0}>table view</TabsTrigger>
-                <TabsTrigger value="convergence">convergence plot</TabsTrigger>
-              </TabsList>
-              
-              {deltaData.length === 0 && selectedTab !== 'convergence' ? (
-                <div className="flex flex-col items-center justify-center p-8 h-[400px] text-center">
-                  <p className="text-amber-400 mb-2">Waiting for comparison data...</p>
-                  <p className="text-gray-400 text-sm">
-                    Select the convergence plot tab to view simulation progress,<br />
-                    or make sure both scenarios have been simulated.
-                  </p>
+    <TooltipProvider>
+      <Card className="dark-glass border border-white/10">
+        <CardHeader>
+          <CardTitle>scenario comparison</CardTitle>
+          <CardDescription>Compare results between baseline and scenario</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            <div className="flex gap-4 items-center">
+              <div className="flex items-center gap-2">
+                <Select.Root value={activation} onValueChange={value => setActivation(value as ActivationType)}>
+                  <Select.Trigger className="w-[160px] flex items-center justify-between px-3 py-2 bg-gray-800 border border-gray-700 rounded-md shadow-sm text-white">
+                    <Select.Value>
+                      {activation.charAt(0).toUpperCase() + activation.slice(1)}
+                    </Select.Value>
+                    <Select.Icon>
+                      <ChevronDownIcon className="text-gray-400" />
+                    </Select.Icon>
+                  </Select.Trigger>
+                  <Select.Portal>
+                    <Select.Content className="bg-gray-800 border border-gray-700 rounded-md shadow-lg">
+                      <Select.Viewport>
+                        <Select.Item value="sigmoid" className="px-3 py-2 text-white hover:bg-gray-700 cursor-pointer outline-none focus:bg-gray-700">
+                          <Select.ItemText>Sigmoid</Select.ItemText>
+                        </Select.Item>
+                        <Select.Item value="tanh" className="px-3 py-2 text-white hover:bg-gray-700 cursor-pointer outline-none focus:bg-gray-700">
+                          <Select.ItemText>Tanh</Select.ItemText>
+                        </Select.Item>
+                        <Select.Item value="relu" className="px-3 py-2 text-white hover:bg-gray-700 cursor-pointer outline-none focus:bg-gray-700">
+                          <Select.ItemText>ReLU</Select.ItemText>
+                        </Select.Item>
+                      </Select.Viewport>
+                    </Select.Content>
+                  </Select.Portal>
+                </Select.Root>
+                {/* Two icons: Tooltip for hover, Popover for click, stacked for perfect UX */}
+                <div className="relative" style={{ width: 20, height: 20 }}>
+                  {/* Tooltip icon (shows on hover, hidden when popover is open) */}
+                  <TooltipPrimitive.Root delayDuration={200}>
+                    <TooltipPrimitive.Trigger asChild>
+                      <span
+                        className="absolute inset-0 ml-1 cursor-pointer text-blue-400 z-10"
+                        tabIndex={0}
+                        style={{ pointerEvents: 'auto' }}
+                        id="activation-info-tooltip"
+                      >
+                        <InfoCircledIcon />
+                      </span>
+                    </TooltipPrimitive.Trigger>
+                    <TooltipPrimitive.Portal>
+                      <TooltipPrimitive.Content sideOffset={8} className="rounded-md bg-gray-900 border border-gray-700 px-3 py-2 text-xs text-gray-200 shadow-lg z-50">
+                        Which activation fits your scenario? <span className="text-gray-400">(Click for details)</span>
+                      </TooltipPrimitive.Content>
+                    </TooltipPrimitive.Portal>
+                  </TooltipPrimitive.Root>
+                  {/* Popover icon (shows on click, overlays tooltip icon) */}
+                  <Popover.Root>
+                    <Popover.Trigger asChild>
+                      <span
+                        className="absolute inset-0 ml-1 cursor-pointer text-blue-400 z-20"
+                        tabIndex={0}
+                        style={{ pointerEvents: 'auto' }}
+                        aria-label="Show activation function details"
+                      >
+                        <InfoCircledIcon />
+                      </span>
+                    </Popover.Trigger>
+                    <Popover.Portal>
+                      <Popover.Content sideOffset={8} className="max-w-xs rounded-lg shadow-lg bg-gray-900 border border-gray-700 p-4 text-sm text-gray-200 z-50">
+                        <div className="mb-2 font-semibold">Activation Function</div>
+                        <div className="mb-3">
+                          <div className="mb-2"><b>Sigmoid - Gradual Growth</b><br />
+                          Starts slow, speeds up, then levels off<br />
+                          Like awareness or trust building over time<br />
+                          <span className="text-gray-400">Use when: There's a natural limit</span></div>
+                          <div className="mb-2"><b>Tanh - Balanced Influence</b><br />
+                          Works in both positive and negative directions<br />
+                          Like public opinion or market reactions<br />
+                          <span className="text-gray-400">Use when: Effects can swing both ways</span></div>
+                          <div className="mb-2"><b>ReLU - Threshold Effect</b><br />
+                          Nothing happens until a tipping point<br />
+                          Like policy triggers or sudden changes<br />
+                          <span className="text-gray-400">Use when: There's a clear on/off switch</span></div>
+                        </div>
+                        <div className="mt-4 text-xs text-blue-300">
+                          Tip: Think about how this relationship works in real life - does it gradually slow down, swing both ways, or suddenly activate?
+                        </div>
+                      </Popover.Content>
+                    </Popover.Portal>
+                  </Popover.Root>
                 </div>
-              ) : (
-                <>
-                  <TabsContent value="chart">
-                    <div className="h-[400px] mt-4">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={deltaData}
-                          margin={{
-                            top: 20,
-                            right: 30,
-                            left: 20,
-                            bottom: 60,
-                          }}
+              </div>
+              <Select.Root value={selectedScenarioId} onValueChange={setSelectedScenarioId}>
+                <Select.Trigger className="w-[200px] flex items-center justify-between px-3 py-2 bg-gray-800 border border-gray-700 rounded-md shadow-sm text-white">
+                  <Select.Value>
+                    {selectedScenario?.name || "Select a scenario"}
+                  </Select.Value>
+                  <Select.Icon>
+                    <ChevronDownIcon className="text-gray-400" />
+                  </Select.Icon>
+                </Select.Trigger>
+                <Select.Portal>
+                  <Select.Content className="bg-gray-800 border border-gray-700 rounded-md shadow-lg">
+                    <Select.Viewport>
+                      {scenarios.map((scenario) => (
+                        <Select.Item 
+                          key={scenario.id} 
+                          value={scenario.id.toString()}
+                          className="px-3 py-2 text-white hover:bg-gray-700 cursor-pointer outline-none focus:bg-gray-700"
                         >
-                          <CartesianGrid strokeDasharray="3 3" />
+                          <Select.ItemText>{scenario.name}</Select.ItemText>
+                        </Select.Item>
+                      ))}
+                    </Select.Viewport>
+                  </Select.Content>
+                </Select.Portal>
+              </Select.Root>
+            </div>
+
+            {isLoading ? (
+              <div className="flex items-center justify-center h-[400px]">
+                <p className="text-gray-400">Running simulation...</p>
+              </div>
+            ) : (
+              <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+                <TabsList>
+                  <TabsTrigger value="chart">Chart</TabsTrigger>
+                  <TabsTrigger value="convergence">Convergence</TabsTrigger>
+                  <TabsTrigger value="delta">Delta Over Time</TabsTrigger>
+                  <TabsTrigger value="maxdiff">Max Diff</TabsTrigger>
+                  <TabsTrigger value="table">Table</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="chart">
+                  <CardDescription className="mb-4 text-sm text-gray-400">
+                    Shows the final difference between baseline and scenario values for each node. Positive values indicate increase, negative values indicate decrease.
+                  </CardDescription>
+                  {selectedTab === 'chart' && deltaData.length > 0 ? (
+                    <div className="h-[400px] w-full">
+                      <ChartJsBar
+                        data={{
+                          labels: deltaData.map((row: any) => row.name),
+                          datasets: [
+                            {
+                              label: 'Difference',
+                              data: deltaData.map((row: any) => row.delta),
+                              backgroundColor: deltaData.map((row: any) => getBarColor(row.delta)),
+                              borderColor: deltaData.map((row: any) => getBarColor(row.delta)),
+                              borderWidth: 1,
+                            },
+                          ],
+                        } as ChartJsData<'bar'>}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: {
+                              display: true,
+                              position: 'right',
+                              labels: {
+                                padding: 20,
+                                usePointStyle: true,
+                                pointStyle: 'rect',
+                              },
+                            },
+                            title: {
+                              display: true,
+                              text: 'Scenario Comparison',
+                              padding: 20,
+                            },
+                            tooltip: {
+                              callbacks: {
+                                label: (context: any) => {
+                                  const label = context.dataset.label || '';
+                                  const value = context.parsed.y;
+                                  return `${label}: ${value.toFixed(3)}`;
+                                },
+                              },
+                            },
+                          },
+                          scales: {
+                            y: {
+                              beginAtZero: true,
+                              title: {
+                                display: true,
+                                text: 'Delta',
+                                padding: 20,
+                              },
+                              grid: {
+                                color: 'rgba(255, 255, 255, 0.1)',
+                              },
+                            },
+                            x: {
+                              title: {
+                                display: true,
+                                text: 'Node',
+                                padding: 20,
+                              },
+                              grid: {
+                                color: 'rgba(255, 255, 255, 0.1)',
+                              },
+                            },
+                          },
+                        } as ChartJsOptions<'bar'>}
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-[400px]">
+                      <p className="text-gray-400">No comparison data available</p>
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="convergence">
+                  <CardDescription className="mb-4 text-sm text-gray-400">
+                    Displays how each node's value changes over time, comparing baseline (dashed) and scenario (solid) trajectories.
+                  </CardDescription>
+                  {selectedTab === 'convergence' && comparisonResult && isComparisonSimulationResult(comparisonResult) && (
+                    <div className="mt-4">
+                      <CompareConvergencePlot
+                        simulationResult={comparisonResult}
+                        nodeLabels={nodeLabels}
+                        nodeColors={nodeColors}
+                      />
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="delta">
+                  <CardDescription className="mb-4 text-sm text-gray-400">
+                    Shows how the difference between baseline and scenario evolves over time. Each line represents a node's changing impact.
+                  </CardDescription>
+                  {selectedTab === 'delta' && deltaOverTimeData.length > 0 ? (
+                    <div className="h-[400px] w-full">
+                      <ResponsiveContainer>
+                        <LineChart data={deltaOverTimeData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
                           <XAxis 
-                            dataKey="name" 
-                            angle={-45} 
-                            textAnchor="end"
-                            height={80}
-                            tick={{fontSize: 12}}
+                            dataKey="iteration"
+                            label={{ 
+                              value: 'Iterations', 
+                              position: 'bottom',
+                              fill: '#9ca3af',
+                              style: { fontSize: '12px' }
+                            }}
+                            stroke="#9ca3af"
+                            tick={{ fill: '#9ca3af' }}
                           />
+                          <YAxis 
+                            label={{ 
+                              value: 'Difference from Baseline', 
+                              angle: -90, 
+                              position: 'insideLeft',
+                              fill: '#9ca3af',
+                              style: { fontSize: '12px' }
+                            }}
+                            stroke="#9ca3af"
+                            tick={{ fill: '#9ca3af' }}
+                          />
+                          <RechartsTooltip 
+                            content={({ active, payload, label }) => {
+                              if (active && payload && payload.length) {
+                                return (
+                                  <div className="bg-gray-800/90 p-3 border border-gray-700 rounded-lg shadow-lg">
+                                    <p className="text-sm text-gray-300 mb-2">Iteration: {label}</p>
+                                    {payload.map((entry: any, index: number) => (
+                                      <p key={index} className="text-sm" style={{ color: entry.color }}>
+                                        {entry.name}: {entry.value.toFixed(3)}
+                                      </p>
+                                    ))}
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Legend 
+                            wrapperStyle={{
+                              paddingTop: '20px',
+                              color: '#9ca3af'
+                            }}
+                          />
+                          {model.nodes.map((node) => {
+                            const nodeId = toStringId(node.id);
+                            return (
+                              <Line
+                                key={nodeId}
+                                type="monotone"
+                                dataKey={nodeId}
+                                name={node.label}
+                                stroke={nodeColors[nodeId]}
+                                strokeWidth={2}
+                                dot={false}
+                                animationDuration={1000}
+                                animationBegin={0}
+                                animationEasing="ease-out"
+                              />
+                            );
+                          })}
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-[400px]">
+                      <p className="text-gray-400">No delta over time data available</p>
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="maxdiff">
+                  <CardDescription className="mb-4 text-sm text-gray-400">
+                    Displays the maximum difference reached between baseline and scenario for each node, highlighting peak impacts.
+                  </CardDescription>
+                  {selectedTab === 'maxdiff' && impactMetrics.length > 0 ? (
+                    <div className="h-[400px] w-full">
+                      <ResponsiveContainer>
+                        <BarChart data={impactMetrics}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="label" />
                           <YAxis />
-                          <Tooltip 
-                            contentStyle={{ backgroundColor: '#1a202c', border: 'none', borderRadius: '4px' }}
-                            formatter={(value: any, name: any) => [parseFloat(value).toFixed(3), name]}
-                          />
-                          <Bar dataKey="delta" fill="#8884d8" name="Difference" />
+                          <RechartsTooltip />
+                          <Legend />
+                          <Bar dataKey="maxDifference" name="Max Diff">
+                            {impactMetrics.map((entry, index) => (
+                              <Cell key={`cell-maxdiff-${index}`} fill={
+                                entry.maxDifference > 0 ? '#22c55e' : entry.maxDifference < 0 ? '#ef4444' : '#6b7280'
+                              } />
+                            ))}
+                          </Bar>
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="table">
-                    <div className="overflow-x-auto">
-                      <table className="w-full mt-4">
-                        <thead>
-                          <tr className="border-b border-white/10">
-                            <th className="py-2 text-left text-xs uppercase tracking-wider text-gray-400">Node</th>
-                            <th className="py-2 text-left text-xs uppercase tracking-wider text-gray-400">Type</th>
-                            <th className="py-2 text-left text-xs uppercase tracking-wider text-gray-400">Baseline</th>
-                            <th className="py-2 text-left text-xs uppercase tracking-wider text-gray-400">Comparison</th>
-                            <th className="py-2 text-left text-xs uppercase tracking-wider text-gray-400">Difference</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {/* Safe rendering of each node type group */}
-                          {Object.keys(nodesByType).map(type => {
-                            // Get rows for this node type
-                            const typeRows = deltaData.filter(data => data.type === type);
-                            
-                            // If no rows for this type, skip
-                            if (typeRows.length === 0) return null;
-                            
-                            // Return the rows for this type
-                            return typeRows.map((row, index) => (
-                              <tr key={row.nodeId || `row-${index}`} className="border-b border-white/5">
-                                <td className="py-2">{row.name}</td>
-                                <td className="py-2">
-                                  <Badge variant="outline">{row.type}</Badge>
+                  ) : (
+                    <div className="flex items-center justify-center h-[400px]">
+                      <p className="text-gray-400">No max difference data available</p>
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="table">
+                  <CardDescription className="mb-4 text-sm text-gray-400">
+                    Detailed comparison showing baseline values, scenario values, differences, and key metrics for each node. Clamped nodes are marked with a lock icon. Direction indicates the pattern of change over time. Normalized % Change is the percent change relative to the larger of the baseline or scenario value.
+                  </CardDescription>
+                  {selectedTab === 'table' && deltaData.length > 0 ? (
+                    <div className="mt-2">
+                      <div className="glass rounded-lg overflow-hidden border border-white/10">
+                        <table className="min-w-full text-sm">
+                          <thead>
+                            <tr className="bg-gray-800">
+                              <th className="px-3 py-2 text-left">Node</th>
+                              <th className="px-3 py-2 text-left">Baseline</th>
+                              <th className="px-3 py-2 text-left">Scenario</th>
+                              <th className="px-3 py-2 text-left">Delta</th>
+                              <th className="px-3 py-2 text-left">Normalized % Change</th>
+                              <th className="px-3 py-2 text-left">AUC</th>
+                              <th className="px-3 py-2 text-left">Max Diff</th>
+                              <th className="px-3 py-2 text-left">Direction</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {impactMetrics.length > 0 ? impactMetrics.map((row: any) => (
+                              <tr key={row.id} className="border-t border-gray-700">
+                                <td className="px-3 py-2 flex items-center gap-2">
+                                  {row.label}
+                                  {Array.isArray((comparisonResult as any)?.clampedNodes) && (comparisonResult as any).clampedNodes.includes(row.id) && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span><FaLock className="text-blue-400 ml-1" /></span>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        Clamped during scenario
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
                                 </td>
-                                <td className="py-2">{typeof row.baseline === 'number' ? row.baseline.toFixed(3) : '0.000'}</td>
-                                <td className="py-2">{typeof row.comparison === 'number' ? row.comparison.toFixed(3) : '0.000'}</td>
-                                <td className={`py-2 ${row.delta > 0 ? 'text-green-400' : row.delta < 0 ? 'text-red-400' : ''}`}>
-                                  {row.delta > 0 ? '+' : ''}{typeof row.delta === 'number' ? row.delta.toFixed(3) : '0.000'}
-                                </td>
+                                <td className="px-3 py-2">{row.baseline?.toFixed(3)}</td>
+                                <td className="px-3 py-2">{row.scenario?.toFixed(3)}</td>
+                                <td className="px-3 py-2">{row.delta?.toFixed(3)}</td>
+                                <td className="px-3 py-2">{row.normalizedChangePercent === null ? '—' : `${row.normalizedChangePercent.toFixed(1)}%`}</td>
+                                <td className="px-3 py-2">{row.auc?.toFixed(3)}</td>
+                                <td className="px-3 py-2">{row.maxDifference?.toFixed(3)}</td>
+                                <td className="px-3 py-2">{row.direction}</td>
                               </tr>
-                            ));
-                          })}
-                        </tbody>
-                      </table>
+                            )) : deltaData.map((row: any) => (
+                              <tr key={row.nodeId} className="border-t border-gray-700">
+                                <td className="px-3 py-2 flex items-center gap-2">
+                                  {row.name}
+                                  {Array.isArray((comparisonResult as any)?.clampedNodes) && (comparisonResult as any).clampedNodes.includes(row.nodeId) && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span><FaLock className="text-blue-400 ml-1" /></span>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        Clamped during scenario
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                </td>
+                                <td className="px-3 py-2">{row.baseline.toFixed(3)}</td>
+                                <td className="px-3 py-2">{row.comparison.toFixed(3)}</td>
+                                <td className="px-3 py-2">{row.delta.toFixed(3)}</td>
+                                <td className="px-3 py-2">—</td>
+                                <td className="px-3 py-2">—</td>
+                                <td className="px-3 py-2">—</td>
+                                <td className="px-3 py-2">—</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
-                  </TabsContent>
-                </>
-              )}
-              
-              <TabsContent value="convergence">
-                {selectedTab === 'convergence' && (
-                  <div className="mt-4">
-                    <div className="h-[400px]">
-                      <CompareConvergencePlot 
-                        baselineScenario={allScenarios.find(s => String(s.id) === String(baselineScenarioId)) || baselineScenarioRef.current}
-                        comparisonScenario={allScenarios.find(s => String(s.id) === String(comparisonScenarioId))}
-                        nodeLabels={nodeLabelsById}
-                      />
+                  ) : (
+                    <div className="flex items-center justify-center h-[200px]">
+                      <p className="text-gray-400">No table data available</p>
                     </div>
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+                  )}
+                </TabsContent>
+              </Tabs>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </TooltipProvider>
   );
+};
+
+// Helper functions
+function getBarColor(delta: number): string {
+  if (delta > 0) return '#22c55e'; // green
+  if (delta < 0) return '#ef4444'; // red
+  return '#6b7280'; // gray
 }
 
-interface CompareConvergencePlotProps {
-  baselineScenario?: Scenario;
-  comparisonScenario?: Scenario;
-  nodeLabels: Record<string, string>;
-}
-
-function CompareConvergencePlot({ baselineScenario, comparisonScenario, nodeLabels }: CompareConvergencePlotProps) {
-  // We don't need to run the simulation again since it's already handled in the parent component
-  // and the results are already stored in the baselineScenario.results
-  
-  // Get the actual results directly from the scenario object
-  const actualBaselineResults = baselineScenario?.results;
-  
-  // Add debugging for convergence issues
-  console.log('CompareConvergencePlot - Scenarios:', { 
-    baselineId: baselineScenario?.id,
-    comparisonId: comparisonScenario?.id,
-    baselineHasTimeSeries: !!actualBaselineResults?.timeSeriesData,
-    comparisonHasTimeSeries: !!comparisonScenario?.results?.timeSeriesData,
-    baselineTimeSeriesKeys: actualBaselineResults?.timeSeriesData ? Object.keys(actualBaselineResults.timeSeriesData).length : 0,
-    comparisonTimeSeriesKeys: comparisonScenario?.results?.timeSeriesData ? Object.keys(comparisonScenario.results.timeSeriesData).length : 0,
-    // Check if scenarios are the same object reference
-    areSameScenario: baselineScenario === comparisonScenario,
-    // Check if results are the same object reference
-    areSameResults: actualBaselineResults === comparisonScenario?.results,
-    // Compare IDs to ensure they're different
-    baselineScenarioId: baselineScenario?.id,
-    comparisonScenarioId: comparisonScenario?.id,
-    // Are initial values different?
-    initialValuesEqual: baselineScenario?.initialValues && comparisonScenario?.initialValues ? 
-      JSON.stringify(baselineScenario.initialValues) === JSON.stringify(comparisonScenario.initialValues) : 'N/A',
-  });
-  
-  // No loading indicator needed anymore since we handle the simulation in the parent component
-  
-  // Check if we have scenario results
-  if (!baselineScenario || !comparisonScenario) {
-    console.log('Scenarios found:', {
-      baselineScenario: !!baselineScenario,
-      comparisonScenario: !!comparisonScenario,
-      baselineResults: !!baselineScenario?.results,
-      comparisonResults: !!comparisonScenario?.results
-    });
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-gray-400">Select both baseline and comparison scenarios to view convergence plot</p>
-      </div>
-    );
-  }
-  
-  // Handle both timeSeriesData and timeSeries field naming for backward compatibility
-  // Try retrieving time series data from multiple possible field names
-  const baselineTimeSeriesData = 
-    actualBaselineResults?.timeSeriesData || 
-    actualBaselineResults?.timeSeries || 
-    (actualBaselineResults as any)?.baselineTimeSeries || 
-    {};
-                            
-  const comparisonTimeSeriesData = 
-    comparisonScenario?.results?.timeSeriesData || 
-    comparisonScenario?.results?.timeSeries || 
-    {};
-  
-  // Check if we have time series data
-  const hasBaselineTimeSeries = Object.keys(baselineTimeSeriesData).length > 0;
-  const hasComparisonTimeSeries = Object.keys(comparisonTimeSeriesData).length > 0;
-  
-  // Return early if either scenario doesn't have time series data
-  if (!hasBaselineTimeSeries || !hasComparisonTimeSeries) {
-    console.error('Missing time series data in scenarios:', {
-      baselineResultsExists: !!actualBaselineResults,
-      comparisonResultsExists: !!comparisonScenario?.results,
-      baselineTimeSeriesExists: hasBaselineTimeSeries,
-      comparisonTimeSeriesExists: hasComparisonTimeSeries,
-      baselineResultsFields: actualBaselineResults ? Object.keys(actualBaselineResults) : [],
-      comparisonResultsFields: comparisonScenario?.results ? Object.keys(comparisonScenario.results) : []
-    });
-    
-    // If we're missing time series data, run the simulation with the current model
-    if (!hasComparisonTimeSeries) {
-      return (
-        <div className="flex flex-col items-center justify-center h-full gap-2">
-          <p className="text-amber-400">Waiting for simulation data...</p>
-          <p className="text-gray-400 text-sm">Select "Run Comparison" to generate convergence data</p>
-        </div>
-      );
-    }
-    
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-gray-400">No convergence data available for these scenarios</p>
-      </div>
-    );
-  }
-
-  // Check if we're comparing a scenario to itself
-  if (baselineScenario?.id !== 'baseline' && 
-      comparisonScenario?.id !== 'baseline' &&
-      baselineScenario?.id === comparisonScenario?.id) {
-    console.warn('Same scenario selected for both baseline and comparison');
-  }
-
-  // Use the time series data we already prepared above
-  const baselineTimeSeries = baselineTimeSeriesData;
-  const comparisonTimeSeries = comparisonTimeSeriesData;
-  
-  // Debug what the time series data actually contains
-  console.log('Time series data inspection:', {
-    baselineTimeSeriesKeys: Object.keys(baselineTimeSeries),
-    comparisonTimeSeriesKeys: Object.keys(comparisonTimeSeries),
-    baselineTimeSeries: JSON.stringify(baselineTimeSeries).substring(0, 100) + '...',
-    comparisonTimeSeries: JSON.stringify(comparisonTimeSeries).substring(0, 100) + '...'
-  });
-
-  // Get maximum iterations to ensure consistent x-axis
-  const baselineIterations = actualBaselineResults?.iterations || 0;
-  const comparisonIterations = comparisonScenario?.results?.iterations || 0;
-  const maxIterations = Math.max(baselineIterations, comparisonIterations);
-
-  // Generate labels for x-axis (iterations)
-  const labels = Array.from({ length: maxIterations + 1 }, (_, i) => `${i}`);
-
-  // Select up to 5 nodes to display (prioritize outcome nodes if available)
-  const allNodeIds = Object.keys(nodeLabels);
-  const nodeIds = allNodeIds.length <= 5 ? allNodeIds : allNodeIds.slice(0, 5);
-
-  // Generate datasets for the chart
-  const colors = [
-    'rgba(168, 85, 247, 1)',  // purple
-    'rgba(0, 196, 255, 1)',   // teal
-    'rgba(239, 68, 68, 1)',   // red
-    'rgba(59, 130, 246, 1)',  // blue
-    'rgba(234, 179, 8, 1)',   // yellow
-  ];
-  
-  type ChartDataset = {
-    label: string;
-    data: number[];
-    borderColor: string;
-    backgroundColor: string;
-    borderDash?: number[];
-    tension: number;
-  };
-  
-  const datasets: ChartDataset[] = [];
-
-  // Add datasets for baseline scenario (dashed lines)
-  nodeIds.forEach((nodeId, index) => {
-    console.log(`Checking baseline dataset for node ${nodeId}:`, {
-      exists: !!baselineTimeSeries[nodeId],
-      dataType: baselineTimeSeries[nodeId] ? typeof baselineTimeSeries[nodeId] : 'missing',
-      isArray: baselineTimeSeries[nodeId] ? Array.isArray(baselineTimeSeries[nodeId]) : false,
-      arrayLength: baselineTimeSeries[nodeId] ? baselineTimeSeries[nodeId].length : 0
-    });
-    
-    if (baselineTimeSeries[nodeId] && Array.isArray(baselineTimeSeries[nodeId])) {
-      const colorIndex = index % colors.length;
-      
-      datasets.push({
-        label: `${nodeLabels[nodeId] || `Node ${nodeId}`} (Baseline)`,
-        data: baselineTimeSeries[nodeId],
-        borderColor: colors[colorIndex],
-        backgroundColor: 'transparent',
-        borderDash: [5, 5],
-        tension: 0.3,
-      });
-    }
-  });
-
-  // Add datasets for comparison scenario (solid lines)
-  nodeIds.forEach((nodeId, index) => {
-    console.log(`Checking comparison dataset for node ${nodeId}:`, {
-      exists: !!comparisonTimeSeries[nodeId],
-      dataType: comparisonTimeSeries[nodeId] ? typeof comparisonTimeSeries[nodeId] : 'missing',
-      isArray: comparisonTimeSeries[nodeId] ? Array.isArray(comparisonTimeSeries[nodeId]) : false,
-      arrayLength: comparisonTimeSeries[nodeId] ? comparisonTimeSeries[nodeId].length : 0,
-      value: comparisonTimeSeries[nodeId] ? JSON.stringify(comparisonTimeSeries[nodeId]).substring(0, 100) + '...' : 'none'
-    });
-    
-    if (comparisonTimeSeries[nodeId] && Array.isArray(comparisonTimeSeries[nodeId])) {
-      const colorIndex = index % colors.length;
-      
-      datasets.push({
-        label: `${nodeLabels[nodeId] || `Node ${nodeId}`} (${comparisonScenario?.name || 'Comparison'})`,
-        data: comparisonTimeSeries[nodeId],
-        borderColor: colors[colorIndex],
-        backgroundColor: 'transparent',
-        tension: 0.3,
-      });
-    }
-  });
-
-  // Chart options
-  const options: ChartOptions<'line'> = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      x: {
-        title: {
-          display: true,
-          text: 'Iterations',
-          color: 'rgba(255, 255, 255, 0.7)',
-        },
-        ticks: {
-          color: 'rgba(255, 255, 255, 0.7)',
-        },
-        grid: {
-          color: 'rgba(255, 255, 255, 0.1)',
-        },
-      },
-      y: {
-        min: 0,
-        max: 1,
-        title: {
-          display: true,
-          text: 'Concept Value',
-          color: 'rgba(255, 255, 255, 0.7)',
-        },
-        ticks: {
-          color: 'rgba(255, 255, 255, 0.7)',
-        },
-        grid: {
-          color: 'rgba(255, 255, 255, 0.1)',
-        },
-      },
-    },
-    plugins: {
-      legend: {
-        position: 'top',
-        labels: {
-          color: 'rgba(255, 255, 255, 0.7)',
-          font: {
-            size: 10,
-          },
-          boxWidth: 12,
-          usePointStyle: true,
-        },
-      },
-      tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        titleColor: 'white',
-        bodyColor: 'white',
-        callbacks: {
-          label: function(context) {
-            return `${context.dataset.label}: ${parseFloat(context.raw as string).toFixed(3)}`;
-          }
-        }
-      }
-    },
-  };
-
-  console.log('Chart data preparation:', {
-    maxIterations: maxIterations, 
-    labelCount: labels.length,
-    nodeIdsFound: nodeIds,
-    datasetsGenerated: datasets.length,
-    baselineDatasetCount: nodeIds.filter(id => baselineTimeSeries[id] && Array.isArray(baselineTimeSeries[id])).length,
-    comparisonDatasetCount: nodeIds.filter(id => comparisonTimeSeries[id] && Array.isArray(comparisonTimeSeries[id])).length
-  });
-
-  return (
-    <Line
-      options={options}
-      data={{
-        labels: labels,
-        datasets: datasets
-      }}
-    />
-  );
-}
+export default ScenarioComparison;

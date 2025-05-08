@@ -1,22 +1,53 @@
 import numpy as np
 import networkx as nx
 import json
+import traceback
 from typing import Dict, List, Literal, Optional, Tuple, Union, Any
 import pandas as pd
+import copy
+import logging
+from flask import current_app
+
+logging.basicConfig(level=logging.INFO)
+
+# --- Normalization Helpers ---
+def normalize_node(node: Any) -> Dict:
+    """Normalize a node dict from frontend to backend format."""
+    # TODO: Remove legacy/nested format support if not needed
+    if 'data' in node and isinstance(node['data'], dict):
+        node_data = node['data']
+        return {
+            'id': str(node.get('id', '')),
+            'value': float(node_data.get('value', 0.0)),
+            'label': str(node_data.get('label', '')),
+            'type': str(node_data.get('type', 'regular'))
+        }
+    return {
+        'id': str(node.get('id', '')),
+        'value': float(node.get('value', 0.0)),
+        'label': str(node.get('label', '')),
+        'type': str(node.get('type', 'regular'))
+    }
+
+def normalize_edge(edge: Any) -> Dict:
+    """Normalize an edge dict from frontend to backend format."""
+    # TODO: Remove legacy/nested format support if not needed
+    weight = (edge.get('data', {}).get('weight', 0.0)
+              if isinstance(edge.get('data'), dict)
+              else edge.get('weight', 0.0))
+    return {
+        'source': str(edge.get('source', '')),
+        'target': str(edge.get('target', '')),
+        'weight': float(weight)
+    }
 
 def normalize_input_data(data: Any) -> Any:
-    """
-    Normalize input data from frontend to ensure proper Python types.
-    Converts string 'true'/'false' to Python booleans and handles
-    other type conversions as needed.
-    
-    Args:
-        data: Any input data structure (dict, list, str, etc.)
-        
-    Returns:
-        Normalized data structure with proper Python types
-    """
+    """Recursively normalize input data from frontend to ensure proper Python types."""
     if isinstance(data, dict):
+        if 'source' in data and 'target' in data:
+            return normalize_edge(data)
+        elif 'id' in data:
+            return normalize_node(data)
         return {k: normalize_input_data(v) for k, v in data.items()}
     elif isinstance(data, list):
         return [normalize_input_data(item) for item in data]
@@ -27,22 +58,15 @@ def normalize_input_data(data: Any) -> Any:
     elif data == "null" or data is None:
         return None
     elif isinstance(data, str):
-        # Try to convert to numeric types
         if data.lower() in ["sigmoid", "tanh", "relu"]:
-            # Ensure activation function names are lowercase
             return data.lower()
         try:
-            # Try to convert to float or int if it's a numeric string
-            if '.' in data:
-                return float(data)
-            else:
-                return int(data)
+            return float(data) if '.' in data else int(data)
         except (ValueError, TypeError):
-            # If not numeric, just return the string
             return data
-    else:
-        return data
+    return data
 
+# --- Activation Functions ---
 def sigmoid(x: float) -> float:
     """Sigmoid activation function."""
     return 1 / (1 + np.exp(-x))
@@ -66,12 +90,31 @@ class FCMSimulator:
         threshold: float = 0.001,
         max_iterations: int = 100
     ):
-        self.nodes = nodes
-        self.edges = edges
+        """Initialize FCM simulator with nodes and edges."""
+        logging.info("Initializing FCM Simulator")
+        logging.info(f"Activation function: {activation_function}")
+        logging.info(f"Threshold: {threshold}")
+        logging.info(f"Max iterations: {max_iterations}")
+        
+        if not nodes:
+            raise ValueError("No nodes provided for simulation")
+        
+        self.nodes = [normalize_node(node) for node in nodes]
+        self.edges = [normalize_edge(edge) for edge in edges]
         self.threshold = threshold
         self.max_iterations = max_iterations
         
-        # Set activation function
+        for node in self.nodes:
+            if not isinstance(node, dict) or 'id' not in node:
+                raise ValueError(f"Invalid node structure: {node}")
+            node_value = node.get('value')
+            if node_value is None:
+                raise ValueError(f"Node missing value: {node}")
+            try:
+                float(node_value)
+            except (TypeError, ValueError):
+                raise ValueError(f"Invalid node value: {node_value}")
+        
         if activation_function == "sigmoid":
             self.activation = sigmoid
         elif activation_function == "tanh":
@@ -81,496 +124,553 @@ class FCMSimulator:
         else:
             raise ValueError(f"Unknown activation function: {activation_function}")
         
-        # Create a directed graph
         self.graph = nx.DiGraph()
         
-        # Add nodes to the graph
+        logging.info("Adding nodes to graph:")
         for node in self.nodes:
-            self.graph.add_node(node["id"], value=node["data"]["value"], label=node["data"].get("label", ""))
+            node_id, value, label = self._parse_node(node)
+            logging.debug(f"Extracted values - id: {node_id}, value: {value}, label: {label}")
+            self.graph.add_node(
+                node_id,
+                value=value,
+                label=label
+            )
+            logging.debug(f"Added node {node_id} to graph")
         
-        # Add edges to the graph
+        logging.info("Adding edges to graph:")
         for edge in self.edges:
-            self.graph.add_edge(
-                edge["source"], 
-                edge["target"], 
-                weight=edge["data"]["weight"]
-            )
-            
-        # Get initial state
-        self.initial_state = {node["id"]: node["data"]["value"] for node in self.nodes}
-
-    def run_simulation(self) -> Dict:
-        """Run FCM simulation until convergence or max iterations."""
-        # Initialize time series data with initial state
-        time_series = {node_id: [value] for node_id, value in self.initial_state.items()}
+            source, target, weight = self._parse_edge(edge)
+            logging.debug(f"Extracted values - source: {source}, target: {target}, weight: {weight}")
+            if source in self.graph and target in self.graph:
+                self.graph.add_edge(source, target, weight=weight)
+                logging.debug(f"Added edge {source} -> {target} with weight {weight}")
+            else:
+                logging.warning(f"Skipping edge with invalid source or target: {source} -> {target}")
         
-        # Create adjacency matrix
-        node_ids = list(self.graph.nodes())
-        n = len(node_ids)
-        adjacency_matrix = np.zeros((n, n))
+        logging.info("Graph initialization complete")
+        logging.info(f"Number of nodes: {self.graph.number_of_nodes()}")
+        logging.info(f"Number of edges: {self.graph.number_of_edges()}")
         
-        # Map node IDs to indices
-        node_to_index = {node_id: i for i, node_id in enumerate(node_ids)}
-        
-        # Fill adjacency matrix
-        for u, v, data in self.graph.edges(data=True):
-            adjacency_matrix[node_to_index[u], node_to_index[v]] = data['weight']
-            
-        # Initial state vector
-        state_vector = np.array([self.initial_state[node_id] for node_id in node_ids])
-        
-        # Run simulation
-        converged = False
-        iteration = 0
-        
-        while not converged and iteration < self.max_iterations:
-            iteration += 1
-            
-            # Calculate new state: S(t+1) = f(S(t) * W)
-            new_state_vector = np.copy(state_vector)
-            
-            for i in range(n):
-                # Calculate weighted sum of inputs
-                weighted_sum = np.dot(state_vector, adjacency_matrix[:, i])
-                
-                # Apply activation function
-                new_state_vector[i] = self.activation(weighted_sum)
-            
-            # Check for convergence
-            diff = np.abs(new_state_vector - state_vector).max()
-            converged = diff < self.threshold
-            
-            # Update state vector
-            state_vector = new_state_vector
-            
-            # Record state for time series
-            for i, node_id in enumerate(node_ids):
-                time_series[node_id].append(float(state_vector[i]))
-        
-        # Create final state
-        final_state = {node_id: float(state_vector[i]) for i, node_id in enumerate(node_ids)}
-        
-        # Return results
-        return {
-            "timeSeries": time_series,
-            "finalState": final_state,
-            "iterations": iteration,
-            "converged": converged
+        self.initial_state = {
+            node_id: float(data['value'])
+            for node_id, data in self.graph.nodes(data=True)
         }
-    
-    def generate_notebook(self, title: str = "FCM Simulation Analysis") -> dict:
-        """Generate a Jupyter notebook with simulation results."""
-        import nbformat as nbf
-        
-        # Run simulation to get results
-        results = self.run_simulation()
-        
-        # Create a new notebook
-        nb = nbf.v4.new_notebook()
-        
-        # Add title cell
-        nb.cells.append(nbf.v4.new_markdown_cell(f"# {title}"))
-        
-        # Add description
-        nb.cells.append(nbf.v4.new_markdown_cell("""
-        This notebook contains an analysis of a Fuzzy Cognitive Map (FCM) simulation.
-        
-        ## Model Description
-        
-        The model consists of nodes (concepts) connected by weighted edges (causal relationships).
-        """))
-        
-        # Add code cell for setup and imports
-        nb.cells.append(nbf.v4.new_code_cell("""
-        import numpy as np
-        import pandas as pd
-        import matplotlib.pyplot as plt
-        import networkx as nx
-        import seaborn as sns
-        
-        # Set plot style
-        plt.style.use('ggplot')
-        sns.set(style="darkgrid")
-        """))
-        
-        # Add model data
-        nodes_str = json.dumps(self.nodes, indent=2)
-        edges_str = json.dumps(self.edges, indent=2)
-        
-        nb.cells.append(nbf.v4.new_code_cell(f"""
-        # Model data
-        nodes = {nodes_str}
-        edges = {edges_str}
-        
-        # Create node information dataframe
-        node_df = pd.DataFrame([
-            {{"id": node["id"], 
-              "label": node["data"].get("label", ""), 
-              "initial_value": node["data"]["value"],
-              "type": node["data"].get("type", "regular")
-            }} for node in nodes
-        ])
-        
-        # Display node information
-        print("Node Information:")
-        display(node_df)
-        """))
-        
-        # Add network visualization
-        nb.cells.append(nbf.v4.new_code_cell("""
-        # Create a directed graph
-        G = nx.DiGraph()
-        
-        # Add nodes to the graph
-        for node in nodes:
-            G.add_node(node["id"], label=node["data"].get("label", ""), value=node["data"]["value"])
-        
-        # Add edges to the graph
-        for edge in edges:
-            G.add_edge(
-                edge["source"], 
-                edge["target"], 
-                weight=edge["data"]["weight"]
-            )
-            
-        # Plot the network
-        plt.figure(figsize=(12, 10))
-        pos = nx.spring_layout(G, seed=42)
-        
-        # Node labels
-        labels = {node["id"]: node["data"].get("label", node["id"]) for node in nodes}
-        
-        # Edge weights
-        edge_weights = [G[u][v]["weight"] for u, v in G.edges()]
-        
-        # Create a colormap for edges: red for positive, blue for negative
-        edge_colors = ["red" if w > 0 else "blue" for w in edge_weights]
-        
-        # Draw the network
-        nx.draw_networkx_nodes(G, pos, node_size=700, alpha=0.8)
-        nx.draw_networkx_labels(G, pos, labels=labels, font_size=12)
-        nx.draw_networkx_edges(
-            G, pos, width=2, alpha=0.7, 
-            edge_color=edge_colors,
-            connectionstyle="arc3,rad=0.1",
-            arrowsize=20
-        )
-        
-        # Add edge labels (weights)
-        edge_labels = {(u, v): f"{G[u][v]['weight']:.2f}" for u, v in G.edges()}
-        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=10)
-        
-        plt.title("Fuzzy Cognitive Map Network", fontsize=16)
-        plt.axis("off")
-        plt.tight_layout()
-        plt.show()
-        """))
-        
-        # Add time series visualization
-        time_series_str = json.dumps(results["timeSeries"], indent=2)
-        iterations_count = results["iterations"]
-        converged_status = str(results["converged"]).lower()
-        
-        nb.cells.append(nbf.v4.new_code_cell(f"""
-        # Simulation results
-        time_series = {time_series_str}
-        final_state = {json.dumps(results["finalState"], indent=2)}
-        iterations = {iterations_count}
-        converged = "{converged_status}"
-        
-        # Convert time series to DataFrame
-        df = pd.DataFrame(time_series)
-        
-        # Plot time series
-        plt.figure(figsize=(12, 6))
-        for column in df.columns:
-            # Get the label for this node
-            node_label = next((node["data"].get("label", column) for node in nodes if node["id"] == column), column)
-            plt.plot(df[column], marker='o', markersize=4, label=node_label)
-            
-        plt.title(f"FCM Simulation Convergence (Iterations: {{iterations}}, Converged: {{converged}})", fontsize=15)
-        plt.xlabel("Iteration", fontsize=12)
-        plt.ylabel("Node Value", fontsize=12)
-        plt.grid(True, alpha=0.3)
-        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        plt.show()
-        """))
-        
-        # Add final state analysis
-        nb.cells.append(nbf.v4.new_code_cell("""
-        # Analyze final state
-        final_df = pd.DataFrame([
-            {"id": node_id, 
-             "label": next((node["data"].get("label", node_id) for node in nodes if node["id"] == node_id), node_id),
-             "initial_value": next((node["data"]["value"] for node in nodes if node["id"] == node_id), 0),
-             "final_value": final_state[node_id],
-             "change": final_state[node_id] - next((node["data"]["value"] for node in nodes if node["id"] == node_id), 0)
-            } for node_id in final_state.keys()
-        ])
-        
-        # Sort by absolute change
-        final_df["abs_change"] = final_df["change"].abs()
-        final_df = final_df.sort_values("abs_change", ascending=False)
-        final_df = final_df.drop("abs_change", axis=1)
-        
-        print("Final State Analysis:")
-        display(final_df)
-        
-        # Plot initial vs final values
-        plt.figure(figsize=(10, 6))
-        
-        x = range(len(final_df))
-        width = 0.35
-        
-        plt.bar(x, final_df["initial_value"], width, label="Initial Value", alpha=0.7)
-        plt.bar([i + width for i in x], final_df["final_value"], width, label="Final Value", alpha=0.7)
-        
-        plt.xlabel("Node", fontsize=12)
-        plt.ylabel("Value", fontsize=12)
-        plt.title("Initial vs Final Node Values", fontsize=15)
-        plt.xticks([i + width/2 for i in x], final_df["label"], rotation=45, ha="right")
-        plt.legend()
-        plt.tight_layout()
-        plt.show()
-        """))
-        
-        # Add network analysis
-        nb.cells.append(nbf.v4.new_code_cell("""
-        # Network Analysis
-        print("Network Statistics:")
-        print(f"Number of nodes: {G.number_of_nodes()}")
-        print(f"Number of edges: {G.number_of_edges()}")
-        print(f"Network density: {nx.density(G):.4f}")
-        
-        # Calculate centrality measures
-        degree_centrality = nx.degree_centrality(G)
-        in_degree_centrality = nx.in_degree_centrality(G)
-        out_degree_centrality = nx.out_degree_centrality(G)
-        betweenness_centrality = nx.betweenness_centrality(G)
-        
-        # Create centrality dataframe
-        centrality_df = pd.DataFrame({
-            "Node": list(G.nodes()),
-            "Degree": list(degree_centrality.values()),
-            "In-Degree": list(in_degree_centrality.values()),
-            "Out-Degree": list(out_degree_centrality.values()),
-            "Betweenness": list(betweenness_centrality.values())
-        })
-        
-        # Add node labels
-        centrality_df["Label"] = centrality_df["Node"].apply(
-            lambda x: next((node["data"].get("label", x) for node in nodes if node["id"] == x), x)
-        )
-        
-        # Sort by degree centrality
-        centrality_df = centrality_df.sort_values("Degree", ascending=False)
-        
-        print("\\nCentrality Analysis:")
-        display(centrality_df)
-        
-        # Plot centrality measures
-        plt.figure(figsize=(14, 6))
-        
-        plt.subplot(1, 2, 1)
-        plt.bar(centrality_df["Label"], centrality_df["In-Degree"], alpha=0.7, label="In-Degree")
-        plt.bar(centrality_df["Label"], centrality_df["Out-Degree"], alpha=0.7, label="Out-Degree", bottom=centrality_df["In-Degree"])
-        plt.xticks(rotation=45, ha="right")
-        plt.ylabel("Centrality")
-        plt.title("In/Out Degree Centrality")
-        plt.legend()
-        
-        plt.subplot(1, 2, 2)
-        plt.bar(centrality_df["Label"], centrality_df["Betweenness"], alpha=0.7, color="green")
-        plt.xticks(rotation=45, ha="right")
-        plt.ylabel("Centrality")
-        plt.title("Betweenness Centrality")
-        
-        plt.tight_layout()
-        plt.show()
-        """))
-        
-        # Add adjacency matrix visualization
-        nb.cells.append(nbf.v4.new_code_cell("""
-        # Create and visualize adjacency matrix
-        adj_matrix = nx.to_numpy_array(G, nodelist=list(G.nodes()))
-        
-        plt.figure(figsize=(10, 8))
-        sns.heatmap(
-            adj_matrix, 
-            cmap="RdBu_r", 
-            center=0,
-            annot=True, 
-            fmt=".2f",
-            xticklabels=[labels[node] for node in G.nodes()],
-            yticklabels=[labels[node] for node in G.nodes()],
-            cbar_kws={"label": "Edge Weight"}
-        )
-        plt.title("FCM Adjacency Matrix", fontsize=15)
-        plt.tight_layout()
-        plt.show()
-        """))
-        
-        # Return the notebook
-        return nb
+        self.node_order = list(self.graph.nodes)
 
-def run_fcm_simulation(
-    nodes: List[Dict], 
-    edges: List[Dict], 
+    def _parse_node(self, node: Dict) -> Tuple[str, float, str]:
+        """Extract id, value, label from a node dict."""
+        node_id = str(node.get('id', ''))
+        value = float(node.get('value', 0.0))
+        label = str(node.get('label', ''))
+        return node_id, value, label
+
+    def _parse_edge(self, edge: Dict) -> Tuple[str, str, float]:
+        """Extract source, target, weight from an edge dict."""
+        source = str(edge.get('source', ''))
+        target = str(edge.get('target', ''))
+        weight = float(edge.get('weight', 0.0))
+        return source, target, weight
+
+    def run_simulation(self, clamped_nodes=None, clamped_values=None) -> Dict:
+        """Run the FCM simulation, optionally clamping nodes to fixed values."""
+        try:
+            logging.info("=== Starting Simulation ===")
+            logging.debug(f"Initial graph state: {[node for node in self.graph.nodes(data=True)]}")
+            time_series: Dict[str, List[float]] = {
+                node: [float(self.graph.nodes[node]['value'])]
+                for node in self.graph.nodes
+            }
+            current_state = {node: self.graph.nodes[node]['value'] for node in self.graph.nodes}
+            logging.debug(f"Initial state: {current_state}")
+            adjacency_matrix = nx.adjacency_matrix(self.graph).todense()
+            logging.debug(f"Adjacency matrix shape: {adjacency_matrix.shape}")
+            converged = False
+            iterations = 0
+            clamped_nodes = clamped_nodes or []
+            clamped_values = clamped_values or {}
+            while not converged and iterations < self.max_iterations:
+                iterations += 1
+                logging.debug(f"Iteration {iterations}")
+                new_state = {}
+                for node in self.graph.nodes:
+                    current_values = np.array([self.graph.nodes[n]['value'] for n in self.node_order])
+                    node_index = self.node_order.index(node)
+                    incoming_weights = np.array(adjacency_matrix)[:, node_index]
+                    if node in clamped_nodes:
+                        new_value = clamped_values.get(node, self.graph.nodes[node]['value'])
+                        logging.debug(f"Node {node}: Clamped at {new_value}")
+                    else:
+                        new_value = float(self.activation(np.dot(current_values, incoming_weights)))
+                        logging.debug(f"Node {node}: {self.graph.nodes[node]['value']} -> {new_value}")
+                    new_state[node] = new_value
+                max_change = max(abs(new_state[node] - self.graph.nodes[node]['value']) 
+                               for node in self.graph.nodes)
+                logging.debug(f"Max change: {max_change}")
+                if max_change < self.threshold:
+                    converged = True
+                    logging.info("Simulation converged")
+                for node, value in new_state.items():
+                    self.graph.nodes[node]['value'] = value
+                    time_series[node].append(value)
+            logging.info(f"Simulation completed after {iterations} iterations")
+            logging.info(f"Converged: {converged}")
+            final_state = {
+                node: {
+                    'id': node,
+                    'label': self.graph.nodes[node]['label'],
+                    'value': float(self.graph.nodes[node]['value'])
+                }
+                for node in self.graph.nodes
+            }
+            logging.debug(f"Final state: {json.dumps(final_state, indent=2)}")
+            return {
+                'finalState': final_state,
+                'timeSeries': time_series,
+                'iterations': iterations,
+                'converged': converged,
+                'initialValues': {node: float(val) for node, val in current_state.items()},
+                'clampedNodes': clamped_nodes or []
+            }
+        except Exception as e:
+            logging.error(f"Error in simulation: {str(e)}")
+            logging.error(f"Error type: {type(e).__name__}")
+            logging.error(f"Traceback: {traceback.format_exc()}")
+            raise
+
+def run_simulation(
+    nodes: List[Dict],
+    edges: List[Dict],
     activation_function: str = "sigmoid",
     threshold: float = 0.001,
     max_iterations: int = 100,
-    generate_notebook: bool = False
+    generate_notebook: bool = False,
+    clamped_nodes: Optional[List[str]] = None,
+    clamped_values: Optional[Dict[str, float]] = None
 ) -> Dict:
-    """
-    Run FCM simulation with the given nodes and edges.
+    """Run a single FCM simulation with optional node clamping.
     
     Args:
-        nodes: List of node objects with id and data properties
-        edges: List of edge objects with source, target and data properties
-        activation_function: Activation function to use (sigmoid, tanh, relu)
-        threshold: Convergence threshold
-        max_iterations: Maximum number of iterations
-        generate_notebook: Whether to generate a Jupyter notebook
+        nodes: List of node dictionaries containing id, value, and label
+        edges: List of edge dictionaries containing source, target, and weight
+        activation_function: Activation function to use ('sigmoid', 'tanh', 'relu')
+        threshold: Convergence threshold for simulation
+        max_iterations: Maximum number of iterations before stopping
+        generate_notebook: Whether to generate a Jupyter notebook (deprecated, use export.py instead)
+        clamped_nodes: List of node IDs to clamp during simulation
+        clamped_values: Dictionary mapping node IDs to their clamped values
         
     Returns:
-        Dict with simulation results
+        Dict containing simulation results:
+        - finalState: Final state of all nodes
+        - timeSeries: Time series data for all nodes
+        - iterations: Number of iterations performed
+        - converged: Whether simulation converged
+        - initialValues: Initial values of all nodes
+        - clampedNodes: List of clamped nodes
+        
+    Raises:
+        ValueError: If simulation fails or input data is invalid
     """
-    # Normalize input data
-    normalized_nodes = normalize_input_data(nodes)
-    normalized_edges = normalize_input_data(edges)
-    normalized_activation = normalize_input_data(activation_function)
-    normalized_threshold = float(threshold)
-    normalized_max_iterations = int(max_iterations)
-    normalized_generate_notebook = normalize_input_data(generate_notebook)
-    
-    # Log input data types for debugging
-    print(f"Activation function: {normalized_activation}, type: {type(normalized_activation)}")
-    print(f"Generate notebook: {normalized_generate_notebook}, type: {type(normalized_generate_notebook)}")
-    
-    # Create simulator
-    simulator = FCMSimulator(
-        nodes=normalized_nodes,
-        edges=normalized_edges,
-        activation_function=normalized_activation,
-        threshold=normalized_threshold,
-        max_iterations=normalized_max_iterations
-    )
-    
-    # Run simulation
-    results = simulator.run_simulation()
-    
-    # Generate notebook if requested (must check normalized value)
-    if normalized_generate_notebook:
-        import nbformat as nbf
-        nb = simulator.generate_notebook()
-        results["notebook"] = nbf.v4.writes(nb)
-    
-    return results
+    try:
+        logging.info("Running simulation...")
+        
+        # Validate input data
+        if not nodes:
+            raise ValueError("No nodes provided for simulation")
+        if not all(isinstance(node, dict) and 'id' in node for node in nodes):
+            raise ValueError("Invalid node structure: all nodes must be dictionaries with 'id'")
+        if not all(isinstance(edge, dict) and 'source' in edge and 'target' in edge for edge in edges):
+            raise ValueError("Invalid edge structure: all edges must be dictionaries with 'source' and 'target'")
+        
+        # Create simulator instance
+        simulator = FCMSimulator(
+            nodes=nodes,
+            edges=edges,
+            activation_function=activation_function,
+            threshold=threshold,
+            max_iterations=max_iterations
+        )
+        
+        # Run simulation with clamping
+        results = simulator.run_simulation(
+            clamped_nodes=clamped_nodes,
+            clamped_values=clamped_values
+        )
+        
+        logging.info("Simulation completed successfully")
+        logging.debug(f"Time series data structure: {len(results.get('timeSeries', {}).get(list(results['timeSeries'].keys())[0], []))} iterations")
+        
+        # Return results in the correct format
+        return {
+            'finalState': results.get('finalState', {}),
+            'timeSeries': results.get('timeSeries', {}),
+            'iterations': results.get('iterations', 0),
+            'converged': results.get('converged', False),
+            'initialValues': results.get('initialValues', {}),
+            'clampedNodes': clamped_nodes or []
+        }
+        
+    except Exception as e:
+        logging.error(f"Error in simulation: {str(e)}")
+        logging.error(f"Error type: {type(e).__name__}")
+        logging.error(f"Traceback: {traceback.format_exc()}")
+        raise ValueError(f"Simulation failed: {str(e)}")
 
+def apply_initial_values(
+    nodes: List[Dict],
+    initial_values: Optional[Dict[str, float]]
+) -> List[Dict]:
+    """Apply initial values to nodes, ensuring all values are properly set.
+    
+    Args:
+        nodes: List of node dictionaries containing id and value
+        initial_values: Dictionary mapping node IDs to initial values
+        
+    Returns:
+        List of updated node dictionaries with initial values applied
+        
+    Raises:
+        ValueError: If a node ID in initial_values is not found in nodes
+        TypeError: If node values cannot be converted to float
+    """
+    try:
+        logging.info(f"Applying initial values: {initial_values}")
+        
+        # Validate input
+        if not nodes:
+            raise ValueError("No nodes provided")
+        if not all(isinstance(node, dict) and 'id' in node for node in nodes):
+            raise ValueError("Invalid node structure: all nodes must be dictionaries with 'id'")
+        
+        # Create a set of valid node IDs for quick lookup
+        valid_node_ids = {str(node['id']) for node in nodes}
+        
+        # Validate initial values
+        if initial_values:
+            invalid_ids = set(initial_values.keys()) - valid_node_ids
+            if invalid_ids:
+                raise ValueError(f"Initial values provided for non-existent nodes: {invalid_ids}")
+        
+        # Apply values
+        for node in nodes:
+            node_id = str(node['id'])
+            if initial_values and node_id in initial_values:
+                try:
+                    node['value'] = float(initial_values[node_id])
+                    logging.info(f"Set node {node_id} value to {node['value']} from initial values")
+                except (TypeError, ValueError) as e:
+                    raise TypeError(f"Invalid value for node {node_id}: {initial_values[node_id]}") from e
+            else:
+                logging.info(f"Using default value {node.get('value', 0)} for node {node_id}")
+        
+        return nodes
+        
+    except Exception as e:
+        logging.error(f"Error applying initial values: {str(e)}")
+        logging.error(f"Error type: {type(e).__name__}")
+        logging.error(f"Traceback: {traceback.format_exc()}")
+        raise
+
+def fuzzy_categorize_direction(
+    baseline_series: List[float],
+    scenario_series: List[float],
+    global_max_change: float,
+    epsilon: float = 1e-4
+) -> str:
+    """Categorize the direction of change between baseline and scenario time series.
+    
+    Args:
+        baseline_series: List of baseline time series values.
+        scenario_series: List of scenario time series values.
+        global_max_change: Global maximum change for relative comparison.
+        epsilon: Small value to avoid division by zero.
+    
+    Returns:
+        String categorizing the direction (e.g., 'No Change', 'High Increase', 'Oscillating (Medium)').
+    
+    Raises:
+        ValueError: If input series are empty or of mismatched length.
+    """
+    try:
+        if not baseline_series or not scenario_series:
+            raise ValueError("Input series must not be empty.")
+        if len(baseline_series) != len(scenario_series):
+            raise ValueError("Baseline and scenario series must be of equal length.")
+        
+        diff_series = np.array(scenario_series) - np.array(baseline_series)
+        final_delta = diff_series[-1]
+        max_abs = np.max(np.abs(diff_series))
+        rel = max_abs / (global_max_change + epsilon)
+
+        if rel <= 0.1:
+            return "No Change"
+
+        # Magnitude label
+        if rel > 0.7:
+            mag = "High"
+        elif rel > 0.3:
+            mag = "Medium"
+        else:
+            mag = "Low"
+
+        # Oscillating: more than one sign flip
+        signs = np.sign(diff_series)
+        nonzero_signs = signs[signs != 0]
+        if len(nonzero_signs) > 1:
+            crosses = np.sum(np.diff(nonzero_signs) != 0)
+            if crosses > 1:
+                return f"Oscillating ({mag})"
+
+        auc = np.trapz(diff_series)
+        # Temporary change: returns to near baseline at end (relative threshold)
+        if rel > 0.1 and np.abs(final_delta) < max(epsilon, 0.05 * max_abs):
+            return f"Temporary {mag} {'Increase' if auc > 0 else 'Decrease'}"
+
+        # Sustained change
+        if final_delta > epsilon:
+            return f"{mag} Increase"
+        elif final_delta < -epsilon:
+            return f"{mag} Decrease"
+
+        # Fallback: use AUC (area under the curve)
+        if auc > 0:
+            return f"{mag} Increase"
+        elif auc < 0:
+            return f"{mag} Decrease"
+
+        return "No Change"
+    except Exception as e:
+        logging.error(f"Error in fuzzy_categorize_direction: {str(e)}")
+        logging.error(f"Error type: {type(e).__name__}")
+        logging.error(f"Traceback: {traceback.format_exc()}")
+        raise
+
+def _calculate_impact_metrics(
+    node_id: str,
+    baseline_results: Dict,
+    scenario_results: Dict,
+    global_max_change: float
+) -> Dict:
+    """Calculate impact metrics for a single node.
+    
+    Args:
+        node_id: ID of the node to analyze.
+        baseline_results: Results from baseline simulation (dict with 'finalState' and 'timeSeries').
+        scenario_results: Results from scenario simulation (dict with 'finalState' and 'timeSeries').
+        global_max_change: Global maximum change for relative comparison.
+    
+    Returns:
+        Dictionary containing impact metrics for the node:
+            - id: Node ID
+            - label: Node label
+            - baseline: Baseline final value
+            - scenario: Scenario final value
+            - delta: Difference (scenario - baseline)
+            - normalizedChangePercent: Normalized percent change
+            - auc: Area under the curve of the difference series
+            - maxDifference: Maximum absolute difference
+            - direction: Fuzzy direction label
+    
+    Raises:
+        ValueError: If node_id is missing from results or series are empty.
+    """
+    try:
+        if node_id not in baseline_results['finalState'] or node_id not in scenario_results['finalState']:
+            raise ValueError(f"Node ID {node_id} missing from finalState.")
+        if node_id not in baseline_results['timeSeries'] or node_id not in scenario_results['timeSeries']:
+            raise ValueError(f"Node ID {node_id} missing from timeSeries.")
+        
+        baseline_value = baseline_results['finalState'][node_id]['value']
+        scenario_value = scenario_results['finalState'][node_id]['value']
+        
+        # Normalized percent change
+        epsilon = 1e-8
+        denom = max(abs(scenario_value), abs(baseline_value), epsilon)
+        normalized_change = ((scenario_value - baseline_value) / denom) * 100
+        
+        # Time series analysis
+        baseline_series = baseline_results['timeSeries'][node_id]
+        scenario_series = scenario_results['timeSeries'][node_id]
+        min_len = min(len(baseline_series), len(scenario_series))
+        if min_len == 0:
+            raise ValueError(f"Empty time series for node {node_id}.")
+        baseline_series = baseline_series[:min_len]
+        scenario_series = scenario_series[:min_len]
+        diff_series = [s - b for s, b in zip(scenario_series, baseline_series)]
+        
+        # Calculate metrics
+        auc = float(np.trapz(diff_series)) if len(diff_series) > 1 else 0.0
+        max_diff = max(diff_series, key=abs) if diff_series else 0.0
+        direction = fuzzy_categorize_direction(baseline_series, scenario_series, global_max_change)
+        
+        return {
+            'id': node_id,
+            'label': baseline_results['finalState'][node_id]['label'],
+            'baseline': baseline_value,
+            'scenario': scenario_value,
+            'delta': scenario_value - baseline_value,
+            'normalizedChangePercent': normalized_change,
+            'auc': auc,
+            'maxDifference': max_diff,
+            'direction': direction
+        }
+    except Exception as e:
+        logging.error(f"Error in _calculate_impact_metrics for node {node_id}: {str(e)}")
+        logging.error(f"Error type: {type(e).__name__}")
+        logging.error(f"Traceback: {traceback.format_exc()}")
+        raise
 
 def run_baseline_scenario_comparison(
-    nodes: List[Dict], 
-    edges: List[Dict], 
-    activation_function: str = "sigmoid",
+    nodes: List[Dict],
+    edges: List[Dict],
+    activation_function: str = 'sigmoid',
     threshold: float = 0.001,
     max_iterations: int = 100,
-    generate_notebook: bool = False
+    model_initial_values: Optional[Dict[str, float]] = None,
+    scenario_initial_values: Optional[Dict[str, float]] = None,
+    clamped_nodes: Optional[List[str]] = None
 ) -> Dict:
-    """
-    Run a baseline simulation and compare it with a scenario simulation.
-    
-    This function creates two simulations:
-    1. Baseline: Using the original node values
-    2. Scenario: Using the provided node values (which may have been modified by the user)
+    """Run a comparison between baseline and scenario simulations.
     
     Args:
-        nodes: List of node objects with id and data properties (for scenario)
-        edges: List of edge objects with source, target and data properties
-        activation_function: Activation function to use (sigmoid, tanh, relu)
+        nodes: List of node dictionaries
+        edges: List of edge dictionaries
+        activation_function: Activation function to use ('sigmoid', 'tanh', 'relu')
         threshold: Convergence threshold
         max_iterations: Maximum number of iterations
-        generate_notebook: Whether to generate a Jupyter notebook
+        model_initial_values: Dictionary mapping node IDs to initial values for baseline
+        scenario_initial_values: Dictionary mapping node IDs to initial values for scenario
+        clamped_nodes: List of node IDs to clamp in scenario
         
     Returns:
-        Dict with simulation results including baseline, scenario, and delta values
+        Dict containing comparison results:
+        - baselineFinalState: Final state of baseline simulation
+        - comparisonFinalState: Final state of scenario simulation
+        - baselineTimeSeries: Time series data from baseline simulation
+        - comparisonTimeSeries: Time series data from scenario simulation
+        - deltaFinalState: Difference between final states
+        - impactMetrics: Detailed impact metrics for each node
+        - converged: Whether both simulations converged
+        - iterations: Maximum iterations taken
+        - clampedNodes: List of clamped nodes
+        
+    Raises:
+        ValueError: If simulation fails or input data is invalid
     """
-    # Normalize input data
-    normalized_nodes = normalize_input_data(nodes)
-    normalized_edges = normalize_input_data(edges)
-    normalized_activation = normalize_input_data(activation_function)
-    normalized_threshold = float(threshold)
-    normalized_max_iterations = int(max_iterations)
-    normalized_generate_notebook = normalize_input_data(generate_notebook)
-    
-    # Create baseline nodes (set all nodes to a neutral starting value)
-    baseline_nodes = []
-    for node in normalized_nodes:
-        # Create a deep copy of the node to avoid modifying the original
-        baseline_node = {
-            'id': node['id'],
-            'data': {
-                # Take all properties from the original node except 'value'
-                **{k: v for k, v in node.get('data', {}).items() if k != 'value'},
-                # For baseline, use a neutral value of 0.5 for ALL nodes, including drivers
-                # This represents the system's natural convergence from a neutral state
-                'value': 0.5
-            }
+    try:
+        logging.info("=== Starting Baseline vs Scenario Comparison ===")
+        logging.info(f"Model initial values: {model_initial_values}")
+        logging.info(f"Scenario initial values: {scenario_initial_values}")
+        logging.info(f"Clamped nodes: {clamped_nodes}")
+        
+        # Create copies of nodes for baseline and scenario
+        baseline_nodes = copy.deepcopy(nodes)
+        scenario_nodes = copy.deepcopy(nodes)
+        
+        # Apply initial values
+        if model_initial_values:
+            logging.info(f"Applying model initial values: {model_initial_values}")
+            for node in baseline_nodes:
+                if node['id'] in model_initial_values:
+                    node['value'] = model_initial_values[node['id']]
+                    logging.info(f"Setting baseline node {node['id']} to {node['value']}")
+        
+        if scenario_initial_values:
+            logging.info(f"Applying scenario initial values: {scenario_initial_values}")
+            for node in scenario_nodes:
+                if node['id'] in scenario_initial_values:
+                    node['value'] = scenario_initial_values[node['id']]
+                    logging.info(f"Setting scenario node {node['id']} to {node['value']}")
+        
+        logging.info(f"Baseline node values: {[(n['id'], n['value']) for n in baseline_nodes]}")
+        logging.info(f"Scenario node values: {[(n['id'], n['value']) for n in scenario_nodes]}")
+        
+        # Prepare clamped values for scenario
+        clamped_values = {
+            node['id']: node['value'] 
+            for node in scenario_nodes 
+            if clamped_nodes and node['id'] in clamped_nodes
         }
-        baseline_nodes.append(baseline_node)
-    
-    # Run baseline simulation
-    baseline_simulator = FCMSimulator(
-        nodes=baseline_nodes,
-        edges=normalized_edges,
-        activation_function=normalized_activation,
-        threshold=normalized_threshold,
-        max_iterations=normalized_max_iterations
-    )
-    baseline_results = baseline_simulator.run_simulation()
-    
-    # Run scenario simulation
-    scenario_simulator = FCMSimulator(
-        nodes=normalized_nodes,
-        edges=normalized_edges,
-        activation_function=normalized_activation,
-        threshold=normalized_threshold,
-        max_iterations=normalized_max_iterations
-    )
-    scenario_results = scenario_simulator.run_simulation()
-    
-    # Calculate delta between baseline and scenario
-    baseline_final = baseline_results['finalState']
-    scenario_final = scenario_results['finalState']
-    
-    # Calculate delta values (scenario - baseline)
-    delta_values = {}
-    for node_id in baseline_final:
-        if node_id in scenario_final:
-            delta_values[node_id] = scenario_final[node_id] - baseline_final[node_id]
-    
-    # Combine results
-    combined_results = {
-        # Standard scenario results
-        'finalState': scenario_results['finalState'],
-        'timeSeries': scenario_results['timeSeries'],
-        'iterations': scenario_results['iterations'],
-        'converged': scenario_results['converged'],
         
-        # Baseline and comparison data
-        'baselineFinalState': baseline_results['finalState'],
-        'baselineTimeSeries': baseline_results['timeSeries'],
-        'baselineIterations': baseline_results['iterations'],
-        'baselineConverged': baseline_results['converged'],
+        # Run simulations
+        baseline_results = run_simulation(
+            nodes=baseline_nodes,
+            edges=edges,
+            activation_function=activation_function,
+            threshold=threshold,
+            max_iterations=max_iterations
+        )
         
-        # Delta values
-        'deltaState': delta_values,
-    }
-    
-    # Generate notebook if requested (must check normalized value)
-    if normalized_generate_notebook:
-        import nbformat as nbf
-        nb = scenario_simulator.generate_notebook()
-        combined_results["notebook"] = nbf.v4.writes(nb)
-    
-    return combined_results
+        scenario_results = run_simulation(
+            nodes=scenario_nodes,
+            edges=edges,
+            activation_function=activation_function,
+            threshold=threshold,
+            max_iterations=max_iterations,
+            clamped_nodes=clamped_nodes,
+            clamped_values=clamped_values
+        )
+        
+        # Log time series data for debugging
+        logging.debug("Time Series Data:")
+        logging.debug("Baseline Time Series:")
+        for node_id, values in baseline_results['timeSeries'].items():
+            logging.debug(f"  {node_id}: {values}")
+        
+        logging.debug("Scenario Time Series:")
+        for node_id, values in scenario_results['timeSeries'].items():
+            logging.debug(f"  {node_id}: {values}")
+        
+        # Calculate global max change for fuzzy direction
+        all_diff_series = []
+        for node_id in baseline_results['finalState']:
+            if clamped_nodes and node_id in clamped_nodes:
+                continue  # skip clamped nodes for global max
+            baseline_series = baseline_results['timeSeries'][node_id]
+            scenario_series = scenario_results['timeSeries'][node_id]
+            min_len = min(len(baseline_series), len(scenario_series))
+            baseline_series = baseline_series[:min_len]
+            scenario_series = scenario_series[:min_len]
+            diff_series = [s - b for s, b in zip(scenario_series, baseline_series)]
+            all_diff_series.append(np.max(np.abs(diff_series)))
+        
+        global_max_change = max(all_diff_series) if all_diff_series else 1.0
+        
+        # Calculate impact metrics for each node
+        impact_metrics = {}
+        delta_final_state = {}
+        
+        for node_id in baseline_results['finalState']:
+            # Calculate impact metrics
+            metrics = _calculate_impact_metrics(
+                node_id,
+                baseline_results,
+                scenario_results,
+                global_max_change
+            )
+            impact_metrics[node_id] = metrics
+            
+            # Calculate delta final state
+            delta_final_state[node_id] = {
+                'id': node_id,
+                'label': baseline_results['finalState'][node_id]['label'],
+                'value': scenario_results['finalState'][node_id]['value'] - baseline_results['finalState'][node_id]['value']
+            }
+        
+        return {
+            'baselineFinalState': baseline_results['finalState'],
+            'comparisonFinalState': scenario_results['finalState'],
+            'baselineTimeSeries': baseline_results['timeSeries'],
+            'comparisonTimeSeries': scenario_results['timeSeries'],
+            'deltaFinalState': delta_final_state,
+            'impactMetrics': impact_metrics,
+            'converged': baseline_results['converged'] and scenario_results['converged'],
+            'iterations': max(baseline_results['iterations'], scenario_results['iterations']),
+            'clampedNodes': clamped_nodes or []
+        }
+        
+    except Exception as e:
+        logging.error(f"Error in baseline-scenario comparison: {str(e)}")
+        logging.error(f"Error type: {type(e).__name__}")
+        logging.error(f"Traceback: {traceback.format_exc()}")
+        raise ValueError(f"Baseline-scenario comparison failed: {str(e)}")

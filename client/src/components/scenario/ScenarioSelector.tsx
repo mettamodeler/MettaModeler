@@ -1,5 +1,4 @@
 import React from 'react';
-import { Scenario } from '@/lib/types';
 import {
   Select,
   SelectContent,
@@ -7,24 +6,44 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ExtendedScenario } from "@/lib/types";
 
 interface ScenarioSelectorProps {
   value: string;
   onValueChange: (value: string) => void;
-  scenarios: Scenario[];
-  baselineId: string;
+  scenarios: ExtendedScenario[];
   label: string;
   placeholder?: string;
+  isBaselineSelector?: boolean;
 }
 
 export default function ScenarioSelector({
   value,
   onValueChange,
   scenarios,
-  baselineId,
   label,
-  placeholder = "Select scenario"
+  placeholder = "Select scenario",
+  isBaselineSelector = false
 }: ScenarioSelectorProps) {
+  // Filter scenarios based on whether they are baseline or not
+  const filteredScenarios = scenarios.filter(scenario => 
+    isBaselineSelector ? scenario.isBaseline : !scenario.isBaseline
+  );
+
+  // If no scenarios are available, show a message
+  if (filteredScenarios.length === 0) {
+    return (
+      <div>
+        <div className="text-sm mb-2">{label}</div>
+        <div className="text-sm text-gray-400">
+          {isBaselineSelector 
+            ? "No baseline scenarios available" 
+            : "No comparison scenarios available"}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="text-sm mb-2">{label}</div>
@@ -33,11 +52,8 @@ export default function ScenarioSelector({
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem key={baselineId} value={baselineId}>
-            Baseline (No Intervention)
-          </SelectItem>
-          {scenarios.map((scenario) => (
-            <SelectItem key={scenario.id} value={String(scenario.id)}>
+          {filteredScenarios.map((scenario) => (
+            <SelectItem key={scenario.id} value={scenario.id}>
               {scenario.name}
             </SelectItem>
           ))}
