@@ -34,6 +34,23 @@ export default function ModelAnalysis({ model }: ModelAnalysisProps) {
   const [analysis, setAnalysis] = useState<NetworkAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
   
+  // Guard: If model or model.nodes is missing or empty, show friendly message and do not run analysis or effects
+  if (!model || !model.nodes || model.nodes.length === 0) {
+    return (
+      <Card className="card h-full">
+        <CardHeader>
+          <CardTitle>model analysis</CardTitle>
+          <CardDescription>Add nodes to your model to see analysis results.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="nested-panel p-6 rounded-lg text-center text-[hsl(var(--muted-foreground))]">
+            <p>Your model needs nodes before analysis can be performed.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
   useEffect(() => {
     // Only analyze if we have nodes and edges
     if (model.nodes.length > 0) {
@@ -151,7 +168,7 @@ export default function ModelAnalysis({ model }: ModelAnalysisProps) {
   
   if (loading) {
     return (
-      <Card className="h-full">
+      <Card className="card h-full">
         <CardHeader>
           <CardTitle>model analysis</CardTitle>
           <CardDescription>Analyzing network structure...</CardDescription>
@@ -170,13 +187,13 @@ export default function ModelAnalysis({ model }: ModelAnalysisProps) {
   
   if (!analysis) {
     return (
-      <Card className="h-full">
+      <Card className="card h-full">
         <CardHeader>
           <CardTitle>model analysis</CardTitle>
           <CardDescription>Add nodes and edges to see analysis</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="glass p-6 rounded-lg text-center text-slate-400">
+          <div className="nested-panel p-6 rounded-lg text-center text-[hsl(var(--muted-foreground))]">
             <p>Your model needs nodes and connections before analysis can be performed.</p>
           </div>
         </CardContent>
@@ -185,39 +202,39 @@ export default function ModelAnalysis({ model }: ModelAnalysisProps) {
   }
   
   return (
-    <Card className="h-full">
+    <Card className="card h-full">
       <CardHeader>
         <CardTitle>model analysis</CardTitle>
         <CardDescription>Network structure and metrics</CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="overview">
-          <TabsList className="mb-4">
-            <TabsTrigger value="overview">overview</TabsTrigger>
-            <TabsTrigger value="centrality">node centrality</TabsTrigger>
-            <TabsTrigger value="matrix">adjacency matrix</TabsTrigger>
+          <TabsList className="tab-bar mb-4">
+            <TabsTrigger value="overview" className="tab">overview</TabsTrigger>
+            <TabsTrigger value="centrality" className="tab">node centrality</TabsTrigger>
+            <TabsTrigger value="matrix" className="tab">adjacency matrix</TabsTrigger>
           </TabsList>
           
           <TabsContent value="overview">
-            <div className="glass p-4 rounded-lg space-y-4">
+            <div className="nested-panel space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <p className="text-xs text-slate-400">Nodes</p>
+                  <p className="text-xs text-[hsl(var(--muted-foreground))]">Nodes</p>
                   <p className="text-2xl font-light">{analysis.nodeCount}</p>
                 </div>
                 
                 <div className="space-y-2">
-                  <p className="text-xs text-slate-400">Edges</p>
+                  <p className="text-xs text-[hsl(var(--muted-foreground))]">Edges</p>
                   <p className="text-2xl font-light">{analysis.edgeCount}</p>
                 </div>
                 
                 <div className="space-y-2">
-                  <p className="text-xs text-slate-400">Density</p>
+                  <p className="text-xs text-[hsl(var(--muted-foreground))]">Density</p>
                   <p className="text-2xl font-light">{analysis.density.toFixed(2)}</p>
                 </div>
                 
                 <div className="space-y-2">
-                  <p className="text-xs text-slate-400">Structure</p>
+                  <p className="text-xs text-[hsl(var(--muted-foreground))]">Structure</p>
                   <div>
                     <Badge variant={analysis.isConnected ? "default" : "outline"} className="mr-1">
                       {analysis.isConnected ? "Connected" : "Disconnected"}
@@ -234,20 +251,20 @@ export default function ModelAnalysis({ model }: ModelAnalysisProps) {
               <div>
                 <h3 className="text-sm font-medium mb-2">Node Types</h3>
                 <div className="flex gap-2">
-                  <div className="flex-1 glass p-2 rounded-lg">
-                    <p className="text-xs text-slate-400">Driver</p>
+                  <div className="flex-1 nested-panel p-2">
+                    <p className="text-xs text-[hsl(var(--muted-foreground))]">Driver</p>
                     <p className="text-xl font-light">
                       {model.nodes.filter(n => n.type === 'driver').length}
                     </p>
                   </div>
-                  <div className="flex-1 glass p-2 rounded-lg">
-                    <p className="text-xs text-slate-400">Regular</p>
+                  <div className="flex-1 nested-panel p-2">
+                    <p className="text-xs text-[hsl(var(--muted-foreground))]">Regular</p>
                     <p className="text-xl font-light">
                       {model.nodes.filter(n => n.type === 'regular').length}
                     </p>
                   </div>
-                  <div className="flex-1 glass p-2 rounded-lg">
-                    <p className="text-xs text-slate-400">Outcome</p>
+                  <div className="flex-1 nested-panel p-2">
+                    <p className="text-xs text-[hsl(var(--muted-foreground))]">Outcome</p>
                     <p className="text-xl font-light">
                       {model.nodes.filter(n => n.type === 'outcome').length}
                     </p>
@@ -258,7 +275,7 @@ export default function ModelAnalysis({ model }: ModelAnalysisProps) {
           </TabsContent>
           
           <TabsContent value="centrality">
-            <div className="glass p-4 rounded-lg">
+            <div className="nested-panel">
               <div className="grid grid-cols-1 gap-4 max-h-[400px] overflow-y-auto pr-2">
                 {model.nodes.map(node => {
                   const inDegree = analysis.centrality.inDegree[node.id] || 0;
@@ -266,26 +283,26 @@ export default function ModelAnalysis({ model }: ModelAnalysisProps) {
                   const betweenness = analysis.centrality.betweenness[node.id] || 0;
                   
                   return (
-                    <div key={node.id} className="glass p-3 rounded-md">
+                    <div key={node.id} className="nested-panel p-3">
                       <div className="flex justify-between items-center mb-1">
                         <div className="text-sm font-medium">{node.label}</div>
-                        <div className="text-xs px-2 py-0.5 rounded bg-white/10 text-white">
+                        <div className="text-xs px-2 py-0.5 rounded bg-[hsl(var(--muted))] text-[hsl(var(--primary))]">
                           {node.type}
                         </div>
                       </div>
                       
                       <div className="grid grid-cols-2 gap-2 text-xs mt-2">
                         <div>
-                          <span className="text-slate-400">In:</span> {inDegree}
+                          <span className="text-[hsl(var(--muted-foreground))]">In:</span> {inDegree}
                         </div>
                         <div>
-                          <span className="text-slate-400">Out:</span> {outDegree}
+                          <span className="text-[hsl(var(--muted-foreground))]">Out:</span> {outDegree}
                         </div>
                         <div>
-                          <span className="text-slate-400">Total:</span> {inDegree + outDegree}
+                          <span className="text-[hsl(var(--muted-foreground))]">Total:</span> {inDegree + outDegree}
                         </div>
                         <div>
-                          <span className="text-slate-400">Between:</span> {betweenness.toFixed(2)}
+                          <span className="text-[hsl(var(--muted-foreground))]">Between:</span> {betweenness.toFixed(2)}
                         </div>
                       </div>
                     </div>
@@ -296,7 +313,7 @@ export default function ModelAnalysis({ model }: ModelAnalysisProps) {
           </TabsContent>
           
           <TabsContent value="matrix">
-            <div className="glass p-4 rounded-lg overflow-auto max-h-[400px]">
+            <div className="nested-panel overflow-auto max-h-[400px]">
               <div className="min-w-max">
                 <table className="text-xs">
                   <thead>
@@ -330,7 +347,7 @@ export default function ModelAnalysis({ model }: ModelAnalysisProps) {
                                   ? value > 0 
                                     ? 'bg-green-500/20' 
                                     : 'bg-red-500/20' 
-                                  : 'bg-slate-500/10'
+                                  : 'bg-[hsl(var(--muted))]'
                               }`}
                             >
                               {value !== 0 ? value.toFixed(1) : ''}

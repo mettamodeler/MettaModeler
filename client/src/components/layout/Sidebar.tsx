@@ -24,6 +24,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { ChevronDownIcon, ChevronRightIcon } from '@radix-ui/react-icons';
+import { FolderPlus, FilePlus, X } from 'lucide-react';
 
 interface SidebarProps {
   currentProjectId: string | null;
@@ -174,7 +176,7 @@ export default function Sidebar({ currentProjectId }: SidebarProps) {
         edges: [],
       };
       
-      await apiRequest('POST', '/api/models', newModel);
+      const created = await apiRequest('POST', '/api/models', newModel);
       
       toast({
         title: "Model Created",
@@ -184,6 +186,10 @@ export default function Sidebar({ currentProjectId }: SidebarProps) {
       setNewModelName('');
       setIsCreatingModel(false);
       refetchModels();
+      // Navigate to the new model editor
+      if (created && created.id) {
+        setLocation(`/models/${created.id}`);
+      }
     } catch (error) {
       toast({
         variant: "destructive",
@@ -265,105 +271,157 @@ export default function Sidebar({ currentProjectId }: SidebarProps) {
     }
   };
 
+  const [expandedProjects, setExpandedProjects] = useState<Record<string, boolean>>({});
+
+  const toggleProject = (projectId: string) => {
+    setExpandedProjects(prev => ({
+      ...prev,
+      [projectId]: !prev[projectId]
+    }));
+  };
+
+  const isActiveProject = (project: Project) => {
+    return effectiveProjectId === project.id.toString();
+  };
+
+  const isActiveModel = (model: FCMModel) => {
+    return currentModelId === model.id;
+  };
+
   return (
-    <div className="dark-glass w-64 flex-shrink-0 flex flex-col border-r border-white/10 z-10">
+    <div className="w-64 flex-shrink-0 flex flex-col border-r border-sidebar-border bg-sidebar-background z-10 light:border-[#E5E7EB] light:bg-[#F9FAFB]">
       {/* Projects Section */}
       <div className="p-4">
         <div className="flex justify-between items-center mb-3">
-          <h2 className="text-sm font-semibold text-gray-300">projects</h2>
-          <button 
-            className="text-secondary hover:text-white p-1 rounded-md hover:bg-white/10"
-            onClick={() => {
-              console.log('Create Project clicked');
-              setIsCreatingProject(true);
-            }}
-            title="Create New Project"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-          </button>
+          <h2 className="text-sm font-semibold text-sidebar-foreground light:text-[#22223B]">projects</h2>
+          <div className="flex gap-1">
+            {/* Create Project Icon (folder-plus) */}
+            <button 
+              className="text-sidebar-secondary hover:text-white p-1 rounded-md hover:bg-white/10 light:text-[#3B82F6] light:hover:text-[#22223B] light:hover:bg-[#E0E7FF]"
+              onClick={() => {
+                setIsCreatingProject(true);
+              }}
+              title="Create New Project"
+            >
+              <FolderPlus className="w-5 h-5" />
+            </button>
+            {/* Create Model Icon (file-plus) */}
+            <button 
+              className="text-sidebar-secondary hover:text-white p-1 rounded-md hover:bg-white/10 light:text-[#7E22CE] light:hover:text-[#22223B] light:hover:bg-[#F3E8FF]"
+              onClick={() => {
+                setNewModelProjectId('');
+                setIsCreatingModel(true);
+              }}
+              title="Create New Model"
+            >
+              <FilePlus className="w-5 h-5" />
+            </button>
+          </div>
         </div>
         
         {/* Projects List */}
-        <div className="space-y-1">
-          {projects.map((project) => (
-            <button
-              key={project.id}
-              onClick={() => handleProjectClick(project.id.toString())}
-              className={cn(
-                "w-full flex items-center py-2 px-3 text-sm font-medium rounded-md hover:bg-secondary",
-                effectiveProjectId === project.id.toString() ? "bg-secondary" : "transparent"
-              )}
-            >
-              {project.name}
-            </button>
-          ))}
-        </div>
+        <ul className="space-y-4">
+          {projects.map((project) => {
+            const childModels = models.filter(m => m.projectId?.toString() === project.id.toString());
+            const isExpandable = childModels.length > 0;
+            return (
+              <li key={project.id} className="group">
+                <div
+                  className={cn(
+                    'flex items-center cursor-pointer px-2 py-1 rounded transition relative',
+                    isActiveProject(project)
+                      ? 'text-sidebar-primary font-semibold bg-transparent light:text-[#3B82F6]'
+                      : 'text-sidebar-foreground light:text-[#22223B]'
+                  )}
+                  onClick={() => isExpandable ? toggleProject(project.id.toString()) : handleProjectClick(project.id.toString())}
+                >
+                  {/* Always show chevron if project has children */}
+                  {isExpandable ? (
+                    expandedProjects[project.id] ? <ChevronDownIcon className="transition-transform" /> : <ChevronRightIcon className="transition-transform" />
+                  ) : (
+                    <span className="w-4 h-4 inline-block" />
+                  )}
+                  <span className="ml-2 flex-1 whitespace-nowrap overflow-visible">{project.name}</span>
+                  <button
+                    className="opacity-0 group-hover:opacity-100 transition-opacity ml-2 text-sidebar-secondary hover:text-white p-1 rounded-md hover:bg-white/10 light:text-[#7E22CE] light:hover:text-[#22223B] light:hover:bg-[#F3E8FF]"
+                    style={{ pointerEvents: 'auto' }}
+                    onClick={e => {
+                      e.stopPropagation();
+                      setNewModelProjectId(project.id.toString());
+                      setIsCreatingModel(true);
+                    }}
+                    title="Create Model in this Project"
+                    tabIndex={-1}
+                  >
+                    <FilePlus className="w-5 h-5" />
+                  </button>
+                  <button
+                    className="opacity-0 group-hover:opacity-100 transition-opacity ml-1 text-red-400 hover:text-white p-1 rounded-md hover:bg-red-500/20 light:text-red-400 light:hover:text-[#22223B] light:hover:bg-[#FECACA]"
+                    style={{ pointerEvents: 'auto' }}
+                    onClick={e => {
+                      e.stopPropagation();
+                      setItemToDelete({ type: 'project', id: Number(project.id) });
+                      setDeleteConfirmOpen(true);
+                    }}
+                    title="Delete Project"
+                    tabIndex={-1}
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                {/* Models nested under project */}
+                {expandedProjects[project.id] && isExpandable &&
+                  <ul className="ml-6 space-y-2 border-l border-sidebar-border pl-2">
+                    {childModels.map(model => (
+                      <li key={model.id} className="group">
+                        <div className={cn(
+                          'flex items-center cursor-pointer px-2 py-1 rounded transition whitespace-nowrap overflow-visible text-base',
+                          isActiveModel(model)
+                            ? 'bg-node-outcome-bg text-node-outcome-text font-semibold light:bg-[#F3E8FF] light:text-[#7E22CE]'
+                            : 'text-sidebar-foreground hover:bg-node-outcome-bg hover:text-node-outcome-text light:text-[#22223B] light:hover:bg-[#F3E8FF] light:hover:text-[#7E22CE]'
+                        )}>
+                          <Link
+                            href={`/models/${model.id}`}
+                            className="flex-1 ml-2"
+                          >
+                            {model.name}
+                          </Link>
+                          {/* Delete model icon on hover */}
+                          <button
+                            className="opacity-0 group-hover:opacity-100 transition-opacity ml-1 text-red-400 hover:text-white p-1 rounded-md hover:bg-red-500/20 light:text-red-400 light:hover:text-[#22223B] light:hover:bg-[#FECACA]"
+                            style={{ pointerEvents: 'auto' }}
+                            onClick={e => {
+                              e.stopPropagation();
+                              setItemToDelete({ type: 'model', id: Number(model.id) });
+                              setDeleteConfirmOpen(true);
+                            }}
+                            title="Delete Model"
+                            tabIndex={-1}
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                }
+              </li>
+            );
+          })}
+        </ul>
       </div>
       
       {/* Divider */}
       <div className="border-t border-white/10 my-2"></div>
-      
-      {/* Models Section */}
-      <div className="p-4 flex-1 overflow-auto">
-        <div className="flex justify-between items-center mb-3">
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold text-gray-300">models</h2>
-            {effectiveProjectId && (
-              <button
-                onClick={() => setLocation('/')}
-                className="text-xs text-secondary hover:text-white"
-                title="Clear project filter"
-              >
-                clear
-              </button>
-            )}
-          </div>
-          <button 
-            className="text-secondary hover:text-white p-1 rounded-md hover:bg-white/10"
-            onClick={() => {
-              if (effectiveProjectId) {
-                setNewModelProjectId(effectiveProjectId);
-              }
-              setIsCreatingModel(true);
-            }}
-            title="Create New Model"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-          </button>
-        </div>
-        
-        {/* Models List */}
-        <div className="space-y-1">
-          {filteredModels.map((model) => (
-            <Link
-              key={model.id}
-              href={`/models/${model.id}`}
-              className={cn(
-                "block py-2 px-3 text-sm font-medium rounded-md hover:bg-secondary",
-                currentModelId === model.id ? "bg-secondary" : "transparent"
-              )}
-            >
-              {model.name}
-            </Link>
-          ))}
-        </div>
-      </div>
       
       {/* User Section */}
       <div className="p-3 glass border-t border-white/10">
         {user ? (
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-sm">
-              {user.displayName ? 
-                user.displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) :
-                user.username.substring(0, 2).toUpperCase()
-              }
+              {user.displayName
+                ? user.displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+                : user.username?.substring(0, 2).toUpperCase()}
             </div>
             <div>
               <div className="text-sm font-medium">{user.displayName || user.username}</div>

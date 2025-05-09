@@ -26,23 +26,30 @@ export function ThemeProvider({
   storageKey = "ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
-  );
+  // Always default to dark unless user explicitly chose light
+  const [theme, setTheme] = useState<Theme>(() => {
+    const stored = localStorage.getItem(storageKey) as Theme | null;
+    if (stored === "light") return "light";
+    return "dark";
+  });
 
   useEffect(() => {
     const root = window.document.documentElement;
     root.classList.remove("light", "dark");
-
-    // Force dark mode for MettaModeler
-    root.classList.add("dark");
+    if (theme === "dark") root.classList.add("dark");
+    else root.classList.add("light");
   }, [theme]);
 
   const value = {
     theme,
     setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme);
-      setTheme(theme);
+      if (theme !== "light") {
+        localStorage.setItem(storageKey, "dark");
+        setTheme("dark");
+      } else {
+        localStorage.setItem(storageKey, "light");
+        setTheme("light");
+      }
     },
   };
 

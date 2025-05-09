@@ -1,6 +1,58 @@
 import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
+// Helper function to parse HSL string
+function parseHsl(hsl: string): { h: number; s: number; l: number } {
+  // Remove any whitespace and split by spaces
+  const values = hsl.trim().split(/\s+/);
+  if (values.length !== 3) {
+    throw new Error(`Invalid HSL format: ${hsl}`);
+  }
+  
+  // Parse values
+  const h = parseFloat(values[0]);
+  const s = parseFloat(values[1]);
+  const l = parseFloat(values[2]);
+  
+  if (isNaN(h) || isNaN(s) || isNaN(l)) {
+    throw new Error(`Invalid HSL values: ${hsl}`);
+  }
+  
+  return { h, s, l };
+}
+
+// Helper function to convert HSL to RGB
+function hslToRgb(h: number, s: number, l: number): string {
+  s /= 100;
+  l /= 100;
+  const k = (n: number) => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  return `rgb(${Math.round(255 * f(0))}, ${Math.round(255 * f(8))}, ${Math.round(255 * f(4))})`;
+}
+
+// Helper function to get theme color with fallback
+function getThemeColor(varName: string, fallback: string): string {
+  const root = typeof window !== 'undefined' ? document.documentElement : null;
+  if (!root) return fallback;
+  
+  const hsl = getComputedStyle(root).getPropertyValue(`--${varName}`).trim();
+  if (!hsl) return fallback;
+  
+  try {
+    const { h, s, l } = parseHsl(hsl);
+    return hslToRgb(h, s, l);
+  } catch (e) {
+    console.warn(`Failed to parse HSL color for ${varName}:`, hsl);
+    return fallback;
+  }
+}
+
+// Helper function to convert RGB to RGBA
+function rgbToRgba(rgb: string, alpha: number): string {
+  return rgb.replace('rgb', 'rgba').replace(')', `, ${alpha})`);
+}
+
 export function AnimatedLoader({ className }: { className?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -31,6 +83,14 @@ export function AnimatedLoader({ className }: { className?: string }) {
     const centerY = canvas.clientHeight / 2;
     const nodeRadius = 8;
 
+    // Use a consistent set of colors for both light and dark mode
+    const themeColors = [
+      getThemeColor('primary', '#A855F7'),
+      getThemeColor('secondary', '#00C4FF'),
+      getThemeColor('accent', '#10b981'),
+      getThemeColor('edge-positive', '#60a5fa'),
+    ];
+
     // Create nodes in a circle
     for (let i = 0; i < nodeCount; i++) {
       const angle = (i * 2 * Math.PI) / nodeCount;
@@ -43,8 +103,8 @@ export function AnimatedLoader({ className }: { className?: string }) {
         targetX: x, 
         targetY: y, 
         radius: nodeRadius, 
-        color: i % 3 === 0 ? '#60a5fa' : i % 3 === 1 ? '#8b5cf6' : '#10b981',
-        originalColor: i % 3 === 0 ? '#60a5fa' : i % 3 === 1 ? '#8b5cf6' : '#10b981',
+        color: themeColors[Math.floor(Math.random() * themeColors.length)],
+        originalColor: themeColors[Math.floor(Math.random() * themeColors.length)],
         pulseState: 0,
         pulseDirection: 1,
         pulseSpeed: 0.02 + (Math.random() * 0.02)
@@ -130,7 +190,7 @@ export function AnimatedLoader({ className }: { className?: string }) {
         
         ctx.beginPath();
         ctx.arc(pulseX, pulseY, 4, 0, Math.PI * 2);
-        ctx.fillStyle = edge.active ? '#60a5fa' : '#8b5cf6';
+        ctx.fillStyle = edge.active ? themeColors[Math.floor(Math.random() * themeColors.length)] : themeColors[Math.floor(Math.random() * themeColors.length)];
         ctx.fill();
       });
       
@@ -157,8 +217,9 @@ export function AnimatedLoader({ className }: { className?: string }) {
           node.x, node.y, node.radius,
           node.x, node.y, node.radius * 2
         );
-        gradient.addColorStop(0, node.color.replace(')', ', 0.5)').replace('rgb', 'rgba'));
-        gradient.addColorStop(1, node.color.replace(')', ', 0)').replace('rgb', 'rgba'));
+        
+        gradient.addColorStop(0, rgbToRgba(node.color, 0.5));
+        gradient.addColorStop(1, rgbToRgba(node.color, 0));
         
         ctx.beginPath();
         ctx.arc(node.x, node.y, node.radius * 2, 0, Math.PI * 2);

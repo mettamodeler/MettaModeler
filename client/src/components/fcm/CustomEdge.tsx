@@ -32,17 +32,17 @@ export default function CustomEdge({
   const [isHovered, setIsHovered] = useState(false);
 
   // Determine edge color based on weight
-  const edgeColor = weight >= 0 
-    ? 'rgba(59, 130, 246, 0.8)' // blue for positive
-    : 'rgba(239, 68, 68, 0.8)'; // red for negative
+  const edgeColor = weight >= 0
+    ? '#3B82F6'  // Bright blue for positive
+    : '#EF4444'; // Bright red for negative
 
   // Calculate stroke width based on weight magnitude
   const weightMagnitude = Math.abs(weight);
-  const strokeWidth = Math.max(1, Math.min(5, weightMagnitude * 4 + 1));
+  const strokeWidth = Math.max(2, Math.min(6, weightMagnitude * 4 + 2));
 
   // Increase stroke width when hovered or highlighted
   const effectiveStrokeWidth = isHovered || isHighlighted || selected 
-    ? strokeWidth + 1.5
+    ? strokeWidth + 2
     : strokeWidth;
   
   // Simple, natural curve with a reasonable default
@@ -76,9 +76,6 @@ export default function CustomEdge({
 
   // Determine if any highlighting effects should be applied
   const shouldHighlight = isHovered || isHighlighted || selected;
-  const highlightFilter = shouldHighlight 
-    ? `drop-shadow(0 0 5px ${edgeColor})` 
-    : undefined;
 
   return (
     <>
@@ -90,12 +87,14 @@ export default function CustomEdge({
           stroke: edgeColor,
           strokeWidth: effectiveStrokeWidth,
           strokeLinejoin: 'round',
-          filter: highlightFilter,
+          filter: shouldHighlight 
+            ? `drop-shadow(0 0 8px ${edgeColor})` 
+            : undefined,
           transition: 'stroke-width 0.2s, filter 0.2s',
         }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        markerEnd={weight >= 0 ? `url(#arrowhead-positive)` : `url(#arrowhead-negative)`}
+        markerEnd={`url(#arrowhead-${weight >= 0 ? 'positive' : 'negative'})`}
       />
 
       <EdgeLabelRenderer>
@@ -112,11 +111,11 @@ export default function CustomEdge({
           <Popover>
             <PopoverTrigger asChild>
               <div 
-                className={`w-6 h-6 rounded-full bg-background/80 cursor-pointer hover:bg-background flex items-center justify-center border border-border ${shouldHighlight ? 'ring-1 ring-white shadow-glow-sm' : ''}`}
+                className={`min-w-[2.5rem] h-10 px-2 rounded-full bg-background/90 backdrop-blur-sm cursor-pointer hover:bg-background flex items-center justify-center border border-border shadow-sm ${shouldHighlight ? 'ring-1 ring-white shadow-glow-sm' : ''}`}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
               >
-                <span className="text-xs font-mono">{weight.toFixed(1)}</span>
+                <span className="text-base font-mono">{weight.toFixed(1)}</span>
               </div>
             </PopoverTrigger>
             <PopoverContent className="w-64 p-4 dark-glass">

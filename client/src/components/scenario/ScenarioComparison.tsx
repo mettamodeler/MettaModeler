@@ -41,6 +41,8 @@ interface ScenarioComparisonProps {
   }>;
   nodeLabelsById?: Record<string, string>;
   nodeTypesById?: Record<string, string>;
+  scenarioTab: string;
+  setScenarioTab: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const CHART_COLOR_PALETTE = [
@@ -56,10 +58,9 @@ const CHART_COLOR_PALETTE = [
   '#f472b6', // rose-400
 ];
 
-const ScenarioComparison: React.FC<ScenarioComparisonProps> = ({ model, scenarios, nodeLabelsById, nodeTypesById }) => {
+const ScenarioComparison: React.FC<ScenarioComparisonProps> = ({ model, scenarios, nodeLabelsById, nodeTypesById, scenarioTab, setScenarioTab }) => {
   const [selectedScenarioId, setSelectedScenarioId] = useState<string>("");
   const [comparisonResult, setComparisonResult] = useState<SimulationResult | ComparisonSimulationResult | null>(null);
-  const [selectedTab, setSelectedTab] = useState('chart');
   const [isLoading, setIsLoading] = useState(false);
   type ActivationType = 'sigmoid' | 'tanh' | 'relu' | 'linear';
   const [activation, setActivation] = useState<ActivationType>('sigmoid');
@@ -287,7 +288,7 @@ const ScenarioComparison: React.FC<ScenarioComparisonProps> = ({ model, scenario
 
   if (scenarios.length === 0) {
     return (
-      <Card className="dark-glass border border-white/10">
+      <Card className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4">
         <CardHeader>
           <CardTitle>scenario comparison</CardTitle>
           <CardDescription>No scenarios available to compare</CardDescription>
@@ -324,34 +325,30 @@ const ScenarioComparison: React.FC<ScenarioComparisonProps> = ({ model, scenario
 
   return (
     <TooltipProvider>
-      <Card className="dark-glass border border-white/10">
-        <CardHeader>
-          <CardTitle>scenario comparison</CardTitle>
-          <CardDescription>Compare results between baseline and scenario</CardDescription>
-        </CardHeader>
+      <Card className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4">
         <CardContent>
           <div className="space-y-6">
             <div className="flex gap-4 items-center">
               <div className="flex items-center gap-2">
                 <Select.Root value={activation} onValueChange={value => setActivation(value as ActivationType)}>
-                  <Select.Trigger className="w-[160px] flex items-center justify-between px-3 py-2 bg-gray-800 border border-gray-700 rounded-md shadow-sm text-white">
+                  <Select.Trigger className="w-[160px] flex items-center justify-between px-3 py-2 bg-[hsl(var(--muted))] border border-[hsl(var(--border))] rounded-md shadow-sm text-[hsl(var(--foreground))]">
                     <Select.Value>
                       {activation.charAt(0).toUpperCase() + activation.slice(1)}
                     </Select.Value>
                     <Select.Icon>
-                      <ChevronDownIcon className="text-gray-400" />
+                      <ChevronDownIcon className="text-[hsl(var(--muted-foreground))]" />
                     </Select.Icon>
                   </Select.Trigger>
                   <Select.Portal>
-                    <Select.Content className="bg-gray-800 border border-gray-700 rounded-md shadow-lg">
+                    <Select.Content className="bg-[hsl(var(--muted))] border border-[hsl(var(--border))] rounded-md shadow-lg">
                       <Select.Viewport>
-                        <Select.Item value="sigmoid" className="px-3 py-2 text-white hover:bg-gray-700 cursor-pointer outline-none focus:bg-gray-700">
+                        <Select.Item value="sigmoid" className="px-3 py-2 text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] cursor-pointer outline-none focus:bg-[hsl(var(--muted))]">
                           <Select.ItemText>Sigmoid</Select.ItemText>
                         </Select.Item>
-                        <Select.Item value="tanh" className="px-3 py-2 text-white hover:bg-gray-700 cursor-pointer outline-none focus:bg-gray-700">
+                        <Select.Item value="tanh" className="px-3 py-2 text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] cursor-pointer outline-none focus:bg-[hsl(var(--muted))]">
                           <Select.ItemText>Tanh</Select.ItemText>
                         </Select.Item>
-                        <Select.Item value="relu" className="px-3 py-2 text-white hover:bg-gray-700 cursor-pointer outline-none focus:bg-gray-700">
+                        <Select.Item value="relu" className="px-3 py-2 text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] cursor-pointer outline-none focus:bg-[hsl(var(--muted))]">
                           <Select.ItemText>ReLU</Select.ItemText>
                         </Select.Item>
                       </Select.Viewport>
@@ -416,22 +413,22 @@ const ScenarioComparison: React.FC<ScenarioComparisonProps> = ({ model, scenario
                 </div>
               </div>
               <Select.Root value={selectedScenarioId} onValueChange={setSelectedScenarioId}>
-                <Select.Trigger className="w-[200px] flex items-center justify-between px-3 py-2 bg-gray-800 border border-gray-700 rounded-md shadow-sm text-white">
+                <Select.Trigger className="w-[200px] flex items-center justify-between px-3 py-2 bg-[hsl(var(--muted))] border border-[hsl(var(--border))] rounded-md shadow-sm text-[hsl(var(--foreground))]">
                   <Select.Value>
                     {selectedScenario?.name || "Select a scenario"}
                   </Select.Value>
                   <Select.Icon>
-                    <ChevronDownIcon className="text-gray-400" />
+                    <ChevronDownIcon className="text-[hsl(var(--muted-foreground))]" />
                   </Select.Icon>
                 </Select.Trigger>
                 <Select.Portal>
-                  <Select.Content className="bg-gray-800 border border-gray-700 rounded-md shadow-lg">
+                  <Select.Content className="bg-[hsl(var(--muted))] border border-[hsl(var(--border))] rounded-md shadow-lg">
                     <Select.Viewport>
                       {scenarios.map((scenario) => (
                         <Select.Item 
                           key={scenario.id} 
                           value={scenario.id.toString()}
-                          className="px-3 py-2 text-white hover:bg-gray-700 cursor-pointer outline-none focus:bg-gray-700"
+                          className={`px-3 py-2 text-[hsl(var(--foreground))] cursor-pointer outline-none focus:bg-[hsl(var(--muted))] ${selectedScenarioId === scenario.id.toString() ? 'bg-[hsl(var(--muted))]' : 'bg-[hsl(var(--card))] hover:bg-[hsl(var(--muted))]'}`}
                         >
                           <Select.ItemText>{scenario.name}</Select.ItemText>
                         </Select.Item>
@@ -444,242 +441,242 @@ const ScenarioComparison: React.FC<ScenarioComparisonProps> = ({ model, scenario
 
             {isLoading ? (
               <div className="flex items-center justify-center h-[400px]">
-                <p className="text-gray-400">Running simulation...</p>
+                <p className="text-[hsl(var(--muted-foreground))]">Running simulation...</p>
               </div>
             ) : (
-              <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-                <TabsList>
-                  <TabsTrigger value="chart">Chart</TabsTrigger>
-                  <TabsTrigger value="convergence">Convergence</TabsTrigger>
-                  <TabsTrigger value="delta">Delta Over Time</TabsTrigger>
-                  <TabsTrigger value="maxdiff">Max Diff</TabsTrigger>
-                  <TabsTrigger value="table">Table</TabsTrigger>
-                </TabsList>
+              <div className="tab-bar mt-6 mb-2">
+                <Tabs value={scenarioTab} onValueChange={setScenarioTab}>
+                  <TabsList className="tab-bar">
+                    <TabsTrigger value="chart" className={`tab${scenarioTab === 'chart' ? ' active' : ''}`}>Chart</TabsTrigger>
+                    <TabsTrigger value="convergence" className={`tab${scenarioTab === 'convergence' ? ' active' : ''}`}>Convergence</TabsTrigger>
+                    <TabsTrigger value="delta" className={`tab${scenarioTab === 'delta' ? ' active' : ''}`}>Delta Over Time</TabsTrigger>
+                    <TabsTrigger value="maxdiff" className={`tab${scenarioTab === 'maxdiff' ? ' active' : ''}`}>Max Diff</TabsTrigger>
+                    <TabsTrigger value="table" className={`tab${scenarioTab === 'table' ? ' active' : ''}`}>Table</TabsTrigger>
+                  </TabsList>
 
-                <TabsContent value="chart">
-                  <CardDescription className="mb-4 text-sm text-gray-400">
-                    Shows the final difference between baseline and scenario values for each node. Positive values indicate increase, negative values indicate decrease.
-                  </CardDescription>
-                  {selectedTab === 'chart' && deltaData.length > 0 ? (
-                    <div className="h-[400px] w-full">
-                      <ChartJsBar
-                        data={{
-                          labels: deltaData.map((row: any) => row.name),
-                          datasets: [
-                            {
-                              label: 'Difference',
-                              data: deltaData.map((row: any) => row.delta),
-                              backgroundColor: deltaData.map((row: any) => getBarColor(row.delta)),
-                              borderColor: deltaData.map((row: any) => getBarColor(row.delta)),
-                              borderWidth: 1,
-                            },
-                          ],
-                        } as ChartJsData<'bar'>}
-                        options={{
-                          responsive: true,
-                          maintainAspectRatio: false,
-                          plugins: {
-                            legend: {
-                              display: true,
-                              position: 'right',
-                              labels: {
-                                padding: 20,
-                                usePointStyle: true,
-                                pointStyle: 'rect',
+                  <TabsContent value="chart">
+                    <CardDescription className="mb-4 text-sm text-[hsl(var(--muted-foreground))]">
+                      Shows the final difference between baseline and scenario values for each node. Positive values indicate increase, negative values indicate decrease.
+                    </CardDescription>
+                    {scenarioTab === 'chart' && deltaData.length > 0 ? (
+                      <div className="h-[400px] w-full bg-[hsl(var(--card))] rounded-lg p-4">
+                        <ChartJsBar
+                          data={{
+                            labels: deltaData.map((row: any) => row.name),
+                            datasets: [
+                              {
+                                label: 'Difference',
+                                data: deltaData.map((row: any) => row.delta),
+                                backgroundColor: deltaData.map((row: any) => getBarColor(row.delta)),
+                                borderColor: deltaData.map((row: any) => getBarColor(row.delta)),
+                                borderWidth: 1,
                               },
-                            },
-                            title: {
-                              display: true,
-                              text: 'Scenario Comparison',
-                              padding: 20,
-                            },
-                            tooltip: {
-                              callbacks: {
-                                label: (context: any) => {
-                                  const label = context.dataset.label || '';
-                                  const value = context.parsed.y;
-                                  return `${label}: ${value.toFixed(3)}`;
+                            ],
+                          } as ChartJsData<'bar'>}
+                          options={{
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                              legend: {
+                                display: true,
+                                position: 'right',
+                                labels: {
+                                  padding: 20,
+                                  usePointStyle: true,
+                                  pointStyle: 'rect',
+                                },
+                              },
+                              title: {
+                                display: true,
+                                text: 'Scenario Comparison',
+                                padding: 20,
+                              },
+                              tooltip: {
+                                callbacks: {
+                                  label: (context: any) => {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    return `${label}: ${value.toFixed(3)}`;
+                                  },
                                 },
                               },
                             },
-                          },
-                          scales: {
-                            y: {
-                              beginAtZero: true,
-                              title: {
-                                display: true,
-                                text: 'Delta',
-                                padding: 20,
+                            scales: {
+                              y: {
+                                beginAtZero: true,
+                                title: {
+                                  display: true,
+                                  text: 'Delta',
+                                  padding: 20,
+                                },
+                                grid: {
+                                  color: 'rgba(255, 255, 255, 0.1)',
+                                },
                               },
-                              grid: {
-                                color: 'rgba(255, 255, 255, 0.1)',
+                              x: {
+                                title: {
+                                  display: true,
+                                  text: 'Node',
+                                  padding: 20,
+                                },
+                                grid: {
+                                  color: 'rgba(255, 255, 255, 0.1)',
+                                },
                               },
                             },
-                            x: {
-                              title: {
-                                display: true,
-                                text: 'Node',
-                                padding: 20,
-                              },
-                              grid: {
-                                color: 'rgba(255, 255, 255, 0.1)',
-                              },
-                            },
-                          },
-                        } as ChartJsOptions<'bar'>}
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center h-[400px]">
-                      <p className="text-gray-400">No comparison data available</p>
-                    </div>
-                  )}
-                </TabsContent>
+                          } as ChartJsOptions<'bar'>}
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-[400px]">
+                        <p className="text-[hsl(var(--muted-foreground))]">No comparison data available</p>
+                      </div>
+                    )}
+                  </TabsContent>
 
-                <TabsContent value="convergence">
-                  <CardDescription className="mb-4 text-sm text-gray-400">
-                    Displays how each node's value changes over time, comparing baseline (dashed) and scenario (solid) trajectories.
-                  </CardDescription>
-                  {selectedTab === 'convergence' && comparisonResult && isComparisonSimulationResult(comparisonResult) && (
-                    <div className="mt-4">
-                      <CompareConvergencePlot
-                        simulationResult={comparisonResult}
-                        nodeLabels={nodeLabels}
-                        nodeColors={nodeColors}
-                      />
-                    </div>
-                  )}
-                </TabsContent>
+                  <TabsContent value="convergence">
+                    <CardDescription className="mb-4 text-sm text-[hsl(var(--muted-foreground))]">
+                      Displays how each node's value changes over time, comparing baseline (dashed) and scenario (solid) trajectories.
+                    </CardDescription>
+                    {scenarioTab === 'convergence' && comparisonResult && isComparisonSimulationResult(comparisonResult) && (
+                      <div className="mt-4 bg-[hsl(var(--card))] rounded-lg p-4">
+                        <CompareConvergencePlot
+                          simulationResult={comparisonResult}
+                          nodeLabels={nodeLabels}
+                          nodeColors={nodeColors}
+                        />
+                      </div>
+                    )}
+                  </TabsContent>
 
-                <TabsContent value="delta">
-                  <CardDescription className="mb-4 text-sm text-gray-400">
-                    Shows how the difference between baseline and scenario evolves over time. Each line represents a node's changing impact.
-                  </CardDescription>
-                  {selectedTab === 'delta' && deltaOverTimeData.length > 0 ? (
-                    <div className="h-[400px] w-full">
-                      <ResponsiveContainer>
-                        <LineChart data={deltaOverTimeData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-                          <XAxis 
-                            dataKey="iteration"
-                            label={{ 
-                              value: 'Iterations', 
-                              position: 'bottom',
-                              fill: '#9ca3af',
-                              style: { fontSize: '12px' }
-                            }}
-                            stroke="#9ca3af"
-                            tick={{ fill: '#9ca3af' }}
-                          />
-                          <YAxis 
-                            label={{ 
-                              value: 'Difference from Baseline', 
-                              angle: -90, 
-                              position: 'insideLeft',
-                              fill: '#9ca3af',
-                              style: { fontSize: '12px' }
-                            }}
-                            stroke="#9ca3af"
-                            tick={{ fill: '#9ca3af' }}
-                          />
-                          <RechartsTooltip 
-                            content={({ active, payload, label }) => {
-                              if (active && payload && payload.length) {
-                                return (
-                                  <div className="bg-gray-800/90 p-3 border border-gray-700 rounded-lg shadow-lg">
-                                    <p className="text-sm text-gray-300 mb-2">Iteration: {label}</p>
-                                    {payload.map((entry: any, index: number) => (
-                                      <p key={index} className="text-sm" style={{ color: entry.color }}>
-                                        {entry.name}: {entry.value.toFixed(3)}
-                                      </p>
-                                    ))}
-                                  </div>
-                                );
-                              }
-                              return null;
-                            }}
-                          />
-                          <Legend 
-                            wrapperStyle={{
-                              paddingTop: '20px',
-                              color: '#9ca3af'
-                            }}
-                          />
-                          {model.nodes.map((node) => {
-                            const nodeId = toStringId(node.id);
-                            return (
-                              <Line
-                                key={nodeId}
-                                type="monotone"
-                                dataKey={nodeId}
-                                name={node.label}
-                                stroke={nodeColors[nodeId]}
-                                strokeWidth={2}
-                                dot={false}
-                                animationDuration={1000}
-                                animationBegin={0}
-                                animationEasing="ease-out"
-                              />
-                            );
-                          })}
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center h-[400px]">
-                      <p className="text-gray-400">No delta over time data available</p>
-                    </div>
-                  )}
-                </TabsContent>
+                  <TabsContent value="delta">
+                    <CardDescription className="mb-4 text-sm text-[hsl(var(--muted-foreground))]">
+                      Shows how the difference between baseline and scenario evolves over time. Each line represents a node's changing impact.
+                    </CardDescription>
+                    {scenarioTab === 'delta' && deltaOverTimeData.length > 0 ? (
+                      <div className="h-[400px] w-full bg-[hsl(var(--card))] rounded-lg p-4">
+                        <ResponsiveContainer>
+                          <LineChart data={deltaOverTimeData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
+                            <XAxis 
+                              dataKey="iteration"
+                              label={{ 
+                                value: 'Iterations', 
+                                position: 'bottom',
+                                fill: '#9ca3af',
+                                style: { fontSize: '12px' }
+                              }}
+                              stroke="#9ca3af"
+                              tick={{ fill: '#9ca3af' }}
+                            />
+                            <YAxis 
+                              label={{ 
+                                value: 'Difference from Baseline', 
+                                angle: -90, 
+                                position: 'insideLeft',
+                                fill: '#9ca3af',
+                                style: { fontSize: '12px' }
+                              }}
+                              stroke="#9ca3af"
+                              tick={{ fill: '#9ca3af' }}
+                            />
+                            <RechartsTooltip 
+                              content={({ active, payload, label }) => {
+                                if (active && payload && payload.length) {
+                                  return (
+                                    <div className="bg-gray-800/90 p-3 border border-gray-700 rounded-lg shadow-lg">
+                                      <p className="text-sm text-gray-300 mb-2">Iteration: {label}</p>
+                                      {payload.map((entry: any, index: number) => (
+                                        <p key={index} className="text-sm" style={{ color: entry.color }}>
+                                          {entry.name}: {entry.value.toFixed(3)}
+                                        </p>
+                                      ))}
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              }}
+                            />
+                            <Legend 
+                              wrapperStyle={{
+                                paddingTop: '20px',
+                                color: '#9ca3af'
+                              }}
+                            />
+                            {model.nodes.map((node) => {
+                              const nodeId = toStringId(node.id);
+                              return (
+                                <Line
+                                  key={nodeId}
+                                  type="monotone"
+                                  dataKey={nodeId}
+                                  name={node.label}
+                                  stroke={nodeColors[nodeId]}
+                                  strokeWidth={2}
+                                  dot={false}
+                                  animationDuration={1000}
+                                  animationBegin={0}
+                                  animationEasing="ease-out"
+                                />
+                              );
+                            })}
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-[400px]">
+                        <p className="text-[hsl(var(--muted-foreground))]">No delta over time data available</p>
+                      </div>
+                    )}
+                  </TabsContent>
 
-                <TabsContent value="maxdiff">
-                  <CardDescription className="mb-4 text-sm text-gray-400">
-                    Displays the maximum difference reached between baseline and scenario for each node, highlighting peak impacts.
-                  </CardDescription>
-                  {selectedTab === 'maxdiff' && impactMetrics.length > 0 ? (
-                    <div className="h-[400px] w-full">
-                      <ResponsiveContainer>
-                        <BarChart data={impactMetrics}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="label" />
-                          <YAxis />
-                          <RechartsTooltip />
-                          <Legend />
-                          <Bar dataKey="maxDifference" name="Max Diff">
-                            {impactMetrics.map((entry, index) => (
-                              <Cell key={`cell-maxdiff-${index}`} fill={
-                                entry.maxDifference > 0 ? '#22c55e' : entry.maxDifference < 0 ? '#ef4444' : '#6b7280'
-                              } />
-                            ))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center h-[400px]">
-                      <p className="text-gray-400">No max difference data available</p>
-                    </div>
-                  )}
-                </TabsContent>
+                  <TabsContent value="maxdiff">
+                    <CardDescription className="mb-4 text-sm text-[hsl(var(--muted-foreground))]">
+                      Displays the maximum difference reached between baseline and scenario for each node, highlighting peak impacts.
+                    </CardDescription>
+                    {scenarioTab === 'maxdiff' && impactMetrics.length > 0 ? (
+                      <div className="h-[400px] w-full bg-[hsl(var(--card))] rounded-lg p-4">
+                        <ResponsiveContainer>
+                          <BarChart data={impactMetrics}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="label" />
+                            <YAxis />
+                            <RechartsTooltip />
+                            <Legend />
+                            <Bar dataKey="maxDifference" name="Max Diff">
+                              {impactMetrics.map((entry, index) => (
+                                <Cell key={`cell-maxdiff-${index}`} fill={
+                                  entry.maxDifference > 0 ? '#22c55e' : entry.maxDifference < 0 ? '#ef4444' : '#6b7280'
+                                } />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-[400px]">
+                        <p className="text-[hsl(var(--muted-foreground))]">No max difference data available</p>
+                      </div>
+                    )}
+                  </TabsContent>
 
-                <TabsContent value="table">
-                  <CardDescription className="mb-4 text-sm text-gray-400">
-                    Detailed comparison showing baseline values, scenario values, differences, and key metrics for each node. Clamped nodes are marked with a lock icon. Direction indicates the pattern of change over time. Normalized % Change is the percent change relative to the larger of the baseline or scenario value.
-                  </CardDescription>
-                  {selectedTab === 'table' && deltaData.length > 0 ? (
-                    <div className="mt-2">
-                      <div className="glass rounded-lg overflow-hidden border border-white/10">
+                  <TabsContent value="table">
+                    <CardDescription className="mb-4 text-sm text-[hsl(var(--muted-foreground))]">
+                      Detailed comparison showing baseline values, scenario values, differences, and key metrics for each node. Clamped nodes are marked with a lock icon. Direction indicates the pattern of change over time. Normalized % Change is the percent change relative to the larger of the baseline or scenario value.
+                    </CardDescription>
+                    {scenarioTab === 'table' && deltaData.length > 0 ? (
+                      <div className="mt-2 bg-[hsl(var(--card))] rounded-lg overflow-hidden border border-[hsl(var(--border))]">
                         <table className="min-w-full text-sm">
                           <thead>
-                            <tr className="bg-gray-800">
-                              <th className="px-3 py-2 text-left">Node</th>
-                              <th className="px-3 py-2 text-left">Baseline</th>
-                              <th className="px-3 py-2 text-left">Scenario</th>
-                              <th className="px-3 py-2 text-left">Delta</th>
-                              <th className="px-3 py-2 text-left">Normalized % Change</th>
-                              <th className="px-3 py-2 text-left">AUC</th>
-                              <th className="px-3 py-2 text-left">Max Diff</th>
-                              <th className="px-3 py-2 text-left">Direction</th>
+                            <tr className="bg-[hsl(var(--table-header-bg))]">
+                              <th className="px-3 py-2 text-left text-[hsl(var(--muted-foreground))]">Node</th>
+                              <th className="px-3 py-2 text-left text-[hsl(var(--muted-foreground))]">Baseline</th>
+                              <th className="px-3 py-2 text-left text-[hsl(var(--muted-foreground))]">Scenario</th>
+                              <th className="px-3 py-2 text-left text-[hsl(var(--muted-foreground))]">Delta</th>
+                              <th className="px-3 py-2 text-left text-[hsl(var(--muted-foreground))]">Normalized % Change</th>
+                              <th className="px-3 py-2 text-left text-[hsl(var(--muted-foreground))]">AUC</th>
+                              <th className="px-3 py-2 text-left text-[hsl(var(--muted-foreground))]">Max Diff</th>
+                              <th className="px-3 py-2 text-left text-[hsl(var(--muted-foreground))]">Direction</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -733,14 +730,14 @@ const ScenarioComparison: React.FC<ScenarioComparisonProps> = ({ model, scenario
                           </tbody>
                         </table>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center h-[200px]">
-                      <p className="text-gray-400">No table data available</p>
-                    </div>
-                  )}
-                </TabsContent>
-              </Tabs>
+                    ) : (
+                      <div className="flex items-center justify-center h-[200px]">
+                        <p className="text-[hsl(var(--muted-foreground))]">No table data available</p>
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </div>
             )}
           </div>
         </CardContent>

@@ -74,6 +74,8 @@ export interface FCMEdge {
   source: string;
   target: string;
   weight: number;
+  sourceHandle?: string;
+  targetHandle?: string;
 }
 
 export interface SimulationNode {

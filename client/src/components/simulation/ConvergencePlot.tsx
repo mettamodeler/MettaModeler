@@ -69,24 +69,27 @@ export default function ConvergencePlot({ simulationResult, nodeLabels }: Conver
   // Generate labels for x-axis (iterations)
   const labels = Array.from({ length: iterations + 1 }, (_, i) => `${i}`);
   
+  // Replace color palette with theme variables
+  const root = typeof window !== 'undefined' ? document.documentElement : null;
+  const themeColors = [
+    root ? getComputedStyle(root).getPropertyValue('--primary').trim() : '#A855F7',
+    root ? getComputedStyle(root).getPropertyValue('--secondary').trim() : '#00C4FF',
+    root ? getComputedStyle(root).getPropertyValue('--destructive').trim() : '#EF4444',
+    root ? getComputedStyle(root).getPropertyValue('--edge-positive').trim() : '#60a5fa',
+    root ? getComputedStyle(root).getPropertyValue('--edge-negative').trim() : '#f87171',
+  ];
+  
   // Generate datasets for each node
   const datasets = Object.entries(timeSeriesData).map(([nodeId, values], index) => {
     // Use nodeLabels for legend and tooltips
     const label = nodeLabels[nodeId] || `Node ${nodeId}`;
     // Colors from theme
-    const colors = [
-      'rgba(168, 85, 247, 1)', // purple
-      'rgba(0, 196, 255, 1)',  // teal
-      'rgba(239, 68, 68, 1)',  // red
-      'rgba(59, 130, 246, 1)', // blue
-      'rgba(234, 179, 8, 1)',  // yellow
-    ];
-    const colorIndex = index % colors.length;
+    const colorIndex = index % themeColors.length;
     return {
       label,
       data: values as number[],
-      borderColor: colors[colorIndex],
-      backgroundColor: colors[colorIndex].replace('1)', '0.2)'),
+      borderColor: themeColors[colorIndex],
+      backgroundColor: themeColors[colorIndex].replace('1)', '0.2)'),
       tension: 0.3,
     };
   });

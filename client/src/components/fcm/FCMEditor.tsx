@@ -69,9 +69,9 @@ function modelToReactFlow(model: FCMModel): { nodes: Node[], edges: Edge[] } {
   // Second pass: create edges with bidirectional flags
   const edges = model.edges.map((edge) => {
     // Determine edge color based on weight
-    const edgeColor = edge.weight >= 0 
-      ? 'rgba(59, 130, 246, 0.8)' // blue for positive
-      : 'rgba(239, 68, 68, 0.8)'; // red for negative
+    const edgeColor = edge.weight >= 0
+      ? getComputedStyle(document.documentElement).getPropertyValue('--edge-positive').trim() || '#3B82F6'
+      : getComputedStyle(document.documentElement).getPropertyValue('--edge-negative').trim() || '#EF4444';
     
     // Check if this edge is part of a bidirectional pair
     const connectionKey = `${edge.source}->${edge.target}`;
@@ -85,6 +85,8 @@ function modelToReactFlow(model: FCMModel): { nodes: Node[], edges: Edge[] } {
       id: edge.id,
       source: edge.source,
       target: edge.target,
+      sourceHandle: edge.sourceHandle,
+      targetHandle: edge.targetHandle,
       type: 'custom',
       data: { 
         weight: edge.weight,
@@ -127,6 +129,8 @@ function reactFlowToModel(
     source: edge.source,
     target: edge.target,
     weight: edge.data?.weight || 0,
+    sourceHandle: edge.sourceHandle,
+    targetHandle: edge.targetHandle,
   }));
   
   return {
@@ -341,9 +345,9 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
         eds.map((edge) => {
           if (edge.id === id) {
             // Determine color based on updated weight
-            const edgeColor = weight >= 0 
-              ? 'rgba(59, 130, 246, 0.8)' // blue for positive
-              : 'rgba(239, 68, 68, 0.8)'; // red for negative
+            const edgeColor = weight >= 0
+              ? getComputedStyle(document.documentElement).getPropertyValue('--edge-positive').trim() || '#3B82F6'
+              : getComputedStyle(document.documentElement).getPropertyValue('--edge-negative').trim() || '#EF4444';
             
             return {
               ...edge,
@@ -364,15 +368,30 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
   // Create a new node
   const onAddNode = useCallback(() => {
     const id = `node-${Date.now()}`;
+    
+    // Calculate position based on existing nodes
+    let position = { x: 250, y: 250 };
+    if (nodes.length > 0) {
+      // Find the rightmost node
+      const rightmostNode = nodes.reduce((rightmost, node) => 
+        node.position.x > rightmost.position.x ? node : rightmost
+      );
+      // Spawn new node to the right of the rightmost node
+      position = {
+        x: rightmostNode.position.x + 200,
+        y: rightmostNode.position.y
+      };
+    }
+    
     const newNode = {
       id,
       type: 'custom',
-      position: { x: 250, y: 250 },
+      position,
       data: { 
         label: 'New Node', 
         type: 'regular' as NodeType, 
         value: 0.5,
-        color: '#A855F7',
+        color: getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#A855F7',
         onChange: onNodeLabelChange,
         onTypeChange: onNodeTypeChange,
       },
@@ -380,7 +399,7 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
     
     setNodes((nds) => [...nds, newNode]);
     saveModelChanges();
-  }, [setNodes, onNodeLabelChange, onNodeTypeChange, saveModelChanges]);
+  }, [setNodes, onNodeLabelChange, onNodeTypeChange, saveModelChanges, nodes]);
   
   // State to track node being hovered over
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
@@ -454,7 +473,8 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
       }}
       onKeyDown={onKeyDown}
       deleteKeyCode={['Backspace', 'Delete']}
-      fitView
+      fitView={nodes.length > 1}
+      defaultViewport={{ x: 0, y: 0, zoom: 1 }}
       minZoom={0.2}
       maxZoom={4}
       connectionMode={ConnectionMode.Loose}
@@ -518,7 +538,9 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
 export default function FCMEditor(props: FCMEditorProps) {
   return (
     <ReactFlowProvider>
-      <FCMEditorContent {...props} />
+      <div style={{ width: '100%', height: '600px' }}>
+        <FCMEditorContent {...props} />
+      </div>
     </ReactFlowProvider>
   );
 }

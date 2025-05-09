@@ -21,6 +21,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { FCMModel } from "@shared/schema";
 import { UserProfile } from "@/components/auth/user-profile";
+import { useTheme } from "@/components/ui/theme-provider";
+import { Switch } from "@/components/ui/switch";
 
 interface AppHeaderProps {
   model?: FCMModel;
@@ -363,8 +365,8 @@ export default function AppHeader({ model }: AppHeaderProps) {
                 <h3 className="text-sm font-medium">User Interface</h3>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-400">Theme</span>
-                    <span className="text-sm">Dark</span>
+                    <span className="text-sm text-gray-400">Light Mode</span>
+                    <ThemeToggle />
                   </div>
                 </div>
               </div>
@@ -431,5 +433,16 @@ export default function AppHeader({ model }: AppHeaderProps) {
         </DialogContent>
       </Dialog>
     </header>
+  );
+}
+
+function ThemeToggle() {
+  const { theme, setTheme } = useTheme();
+  return (
+    <Switch
+      checked={theme === "light"}
+      onCheckedChange={checked => setTheme(checked ? "light" : "dark")}
+      aria-label="Toggle light mode"
+    />
   );
 }

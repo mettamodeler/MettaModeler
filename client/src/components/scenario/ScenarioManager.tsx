@@ -32,6 +32,10 @@ interface Scenario {
 
 interface ScenarioManagerProps {
   model: FCMModel;
+  selectedScenarioIds: Set<string>;
+  setSelectedScenarioIds: React.Dispatch<React.SetStateAction<Set<string>>>;
+  scenarioTab: string;
+  setScenarioTab: React.Dispatch<React.SetStateAction<string>>;
 }
 
 // Export validation function
@@ -42,7 +46,7 @@ export const validateInitialValues = (values: Record<string, number>, nodes: FCM
   }
 };
 
-export default function ScenarioManager({ model }: ScenarioManagerProps) {
+export default function ScenarioManager({ model, selectedScenarioIds, setSelectedScenarioIds, scenarioTab, setScenarioTab }: ScenarioManagerProps) {
   const { toast } = useToast();
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +55,6 @@ export default function ScenarioManager({ model }: ScenarioManagerProps) {
   const [deleteScenarioId, setDeleteScenarioId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [selectedScenarios, setSelectedScenarios] = useState<Set<string>>(new Set());
   const [newScenarioName, setNewScenarioName] = useState("");
   const [initialValues, setInitialValues] = useState<Record<string, number>>({});
   const { runSimulation, updateParams } = useSimulation(model);
@@ -177,10 +180,10 @@ export default function ScenarioManager({ model }: ScenarioManagerProps) {
       setScenarios(prev => prev.filter(s => s.id !== deleteScenarioId));
       
       // Remove from selected scenarios if present
-      if (selectedScenarios.has(deleteScenarioId)) {
-        const newSelected = new Set(selectedScenarios);
+      if (selectedScenarioIds.has(deleteScenarioId)) {
+        const newSelected = new Set(selectedScenarioIds);
         newSelected.delete(deleteScenarioId);
-        setSelectedScenarios(newSelected);
+        setSelectedScenarioIds(newSelected);
       }
       
       // Close dialog
@@ -205,7 +208,7 @@ export default function ScenarioManager({ model }: ScenarioManagerProps) {
 
   // Toggle scenario selection
   const toggleScenarioSelection = (scenario: Scenario) => {
-    const newSelected = new Set(selectedScenarios);
+    const newSelected = new Set(selectedScenarioIds);
     
     if (newSelected.has(scenario.id)) {
       newSelected.delete(scenario.id);
@@ -213,7 +216,7 @@ export default function ScenarioManager({ model }: ScenarioManagerProps) {
       newSelected.add(scenario.id);
     }
     
-    setSelectedScenarios(newSelected);
+    setSelectedScenarioIds(newSelected);
   };
 
   // Handle initial value change
@@ -225,82 +228,74 @@ export default function ScenarioManager({ model }: ScenarioManagerProps) {
   };
 
   // Filter scenarios based on selection
-  const selectedScenariosList = scenarios.filter(s => selectedScenarios.has(s.id));
+  const selectedScenariosList = scenarios.filter(s => selectedScenarioIds.has(s.id));
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold tracking-tight">Scenarios</h2>
-        <Button onClick={() => setNewScenarioDialogOpen(true)}>
-          New Scenario
-        </Button>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold lowercase text-[hsl(var(--foreground))]">scenarios</h3>
+        <Button className="bg-[var(--metta-blue)] text-white px-4 py-2 rounded-md hover:bg-[var(--metta-blue)]/90" onClick={() => setNewScenarioDialogOpen(true)}>New Scenario</Button>
       </div>
-      
       {loading ? (
-        <div className="glass p-6 rounded-lg text-center">
-          <p className="text-muted-foreground">Loading scenarios...</p>
+        <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 text-center">
+          <p className="text-[hsl(var(--muted-foreground))]">Loading scenarios...</p>
         </div>
       ) : scenarios.length === 0 ? (
-        <div className="glass p-6 rounded-lg text-center">
-          <p className="text-muted-foreground">No scenarios found for this model.</p>
-          <p className="text-sm text-muted-foreground mt-2">
+        <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 text-center">
+          <p className="text-[hsl(var(--muted-foreground))]">No scenarios found for this model.</p>
+          <p className="text-sm text-[hsl(var(--muted-foreground))] mt-2">
             Create a scenario to run simulations with different initial values.
           </p>
         </div>
       ) : (
         <>
-          <div className="glass rounded-lg overflow-hidden">
+          <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] overflow-hidden mb-6">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border/50">
-                  <th className="p-4 text-left font-medium">Name</th>
-                  <th className="p-4 text-left font-medium">Created</th>
-                  <th className="p-4 text-left font-medium">Status</th>
-                  <th className="p-4 text-left font-medium">Actions</th>
+                <tr className="border-b border-[hsl(var(--border))] bg-[hsl(var(--table-header-bg))]">
+                  <th className="p-3 text-left font-medium text-[hsl(var(--muted-foreground))] lowercase">name</th>
+                  <th className="p-3 text-left font-medium text-[hsl(var(--muted-foreground))] lowercase">created</th>
+                  <th className="p-3 text-left font-medium text-[hsl(var(--muted-foreground))] lowercase">status</th>
+                  <th className="p-3 text-left font-medium text-[hsl(var(--muted-foreground))] lowercase">actions</th>
                 </tr>
               </thead>
               <tbody>
                 {scenarios.map((scenario) => (
                   <tr 
                     key={scenario.id}
-                    className={`border-b border-border/30 transition-colors hover:bg-muted/30 ${
-                      selectedScenarios.has(scenario.id) ? "bg-primary/10" : ""
-                    }`}
+                    className={`border-b border-[hsl(var(--border))] transition-colors hover:bg-[hsl(var(--muted))]/10 ${selectedScenarioIds.has(scenario.id) ? "bg-[hsl(var(--primary))/20]" : ""}`}
                   >
-                    <td className="p-4">
-                      <div className="font-medium">{scenario.name}</div>
-                    </td>
-                    <td className="p-4 text-muted-foreground">
+                    <td className="p-3 font-medium text-[hsl(var(--foreground))]">{scenario.name}</td>
+                    <td className="p-3 text-[hsl(var(--muted-foreground))]">
                       {format(new Date(scenario.createdAt), "MMM d, yyyy")}
                     </td>
-                    <td className="p-4">
+                    <td className="p-3">
                       {scenario.results ? (
-                        <Badge variant="secondary">
-                          {scenario.results.converged ? "Converged" : "Not Converged"}
-                        </Badge>
+                        <span className="inline-block px-2 py-1 rounded bg-[var(--metta-blue)] text-white text-xs font-semibold lowercase">{scenario.results.converged ? "converged" : "not converged"}</span>
                       ) : (
-                        <Badge variant="outline">No Results</Badge>
+                        <span className="inline-block px-2 py-1 rounded border border-[hsl(var(--border))] text-xs text-[hsl(var(--muted-foreground))] lowercase">no results</span>
                       )}
                     </td>
-                    <td className="p-4">
+                    <td className="p-3">
                       <div className="flex items-center gap-2">
                         <Button 
-                          variant="outline" 
+                          className={`px-3 py-1 rounded bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] text-sm border-none hover:bg-[hsl(var(--primary))]/10 ${selectedScenarioIds.has(scenario.id) ? 'opacity-70' : ''}`}
+                          variant="secondary"
                           size="sm"
                           onClick={() => toggleScenarioSelection(scenario)}
                         >
-                          {selectedScenarios.has(scenario.id) ? "Deselect" : "Select"}
+                          {selectedScenarioIds.has(scenario.id) ? "deselect" : "select"}
                         </Button>
                         <Button 
-                          variant="outline" 
+                          className="px-3 py-1 rounded bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))] text-sm border-none hover:bg-[hsl(var(--destructive))]/80"
+                          variant="destructive"
                           size="sm"
-                          className="text-destructive border-destructive hover:bg-destructive/10"
                           onClick={() => {
                             setDeleteScenarioId(scenario.id);
                             setDeleteDialogOpen(true);
                           }}
                         >
-                          Delete
+                          delete
                         </Button>
                       </div>
                     </td>
@@ -309,9 +304,10 @@ export default function ScenarioManager({ model }: ScenarioManagerProps) {
               </tbody>
             </table>
           </div>
-          
           {selectedScenariosList.length > 0 && (
-            <div className="mt-6">
+            <div className="mt-6 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4">
+              <h3 className="text-lg font-semibold mb-2 lowercase text-[hsl(var(--foreground))]">comparison controls</h3>
+              <div className="text-sm text-[hsl(var(--muted-foreground))] mb-4">select activation function and scenario to compare</div>
               <ScenarioComparison 
                 scenarios={selectedScenariosList}
                 model={model}
@@ -323,6 +319,8 @@ export default function ScenarioManager({ model }: ScenarioManagerProps) {
                   acc[node.id] = node.type || 'regular';
                   return acc;
                 }, {} as Record<string, string>)}
+                scenarioTab={scenarioTab}
+                setScenarioTab={setScenarioTab}
               />
             </div>
           )}
@@ -332,7 +330,7 @@ export default function ScenarioManager({ model }: ScenarioManagerProps) {
       {/* New Scenario Dialog */}
       <Dialog open={newScenarioDialogOpen} onOpenChange={setNewScenarioDialogOpen}>
         <TooltipProvider>
-          <DialogContent className="glass border border-white/10 max-w-2xl">
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Create New Scenario</DialogTitle>
               <DialogDescription>
@@ -427,7 +425,7 @@ export default function ScenarioManager({ model }: ScenarioManagerProps) {
       
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="glass border border-white/10">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Delete Scenario</DialogTitle>
             <DialogDescription>

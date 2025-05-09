@@ -50,6 +50,23 @@ interface SimulationPanelProps {
 }
 
 export default function SimulationPanel({ model }: SimulationPanelProps) {
+  // Guard: If model or model.nodes is missing or empty, show friendly message and do not run simulation logic
+  if (!model || !model.nodes || model.nodes.length === 0) {
+    return (
+      <Card className="card h-full">
+        <CardHeader>
+          <CardTitle>simulation parameters</CardTitle>
+          <CardDescription>Add nodes to your model to run a simulation.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="nested-panel p-6 rounded-lg text-center text-[hsl(var(--muted-foreground))]">
+            <p>Your model needs nodes before you can run a simulation.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const { toast } = useToast();
   const { baselineResult, setBaselineResult, isBaselineValid, clearBaseline } = useBaseline();
   
