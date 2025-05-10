@@ -60,6 +60,7 @@ export default function ScenarioManager({ model, selectedScenarioIds, setSelecte
   const { runSimulation, updateParams } = useSimulation(model);
   const [clampedNodes, setClampedNodes] = useState<string[]>([]);
   const [showClampHelp, setShowClampHelp] = useState(false);
+  const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null);
 
   // Fetch scenarios when model changes
   useEffect(() => {
@@ -321,6 +322,8 @@ export default function ScenarioManager({ model, selectedScenarioIds, setSelecte
                 }, {} as Record<string, string>)}
                 scenarioTab={scenarioTab}
                 setScenarioTab={setScenarioTab}
+                selectedScenarioId={selectedScenarioId}
+                setSelectedScenarioId={setSelectedScenarioId}
               />
             </div>
           )}

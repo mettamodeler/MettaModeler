@@ -43,6 +43,8 @@ interface ScenarioComparisonProps {
   nodeTypesById?: Record<string, string>;
   scenarioTab: string;
   setScenarioTab: React.Dispatch<React.SetStateAction<string>>;
+  selectedScenarioId: string | null;
+  setSelectedScenarioId: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
 const CHART_COLOR_PALETTE = [
@@ -58,8 +60,7 @@ const CHART_COLOR_PALETTE = [
   '#f472b6', // rose-400
 ];
 
-const ScenarioComparison: React.FC<ScenarioComparisonProps> = ({ model, scenarios, nodeLabelsById, nodeTypesById, scenarioTab, setScenarioTab }) => {
-  const [selectedScenarioId, setSelectedScenarioId] = useState<string>("");
+const ScenarioComparison: React.FC<ScenarioComparisonProps> = ({ model, scenarios, nodeLabelsById, nodeTypesById, scenarioTab, setScenarioTab, selectedScenarioId, setSelectedScenarioId }) => {
   const [comparisonResult, setComparisonResult] = useState<SimulationResult | ComparisonSimulationResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   type ActivationType = 'sigmoid' | 'tanh' | 'relu' | 'linear';
@@ -69,13 +70,6 @@ const ScenarioComparison: React.FC<ScenarioComparisonProps> = ({ model, scenario
     scenarios.find((s: { id: string }) => s.id.toString() === selectedScenarioId),
     [scenarios, selectedScenarioId]
   );
-
-  // Initialize selected scenario
-  useEffect(() => {
-    if (scenarios.length > 0) {
-      setSelectedScenarioId(scenarios[0].id.toString());
-    }
-  }, [scenarios]);
 
   // Get node labels and colors
   const { nodeLabels, nodeColors } = useMemo<{
@@ -286,6 +280,13 @@ const ScenarioComparison: React.FC<ScenarioComparisonProps> = ({ model, scenario
     }).filter(Boolean);
   }, [comparisonResult, model.nodes]);
 
+  // Cleanup large data when component unmounts or scenario tab is closed
+  useEffect(() => {
+    return () => {
+      setComparisonResult(null);
+    };
+  }, []);
+
   if (scenarios.length === 0) {
     return (
       <Card className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4">
@@ -412,7 +413,7 @@ const ScenarioComparison: React.FC<ScenarioComparisonProps> = ({ model, scenario
                   </Popover.Root>
                 </div>
               </div>
-              <Select.Root value={selectedScenarioId} onValueChange={setSelectedScenarioId}>
+              <Select.Root value={selectedScenarioId ?? (scenarios[0]?.id?.toString() ?? '')} onValueChange={v => setSelectedScenarioId(v)} disabled={scenarios.length === 1}>
                 <Select.Trigger className="w-[200px] flex items-center justify-between px-3 py-2 bg-[hsl(var(--muted))] border border-[hsl(var(--border))] rounded-md shadow-sm text-[hsl(var(--foreground))]">
                   <Select.Value>
                     {selectedScenario?.name || "Select a scenario"}

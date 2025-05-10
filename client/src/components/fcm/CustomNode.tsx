@@ -51,9 +51,15 @@ export default function CustomNode({ id, data, selected }: NodeProps<CustomNodeD
 
   // Determine background color based on type or explicit color
   function getNodeColor() {
-    if (type === 'driver') return '#1E3A8A';  // Dark blue for drivers
-    if (type === 'outcome') return '#4C1D95'; // Dark purple for outcomes
-    return '#4C1D95'; // Default to purple for regular nodes
+    if (type === 'driver') return 'var(--node-driver-bg)';
+    if (type === 'outcome') return 'var(--node-outcome-bg)';
+    return 'var(--node-outcome-bg)';
+  }
+
+  function getNodeTextColor() {
+    if (type === 'driver') return 'var(--node-driver-text)';
+    if (type === 'outcome') return 'var(--node-outcome-text)';
+    return 'var(--node-outcome-text)';
   }
 
   // This is a validation function to determine which connections are valid
@@ -72,6 +78,7 @@ export default function CustomNode({ id, data, selected }: NodeProps<CustomNodeD
         ${shouldHighlight ? 'shadow-[0_0_20px_rgba(255,255,255,0.3)]' : ''}`}
       style={{ 
         backgroundColor: getNodeColor(),
+        color: getNodeTextColor(),
         boxShadow: shouldHighlight ? '0 0 15px rgba(255, 255, 255, 0.2)' : 'none',
         transform: shouldHighlight ? 'scale(1.02)' : 'scale(1)',
       }}
@@ -119,14 +126,14 @@ export default function CustomNode({ id, data, selected }: NodeProps<CustomNodeD
         type="text"
         value={label}
         onChange={handleLabelChange}
-        className="font-medium text-sm bg-transparent text-center w-full border-none focus:outline-none text-white"
+        className="font-medium text-sm bg-transparent text-center w-full border-none focus:outline-none"
       />
       
       <div className="text-xs mt-1 bg-white/10 rounded-sm py-0.5 px-1 flex items-center justify-between">
         <select 
           value={type}
           onChange={handleTypeChange}
-          className="bg-transparent border-none text-xs focus:outline-none cursor-pointer text-white"
+          className="bg-transparent border-none text-xs focus:outline-none cursor-pointer"
         >
           <option value="driver">driver</option>
           <option value="regular">regular</option>

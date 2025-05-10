@@ -174,6 +174,13 @@ export default function SimulationPanel({ model }: SimulationPanelProps) {
     }
   }, [simulationResult, scenarioName, model.id, initialValues, toast]);
   
+  useEffect(() => {
+    return () => {
+      setSimulationResult(null);
+      clearBaseline();
+    };
+  }, []);
+
   return (
     <div className="relative h-full overflow-auto">
       <div className="p-6 grid grid-cols-1 gap-6">

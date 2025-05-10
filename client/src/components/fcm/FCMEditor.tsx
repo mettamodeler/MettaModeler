@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, useMemo } from 'react';
+import { useCallback, useRef, useState, useMemo, useEffect } from 'react';
 import ReactFlow, {
   ReactFlowProvider,
   MiniMap,
@@ -457,6 +457,13 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
         (edge.source === hoveredNodeId || edge.target === hoveredNodeId) : false,
     },
   }));
+  
+  useEffect(() => {
+    return () => {
+      setNodes([]);
+      setEdges([]);
+    };
+  }, []);
   
   return (
     <ReactFlow

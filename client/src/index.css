@@ -10,10 +10,13 @@
     --dot-grid: 210 16% 83%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
-    --node-driver-bg: #1E3A8A;
-    --node-driver-text: #FFFFFF;
-    --node-outcome-bg: #4C1D95;
-    --node-outcome-text: #FFFFFF;
+    --node-driver-bg: #B3D8FF; /* pastel blue-100 */
+    --node-driver-tag-bg: #BFDBFE; /* pastel blue-200 */
+    --node-outcome-bg: #E9D8FD; /* pastel purple-100 */
+    --node-outcome-tag-bg: #DDD6FE; /* pastel purple-200 */
+    --node-indicator-bg: #60A5FA; /* blue-400 */
+    --node-driver-text: #1E40AF; /* blue-800 */
+    --node-outcome-text: #6D28D9; /* purple-800 */
     --edge-positive: #3B82F6;
     --edge-negative: #EF4444;
     --edge-weight-bg: 0 0% 100%;

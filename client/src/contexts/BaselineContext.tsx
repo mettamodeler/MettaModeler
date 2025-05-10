@@ -59,6 +59,13 @@ export function BaselineProvider({ children }: { children: React.ReactNode }) {
     return true;
   }, [baselineResult, modelId]);
 
+  useEffect(() => {
+    return () => {
+      setBaselineResultState(null);
+      setModelId(null);
+    };
+  }, []);
+
   return (
     <BaselineContext.Provider 
       value={{ 
