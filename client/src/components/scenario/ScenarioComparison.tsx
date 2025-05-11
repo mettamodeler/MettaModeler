@@ -66,6 +66,17 @@ const ScenarioComparison: React.FC<ScenarioComparisonProps> = ({ model, scenario
   type ActivationType = 'sigmoid' | 'tanh' | 'relu' | 'linear';
   const [activation, setActivation] = useState<ActivationType>('sigmoid');
   
+  // Auto-select the single scenario if there's only one, or clear if none
+  useEffect(() => {
+    if (scenarios.length === 1) {
+      if (selectedScenarioId !== scenarios[0].id.toString()) {
+        setSelectedScenarioId(scenarios[0].id.toString());
+      }
+    } else if (scenarios.length === 0 && selectedScenarioId) {
+      setSelectedScenarioId(null);
+    }
+  }, [scenarios, selectedScenarioId, setSelectedScenarioId]);
+
   const selectedScenario = useMemo(() => 
     scenarios.find((s: { id: string }) => s.id.toString() === selectedScenarioId),
     [scenarios, selectedScenarioId]
@@ -413,7 +424,11 @@ const ScenarioComparison: React.FC<ScenarioComparisonProps> = ({ model, scenario
                   </Popover.Root>
                 </div>
               </div>
-              <Select.Root value={selectedScenarioId ?? (scenarios[0]?.id?.toString() ?? '')} onValueChange={v => setSelectedScenarioId(v)} disabled={scenarios.length === 1}>
+              <Select.Root 
+                value={selectedScenarioId ?? (scenarios[0]?.id?.toString() ?? '')} 
+                onValueChange={v => setSelectedScenarioId(v)} 
+                disabled={scenarios.length === 1}
+              >
                 <Select.Trigger className="w-[200px] flex items-center justify-between px-3 py-2 bg-[hsl(var(--muted))] border border-[hsl(var(--border))] rounded-md shadow-sm text-[hsl(var(--foreground))]">
                   <Select.Value>
                     {selectedScenario?.name || "Select a scenario"}
@@ -423,7 +438,11 @@ const ScenarioComparison: React.FC<ScenarioComparisonProps> = ({ model, scenario
                   </Select.Icon>
                 </Select.Trigger>
                 <Select.Portal>
-                  <Select.Content className="bg-[hsl(var(--muted))] border border-[hsl(var(--border))] rounded-md shadow-lg">
+                  <Select.Content 
+                    className="bg-[hsl(var(--muted))] border border-[hsl(var(--border))] rounded-md shadow-lg z-[100]"
+                    position="popper"
+                    sideOffset={5}
+                  >
                     <Select.Viewport>
                       {scenarios.map((scenario) => (
                         <Select.Item 
