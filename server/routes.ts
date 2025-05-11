@@ -16,12 +16,11 @@ import { setupAuth, isAuthenticated } from "./auth";
 import { exportService, ExportFormat, ExportType } from "./export";
 import { SimulationResult as PythonSimulationResult } from './types';
 import axios, { AxiosError } from "axios";
-import simulateRouter from './routes/simulate';
-import { ProjectSchema, ProjectStorageSchema, type ProjectStorage } from './types/Project.v1.zod';
-import { ModelSchema, ModelStorageSchema, type ModelStorage } from './types/Model.v1.zod';
-import { ScenarioSchema, ScenarioStorageSchema, type ScenarioStorage } from './types/Scenario.v1.zod';
-import { CreateModelSchema } from './types/Model.v1.zod';
-import { CreateScenarioSchema } from './types/Scenario.v1.zod';
+import { ProjectSchema, ProjectStorageSchema, type ProjectStorage } from './types/Project.v2.zod';
+import { ModelSchema, ModelStorageSchema, type ModelStorage } from './types/Model.v2.zod';
+import { ScenarioSchema, ScenarioStorageSchema, type ScenarioStorage } from './types/Scenario.v2.zod';
+import { CreateModelSchema } from './types/Model.v2.zod';
+import { CreateScenarioSchema } from './types/Scenario.v2.zod';
 
 // Python simulation service URL
 const PYTHON_SIM_URL = process.env.PYTHON_SIM_URL || 'http://localhost:5050';
@@ -36,9 +35,6 @@ interface SimulationResponse {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
   setupAuth(app);
-
-  // Register the Zod-validated /api/simulate route
-  app.use(simulateRouter);
 
   // API routes
   // Projects

@@ -1,0 +1,13 @@
+
+> rest-express@1.0.0 dev
+> concurrently "tsx server/index.ts" "vite"
+
+[1] Port 5173 is in use, trying another one...
+[1] 
+[1]   VITE v5.4.14  ready in 195 ms
+[1] 
+[1]   ➜  Local:   http://localhost:5174/
+[1]   ➜  Network: use --host to expose
+[0] Using in-memory storage for MettaModeler
+[0] 2:36:58 PM [system] Uncaught Exception: listen EADDRINUSE: address already in use :::3000
+[0] tsx server/index.ts exited with code 0

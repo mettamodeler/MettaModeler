@@ -138,6 +138,12 @@ export default function ScenarioManager({ model, selectedScenarioIds, setSelecte
         {
           name: newScenarioName,
           modelId: model.id,
+          description: "",
+          nodes: model.nodes.map(node => ({
+            id: node.id,
+            label: node.label,
+            value: initialValues[node.id] || 0
+          })),
           initialValues,
           clampedNodes,
           results: {
