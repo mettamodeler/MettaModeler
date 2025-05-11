@@ -1,0 +1,20 @@
+name: Schema & Codegen Drift Check
+
+on: [push, pull_request]
+
+jobs:
+  codegen-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install dependencies
+        run: npm install
+      - name: Install Python codegen tool
+        run: pip install datamodel-code-generator
+      - name: Run codegen
+        run: |
+          npm run codegen:ts
+          npm run codegen:zod
+          npm run codegen:py
+      - name: Check for drift
+        run: git diff --exit-code || (echo 'Codegen drift detected! Run codegen and commit.' && exit 1) 

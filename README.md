@@ -61,7 +61,21 @@ For more details on the launcher system, see [LAUNCHER.md](LAUNCHER.md).
 
 ## Documentation
 
-For detailed documentation, see [PROJECT.md](PROJECT.md).
+- For detailed architecture and conventions, see [docs/architecture.md](docs/architecture.md).
+- For project-level details, see [PROJECT.md](PROJECT.md).
+
+## Schema-First & Codegen Workflow
+
+MettaModeler uses a schema-first, codegen-driven workflow:
+- All core data models are defined in `/schemas` as versioned JSON-Schema files.
+- To update all types after a schema change, run:
+  ```sh
+  npm run codegen:ts
+  npm run codegen:zod
+  npm run codegen:py
+  ```
+- Commit any changes in generated files. CI will fail if you forget to update generated files.
+- See [docs/architecture.md](docs/architecture.md) for full details.
 
 ## License
 
