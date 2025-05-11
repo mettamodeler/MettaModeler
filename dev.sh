@@ -29,34 +29,31 @@ start_all() {
     fi
     cd ..
     
-    # Start frontend service
-    echo -e "${YELLOW}Starting frontend service...${NC}"
-    cd client && ./launch.sh start
-    if [ $? -ne 0 ]; then
-        echo -e "${RED}Failed to start frontend service${NC}"
-        # Try to stop Python service
-        cd ../python_sim && ./launch.sh stop
-        exit 1
-    fi
-    cd ..
+    # Start frontend and server services
+    echo -e "${YELLOW}Starting frontend and server services...${NC}"
+    npm run dev > frontend.log 2>&1 &
+    echo $! > frontend.pid
     
     # Print status banner
     print_banner
     echo -e "${GREEN}MettaModeler is now running!${NC}"
     echo -e "${GREEN}Python service: ${YELLOW}http://localhost:5050${NC}"
     echo -e "${GREEN}Frontend: ${YELLOW}http://localhost:5173${NC}"
+    echo -e "${GREEN}Server: ${YELLOW}http://localhost:3000${NC}"
     echo -e "${GREEN}Logs:${NC}"
     echo -e "  - Python: ${YELLOW}python_sim/app.log${NC}"
-    echo -e "  - Frontend: ${YELLOW}client/frontend.log${NC}"
+    echo -e "  - Frontend: ${YELLOW}frontend.log${NC}"
 }
 
 # Function to stop all services
 stop_all() {
     echo -e "${YELLOW}Stopping all MettaModeler services...${NC}"
     
-    # Stop frontend service
-    cd client && ./launch.sh stop
-    cd ..
+    # Stop frontend and server services
+    if [ -f "frontend.pid" ]; then
+        kill $(cat frontend.pid) 2>/dev/null
+        rm -f frontend.pid
+    fi
     
     # Stop Python service
     cd python_sim && ./launch.sh stop
@@ -79,9 +76,12 @@ show_status() {
     cd python_sim && ./launch.sh status
     cd ..
     
-    echo -e "\n${YELLOW}Frontend service status:${NC}"
-    cd client && ./launch.sh status
-    cd ..
+    echo -e "\n${YELLOW}Frontend and server status:${NC}"
+    if [ -f "frontend.pid" ]; then
+        echo -e "${GREEN}Running${NC}"
+    else
+        echo -e "${RED}Not running${NC}"
+    fi
 }
 
 # Main script
