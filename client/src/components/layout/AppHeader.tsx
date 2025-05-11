@@ -340,32 +340,32 @@ export default function AppHeader({ model }: AppHeaderProps) {
           </SheetTrigger>
           <SheetContent className="dark-glass border-l border-white/10">
             <SheetHeader>
-              <SheetTitle>application settings</SheetTitle>
-              <SheetDescription>
+              <SheetTitle className="text-gray-900 dark:text-gray-100">application settings</SheetTitle>
+              <SheetDescription className="text-gray-700 dark:text-gray-300">
                 Configure the application settings
               </SheetDescription>
             </SheetHeader>
             
             <div className="py-6 space-y-6">
               <div className="space-y-4">
-                <h3 className="text-sm font-medium">Simulation Parameters</h3>
+                <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Simulation Parameters</h3>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-400">Default Max Iterations</span>
-                    <span className="text-sm">20</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Default Max Iterations</span>
+                    <span className="text-sm text-gray-900 dark:text-gray-100">20</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-400">Default Threshold</span>
-                    <span className="text-sm">0.001</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Default Threshold</span>
+                    <span className="text-sm text-gray-900 dark:text-gray-100">0.001</span>
                   </div>
                 </div>
               </div>
               
               <div className="space-y-4">
-                <h3 className="text-sm font-medium">User Interface</h3>
+                <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">User Interface</h3>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-400">Light Mode</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Light Mode</span>
                     <ThemeToggle />
                   </div>
                 </div>
@@ -385,16 +385,16 @@ export default function AppHeader({ model }: AppHeaderProps) {
       <Dialog open={helpDialogOpen} onOpenChange={setHelpDialogOpen}>
         <DialogContent className="dark-glass border border-white/10 max-w-2xl">
           <DialogHeader>
-            <DialogTitle>MettaModeler Help</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-gray-900 dark:text-gray-100">MettaModeler Help</DialogTitle>
+            <DialogDescription className="text-gray-700 dark:text-gray-300">
               Quick guide to using the FCM modeling platform
             </DialogDescription>
           </DialogHeader>
           
           <div className="py-4 space-y-6">
             <div>
-              <h3 className="text-lg font-medium mb-2">What is a Fuzzy Cognitive Map?</h3>
-              <p className="text-sm text-gray-400">
+              <h3 className="text-lg font-medium mb-2 text-gray-900 dark:text-gray-100">What is a Fuzzy Cognitive Map?</h3>
+              <p className="text-sm text-gray-700 dark:text-gray-300">
                 Fuzzy Cognitive Maps (FCMs) are graphical models used to represent complex causal relationships 
                 between different concepts. They're useful for modeling and simulating complex systems where
                 relationships between variables can be uncertain or "fuzzy."
@@ -402,8 +402,8 @@ export default function AppHeader({ model }: AppHeaderProps) {
             </div>
             
             <div>
-              <h3 className="text-lg font-medium mb-2">Using the Model Editor</h3>
-              <ul className="text-sm text-gray-400 list-disc list-inside space-y-2">
+              <h3 className="text-lg font-medium mb-2 text-gray-900 dark:text-gray-100">Using the Model Editor</h3>
+              <ul className="text-sm text-gray-700 dark:text-gray-300 list-disc list-inside space-y-2">
                 <li>Add nodes by clicking the + button in the top-right of the canvas</li>
                 <li>Connect nodes by dragging from one node's handle to another</li>
                 <li>Edit node labels by clicking on them</li>
@@ -414,8 +414,8 @@ export default function AppHeader({ model }: AppHeaderProps) {
             </div>
             
             <div>
-              <h3 className="text-lg font-medium mb-2">Running Simulations</h3>
-              <ul className="text-sm text-gray-400 list-disc list-inside space-y-2">
+              <h3 className="text-lg font-medium mb-2 text-gray-900 dark:text-gray-100">Running Simulations</h3>
+              <ul className="text-sm text-gray-700 dark:text-gray-300 list-disc list-inside space-y-2">
                 <li>Switch to the simulation tab to set initial values for nodes</li>
                 <li>Configure driver nodes to represent your input variables</li>
                 <li>Set simulation parameters like iterations and threshold</li>
