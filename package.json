@@ -8,7 +8,10 @@
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "codegen:ts": "json-schema-to-typescript -o client/src/api/types/ schemas/*.json && json-schema-to-typescript -o server/types/ schemas/*.json",
+    "codegen:zod": "json-schema-to-zod --input schemas/SimulationInput.v1.json --output server/types/SimulationInput.v1.zod.ts && json-schema-to-zod --input schemas/Project.v1.json --output server/types/Project.v1.zod.ts && json-schema-to-zod --input schemas/Model.v1.json --output server/types/Model.v1.zod.ts && json-schema-to-zod --input schemas/Scenario.v1.json --output server/types/Scenario.v1.zod.ts && json-schema-to-zod --input schemas/User.v1.json --output server/types/User.v1.zod.ts",
+    "codegen:py": "datamodel-codegen --input schemas/SimulationInput.v1.json --output python_sim/schemas/simulation_input_v1.py && datamodel-codegen --input schemas/Project.v1.json --output python_sim/schemas/project_v1.py && datamodel-codegen --input schemas/Model.v1.json --output python_sim/schemas/model_v1.py && datamodel-codegen --input schemas/Scenario.v1.json --output python_sim/schemas/scenario_v1.py && datamodel-codegen --input schemas/User.v1.json --output python_sim/schemas/user_v1.py"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -85,7 +88,6 @@
     "vaul": "^1.1.0",
     "wouter": "^3.3.5",
     "ws": "^8.18.0",
-    "zod": "^3.23.8",
     "zod-validation-error": "^3.4.0"
   },
   "devDependencies": {
@@ -107,11 +109,14 @@
     "concurrently": "^9.1.2",
     "drizzle-kit": "^0.30.4",
     "esbuild": "^0.25.0",
+    "json-schema-to-typescript": "^15.0.4",
+    "json-schema-to-zod": "^2.6.1",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
     "tsx": "^4.19.3",
     "typescript": "5.6.3",
-    "vite": "^5.4.14"
+    "vite": "^5.4.14",
+    "zod": "^3.24.4"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"

@@ -45,6 +45,7 @@ export const scenarios = pgTable("scenarios", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   modelId: integer("model_id").references(() => models.id),
+  description: text("description"),
   initialValues: jsonb("initial_values").$type<Record<string, number>>().default({}),
   results: jsonb("results").$type<SimulationResult>(),
   simulationParams: jsonb("simulation_params").$type<SimulationParameters>().default({
@@ -54,6 +55,7 @@ export const scenarios = pgTable("scenarios", {
   }),
   clampedNodes: jsonb("clamped_nodes").$type<string[]>().default([]),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
 });
 
 // Types for Fuzzy Cognitive Maps
@@ -133,10 +135,13 @@ export const insertModelSchema = createInsertSchema(models).pick({
 export const insertScenarioSchema = createInsertSchema(scenarios).pick({
   name: true,
   modelId: true,
+  description: true,
   initialValues: true,
   results: true,
   simulationParams: true,
-  clampedNodes: true
+  clampedNodes: true,
+  createdAt: true,
+  updatedAt: true
 });
 
 // Select types

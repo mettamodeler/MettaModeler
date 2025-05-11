@@ -5,7 +5,7 @@ This module contains all Pydantic models used for validating API requests and re
 It serves as the single source of truth for the structure of data exchanged between the frontend and backend.
 Any changes to API payloads must be reflected here.
 """
-from typing import List, Dict, Any, Optional, Union
+from typing import List, Dict, Any, Optional, Union, Literal
 from pydantic import BaseModel, Field, root_validator
 
 class SimulationNode(BaseModel):
@@ -21,6 +21,7 @@ class SimulationEdge(BaseModel):
 
 class SimulationInputSchema(BaseModel):
     # Required fields
+    schemaVersion: Literal["1.0.0"] = "1.0.0"
     nodes: List[SimulationNode]
     edges: List[SimulationEdge]
     activation: Optional[str] = Field('sigmoid', description="Activation function")
@@ -36,6 +37,8 @@ class SimulationInputSchema(BaseModel):
     promotedNodes: Optional[List[str]] = None
     activationFunction: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
+    modelInitialValues: Optional[Dict[str, float]] = Field(default=None, description="Initial values for baseline model")
+    scenarioInitialValues: Optional[Dict[str, float]] = Field(default=None, description="Initial values for scenario")
 
     class Config:
         extra = "allow"  # Accept unknown fields

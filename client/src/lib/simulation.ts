@@ -41,6 +41,7 @@ export async function runSimulation(
 
   // Build payload with type assertion since compareToBaseline is a valid parameter
   const payload = {
+    schemaVersion: "1.0.0",
     nodes,
     edges,
     activation: params.activation || 'sigmoid',
@@ -52,10 +53,8 @@ export async function runSimulation(
           modelInitialValues: Object.fromEntries(model.nodes.map(n => [n.id, n.value])),
           scenarioInitialValues: initialValues
         }
-      : {
-          initialValues
-        }
-    ),
+      : {})
+    ,
     ...(params.clampedNodes ? { clampedNodes: params.clampedNodes } : {})
   };
 
@@ -81,8 +80,8 @@ export async function runSimulation(
   // Format the result to include both timeSeries and timeSeriesData for compatibility
   const formattedResult: ExtendedSimulationResult = {
     ...result,
-    timeSeriesData: result.timeSeries || result.timeSeriesData || {},
-    timeSeries: result.timeSeries || result.timeSeriesData || {},
+    timeSeriesData: result.timeSeries || {},
+    timeSeries: result.timeSeries || {},
     iterations: result.iterations || 0,
     converged: result.converged || false,
     finalValues: result.finalState || {},

@@ -33,6 +33,11 @@ start_all() {
     echo -e "${YELLOW}Starting frontend and server services...${NC}"
     npm run dev > frontend.log 2>&1 &
     echo $! > frontend.pid
+
+    # Start Express server
+    echo -e "${YELLOW}Starting Express server...${NC}"
+    npx ts-node server/index.ts > express.log 2>&1 &
+    echo $! > express.pid
     
     # Print status banner
     print_banner
@@ -43,6 +48,7 @@ start_all() {
     echo -e "${GREEN}Logs:${NC}"
     echo -e "  - Python: ${YELLOW}python_sim/app.log${NC}"
     echo -e "  - Frontend: ${YELLOW}frontend.log${NC}"
+    echo -e "  - Express: ${YELLOW}express.log${NC}"
 }
 
 # Function to stop all services
@@ -53,6 +59,12 @@ stop_all() {
     if [ -f "frontend.pid" ]; then
         kill $(cat frontend.pid) 2>/dev/null
         rm -f frontend.pid
+    fi
+
+    # Stop Express server
+    if [ -f "express.pid" ]; then
+        kill $(cat express.pid) 2>/dev/null
+        rm -f express.pid
     fi
     
     # Stop Python service
@@ -78,9 +90,14 @@ show_status() {
     
     echo -e "\n${YELLOW}Frontend and server status:${NC}"
     if [ -f "frontend.pid" ]; then
-        echo -e "${GREEN}Running${NC}"
+        echo -e "${GREEN}Frontend: Running${NC}"
     else
-        echo -e "${RED}Not running${NC}"
+        echo -e "${RED}Frontend: Not running${NC}"
+    fi
+    if [ -f "express.pid" ]; then
+        echo -e "${GREEN}Express: Running${NC}"
+    else
+        echo -e "${RED}Express: Not running${NC}"
     fi
 }
 

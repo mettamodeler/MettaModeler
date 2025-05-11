@@ -11,6 +11,7 @@ from datetime import datetime
 import nbformat
 from simulation_schema import SimulationInputSchema
 import logging
+from pydantic import ValidationError
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -22,16 +23,15 @@ def simulate():
         data = request.get_json()
         logging.info("Received simulation request: %s", json.dumps(data, indent=2))
 
-        # Validate and parse input using Pydantic schema
-        sim_input = SimulationInputSchema(**data)
-        sim_input.log_unknown_fields()
+        # Validate and parse input using SimulationInputSchema
+        sim_input = SimulationInputSchema.model_validate(data)
 
         # Extract both sets of initial values if present
         model_initial_values = data.get('modelInitialValues', {})
         scenario_initial_values = data.get('scenarioInitialValues', {})
 
         # Prepare arguments for simulation logic
-        sim_args = sim_input.dict()
+        sim_args = sim_input.model_dump()
 
         # Run appropriate simulation based on compareToBaseline flag
         if sim_input.compareToBaseline:
@@ -58,6 +58,12 @@ def simulate():
         # Return simulation results
         return jsonify(results)
 
+    except ValidationError as e:
+        return jsonify({
+            "status": 400,
+            "code": "INVALID_PAYLOAD",
+            "fieldErrors": e.errors()
+        }), 400
     except Exception as e:
         logging.error(f"Error in simulation: {str(e)}")
         logging.error(f"Error type: {type(e).__name__}")

@@ -135,6 +135,9 @@ function reactFlowToModel(
   
   return {
     ...model,
+    schemaVersion: "1.0.0",
+    id: Number(model.id),
+    projectId: Number(model.projectId),
     nodes: updatedNodes as FCMNode[],
     edges: updatedEdges as FCMEdge[],
   };

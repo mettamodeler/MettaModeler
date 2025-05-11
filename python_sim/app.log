@@ -9,9 +9,10 @@ INFO:werkzeug:[33mPress CTRL+C to quit[0m
 INFO:werkzeug: * Restarting with watchdog (fsevents)
 INFO:root:Starting Flask app on port 5050
 WARNING:werkzeug: * Debugger is active!
-INFO:werkzeug: * Debugger PIN: 956-059-593
-INFO:werkzeug:127.0.0.1 - - [10/May/2025 11:42:13] "GET /api/health HTTP/1.1" 200 -
+INFO:werkzeug: * Debugger PIN: 134-194-360
+INFO:werkzeug:127.0.0.1 - - [11/May/2025 12:05:08] "GET /api/health HTTP/1.1" 200 -
 INFO:root:Received simulation request: {
+  "schemaVersion": "1.0.0",
   "nodes": [
     {
       "id": "node-1",
@@ -74,10 +75,10 @@ INFO:root:Received simulation request: {
   "activation": "sigmoid",
   "threshold": 0.001,
   "maxIterations": 20,
+  "compareToBaseline": false,
   "clampedNodes": [
     "node-1"
-  ],
-  "initialValues": {}
+  ]
 }
 INFO:root:Running simulation...
 INFO:root:Initializing FCM Simulator
@@ -94,4 +95,1176 @@ INFO:root:Simulation converged
 INFO:root:Simulation completed after 3 iterations
 INFO:root:Converged: True
 INFO:root:Simulation completed successfully
-INFO:werkzeug:127.0.0.1 - - [10/May/2025 11:42:43] "POST /api/simulate HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [11/May/2025 12:05:41] "POST /api/simulate HTTP/1.1" 200 -
+INFO:root:Received simulation request: {
+  "schemaVersion": "1.0.0",
+  "nodes": [
+    {
+      "id": "node-1",
+      "value": 0.08,
+      "label": "groundwater level",
+      "type": "driver"
+    },
+    {
+      "id": "node-2",
+      "value": 0.6,
+      "label": "precipitation",
+      "type": "driver"
+    },
+    {
+      "id": "node-3",
+      "value": 0.4,
+      "label": "agricultural demand",
+      "type": "regular"
+    },
+    {
+      "id": "node-4",
+      "value": 0.2,
+      "label": "water quality",
+      "type": "outcome"
+    },
+    {
+      "id": "node-5",
+      "value": 0.5,
+      "label": "ecosystem health",
+      "type": "outcome"
+    }
+  ],
+  "edges": [
+    {
+      "source": "node-1",
+      "target": "node-4",
+      "weight": 0.8
+    },
+    {
+      "source": "node-2",
+      "target": "node-1",
+      "weight": 0.6
+    },
+    {
+      "source": "node-3",
+      "target": "node-1",
+      "weight": -0.5
+    },
+    {
+      "source": "node-1",
+      "target": "node-5",
+      "weight": 0.7
+    },
+    {
+      "source": "node-4",
+      "target": "node-5",
+      "weight": 0.9
+    }
+  ],
+  "activation": "sigmoid",
+  "threshold": 0.01,
+  "maxIterations": 100,
+  "compareToBaseline": true,
+  "modelInitialValues": {
+    "node-1": 0.8,
+    "node-2": 0.6,
+    "node-3": 0.4,
+    "node-4": 0.2,
+    "node-5": 0.5
+  },
+  "scenarioInitialValues": {
+    "node-1": 0.08,
+    "node-2": 0.6,
+    "node-3": 0.4,
+    "node-4": 0.2,
+    "node-5": 0.5
+  },
+  "clampedNodes": [
+    "node-1"
+  ]
+}
+INFO:root:=== Starting Baseline vs Scenario Comparison ===
+INFO:root:Model initial values: {'node-1': 0.8, 'node-2': 0.6, 'node-3': 0.4, 'node-4': 0.2, 'node-5': 0.5}
+INFO:root:Scenario initial values: {'node-1': 0.08, 'node-2': 0.6, 'node-3': 0.4, 'node-4': 0.2, 'node-5': 0.5}
+INFO:root:Clamped nodes: ['node-1']
+INFO:root:Applying model initial values: {'node-1': 0.8, 'node-2': 0.6, 'node-3': 0.4, 'node-4': 0.2, 'node-5': 0.5}
+INFO:root:Setting baseline node node-1 to 0.8
+INFO:root:Setting baseline node node-2 to 0.6
+INFO:root:Setting baseline node node-3 to 0.4
+INFO:root:Setting baseline node node-4 to 0.2
+INFO:root:Setting baseline node node-5 to 0.5
+INFO:root:Applying scenario initial values: {'node-1': 0.08, 'node-2': 0.6, 'node-3': 0.4, 'node-4': 0.2, 'node-5': 0.5}
+INFO:root:Setting scenario node node-1 to 0.08
+INFO:root:Setting scenario node node-2 to 0.6
+INFO:root:Setting scenario node node-3 to 0.4
+INFO:root:Setting scenario node node-4 to 0.2
+INFO:root:Setting scenario node node-5 to 0.5
+INFO:root:Baseline node values: [('node-1', 0.8), ('node-2', 0.6), ('node-3', 0.4), ('node-4', 0.2), ('node-5', 0.5)]
+INFO:root:Scenario node values: [('node-1', 0.08), ('node-2', 0.6), ('node-3', 0.4), ('node-4', 0.2), ('node-5', 0.5)]
+INFO:root:Running simulation...
+INFO:root:Initializing FCM Simulator
+INFO:root:Activation function: sigmoid
+INFO:root:Threshold: 0.01
+INFO:root:Max iterations: 100
+INFO:root:Adding nodes to graph:
+INFO:root:Adding edges to graph:
+INFO:root:Graph initialization complete
+INFO:root:Number of nodes: 5
+INFO:root:Number of edges: 5
+INFO:root:=== Starting Simulation ===
+INFO:root:Simulation converged
+INFO:root:Simulation completed after 4 iterations
+INFO:root:Converged: True
+INFO:root:Simulation completed successfully
+INFO:root:Running simulation...
+INFO:root:Initializing FCM Simulator
+INFO:root:Activation function: sigmoid
+INFO:root:Threshold: 0.01
+INFO:root:Max iterations: 100
+INFO:root:Adding nodes to graph:
+INFO:root:Adding edges to graph:
+INFO:root:Graph initialization complete
+INFO:root:Number of nodes: 5
+INFO:root:Number of edges: 5
+INFO:root:=== Starting Simulation ===
+INFO:root:Simulation converged
+INFO:root:Simulation completed after 3 iterations
+INFO:root:Converged: True
+INFO:root:Simulation completed successfully
+INFO:werkzeug:127.0.0.1 - - [11/May/2025 12:05:43] "POST /api/simulate HTTP/1.1" 200 -
+INFO:root:Analyze nodes count: 5
+INFO:root:Analyze edges count: 5
+INFO:root:Received simulation request: {
+  "schemaVersion": "1.0.0",
+  "nodes": [
+    {
+      "id": "node-1",
+      "value": 0.8,
+      "label": "groundwater level",
+      "type": "driver"
+    },
+    {
+      "id": "node-2",
+      "value": 0.6,
+      "label": "precipitation",
+      "type": "driver"
+    },
+    {
+      "id": "node-3",
+      "value": 0.4,
+      "label": "agricultural demand",
+      "type": "regular"
+    },
+    {
+      "id": "node-4",
+      "value": 0.2,
+      "label": "water quality",
+      "type": "outcome"
+    },
+    {
+      "id": "node-5",
+      "value": 0.5,
+      "label": "ecosystem health",
+      "type": "outcome"
+    }
+  ],
+  "edges": [
+    {
+      "source": "node-1",
+      "target": "node-4",
+      "weight": 0.8
+    },
+    {
+      "source": "node-2",
+      "target": "node-1",
+      "weight": 0.6
+    },
+    {
+      "source": "node-3",
+      "target": "node-1",
+      "weight": -0.5
+    },
+    {
+      "source": "node-1",
+      "target": "node-5",
+      "weight": 0.7
+    },
+    {
+      "source": "node-4",
+      "target": "node-5",
+      "weight": 0.9
+    }
+  ],
+  "activation": "sigmoid",
+  "threshold": 0.001,
+  "maxIterations": 20,
+  "compareToBaseline": false
+}
+INFO:werkzeug:127.0.0.1 - - [11/May/2025 12:05:52] "POST /api/analyze HTTP/1.1" 200 -
+INFO:root:Running simulation...
+INFO:root:Initializing FCM Simulator
+INFO:root:Activation function: sigmoid
+INFO:root:Threshold: 0.001
+INFO:root:Max iterations: 20
+INFO:root:Adding nodes to graph:
+INFO:root:Adding edges to graph:
+INFO:root:Graph initialization complete
+INFO:root:Number of nodes: 5
+INFO:root:Number of edges: 5
+INFO:root:=== Starting Simulation ===
+INFO:root:Simulation converged
+INFO:root:Simulation completed after 4 iterations
+INFO:root:Converged: True
+INFO:root:Simulation completed successfully
+INFO:werkzeug:127.0.0.1 - - [11/May/2025 12:05:52] "POST /api/simulate HTTP/1.1" 200 -
+INFO:root:Received simulation request: {
+  "schemaVersion": "1.0.0",
+  "nodes": [
+    {
+      "id": "node-1",
+      "value": 0.8,
+      "label": "groundwater level",
+      "type": "driver"
+    },
+    {
+      "id": "node-2",
+      "value": 0.6,
+      "label": "precipitation",
+      "type": "driver"
+    },
+    {
+      "id": "node-3",
+      "value": 0.4,
+      "label": "agricultural demand",
+      "type": "regular"
+    },
+    {
+      "id": "node-4",
+      "value": 0.2,
+      "label": "water quality",
+      "type": "outcome"
+    },
+    {
+      "id": "node-5",
+      "value": 0.5,
+      "label": "ecosystem health",
+      "type": "outcome"
+    }
+  ],
+  "edges": [
+    {
+      "source": "node-1",
+      "target": "node-4",
+      "weight": 0.8
+    },
+    {
+      "source": "node-2",
+      "target": "node-1",
+      "weight": 0.6
+    },
+    {
+      "source": "node-3",
+      "target": "node-1",
+      "weight": -0.5
+    },
+    {
+      "source": "node-1",
+      "target": "node-5",
+      "weight": 0.7
+    },
+    {
+      "source": "node-4",
+      "target": "node-5",
+      "weight": 0.9
+    }
+  ],
+  "activation": "sigmoid",
+  "threshold": 0.001,
+  "maxIterations": 20,
+  "compareToBaseline": false
+}
+INFO:root:Running simulation...
+INFO:root:Initializing FCM Simulator
+INFO:root:Activation function: sigmoid
+INFO:root:Threshold: 0.001
+INFO:root:Max iterations: 20
+INFO:root:Adding nodes to graph:
+INFO:root:Adding edges to graph:
+INFO:root:Graph initialization complete
+INFO:root:Number of nodes: 5
+INFO:root:Number of edges: 5
+INFO:root:=== Starting Simulation ===
+INFO:root:Simulation converged
+INFO:root:Simulation completed after 4 iterations
+INFO:root:Converged: True
+INFO:root:Simulation completed successfully
+INFO:werkzeug:127.0.0.1 - - [11/May/2025 12:05:57] "POST /api/simulate HTTP/1.1" 200 -
+INFO:root:Received simulation request: {
+  "schemaVersion": "1.0.0",
+  "nodes": [
+    {
+      "id": "node-1",
+      "value": 0.8,
+      "label": "groundwater level",
+      "type": "driver"
+    },
+    {
+      "id": "node-2",
+      "value": 0.6,
+      "label": "precipitation",
+      "type": "driver"
+    },
+    {
+      "id": "node-3",
+      "value": 0.4,
+      "label": "agricultural demand",
+      "type": "regular"
+    },
+    {
+      "id": "node-4",
+      "value": 0.2,
+      "label": "water quality",
+      "type": "outcome"
+    },
+    {
+      "id": "node-5",
+      "value": 0.5,
+      "label": "ecosystem health",
+      "type": "outcome"
+    }
+  ],
+  "edges": [
+    {
+      "source": "node-1",
+      "target": "node-4",
+      "weight": 0.8
+    },
+    {
+      "source": "node-2",
+      "target": "node-1",
+      "weight": 0.6
+    },
+    {
+      "source": "node-3",
+      "target": "node-1",
+      "weight": -0.5
+    },
+    {
+      "source": "node-1",
+      "target": "node-5",
+      "weight": 0.7
+    },
+    {
+      "source": "node-4",
+      "target": "node-5",
+      "weight": 0.9
+    }
+  ],
+  "activation": "sigmoid",
+  "threshold": 0.001,
+  "maxIterations": 20,
+  "compareToBaseline": false
+}
+INFO:root:Running simulation...
+INFO:root:Initializing FCM Simulator
+INFO:root:Activation function: sigmoid
+INFO:root:Threshold: 0.001
+INFO:root:Max iterations: 20
+INFO:root:Adding nodes to graph:
+INFO:root:Adding edges to graph:
+INFO:root:Graph initialization complete
+INFO:root:Number of nodes: 5
+INFO:root:Number of edges: 5
+INFO:root:=== Starting Simulation ===
+INFO:root:Simulation converged
+INFO:root:Simulation completed after 4 iterations
+INFO:root:Converged: True
+INFO:root:Simulation completed successfully
+INFO:werkzeug:127.0.0.1 - - [11/May/2025 12:06:00] "POST /api/simulate HTTP/1.1" 200 -
+INFO:root:Received simulation request: {
+  "schemaVersion": "1.0.0",
+  "nodes": [
+    {
+      "id": "node-1",
+      "value": 0.8,
+      "label": "groundwater level",
+      "type": "driver"
+    },
+    {
+      "id": "node-2",
+      "value": 0.6,
+      "label": "precipitation",
+      "type": "driver"
+    },
+    {
+      "id": "node-3",
+      "value": 0.4,
+      "label": "agricultural demand",
+      "type": "regular"
+    },
+    {
+      "id": "node-4",
+      "value": 0.2,
+      "label": "water quality",
+      "type": "outcome"
+    },
+    {
+      "id": "node-5",
+      "value": 0.5,
+      "label": "ecosystem health",
+      "type": "outcome"
+    }
+  ],
+  "edges": [
+    {
+      "source": "node-1",
+      "target": "node-4",
+      "weight": 0.8
+    },
+    {
+      "source": "node-2",
+      "target": "node-1",
+      "weight": 0.6
+    },
+    {
+      "source": "node-3",
+      "target": "node-1",
+      "weight": -0.5
+    },
+    {
+      "source": "node-1",
+      "target": "node-5",
+      "weight": 0.7
+    },
+    {
+      "source": "node-4",
+      "target": "node-5",
+      "weight": 0.9
+    }
+  ],
+  "activation": "sigmoid",
+  "threshold": 0.001,
+  "maxIterations": 20,
+  "compareToBaseline": false
+}
+INFO:root:Running simulation...
+INFO:root:Initializing FCM Simulator
+INFO:root:Activation function: sigmoid
+INFO:root:Threshold: 0.001
+INFO:root:Max iterations: 20
+INFO:root:Adding nodes to graph:
+INFO:root:Adding edges to graph:
+INFO:root:Graph initialization complete
+INFO:root:Number of nodes: 5
+INFO:root:Number of edges: 5
+INFO:root:=== Starting Simulation ===
+INFO:root:Simulation converged
+INFO:root:Simulation completed after 4 iterations
+INFO:root:Converged: True
+INFO:root:Simulation completed successfully
+INFO:werkzeug:127.0.0.1 - - [11/May/2025 12:06:01] "POST /api/simulate HTTP/1.1" 200 -
+INFO:root:Received simulation request: {
+  "schemaVersion": "1.0.0",
+  "nodes": [
+    {
+      "id": "node-1",
+      "value": 0.08,
+      "label": "groundwater level",
+      "type": "driver"
+    },
+    {
+      "id": "node-2",
+      "value": 0.6,
+      "label": "precipitation",
+      "type": "driver"
+    },
+    {
+      "id": "node-3",
+      "value": 0.4,
+      "label": "agricultural demand",
+      "type": "regular"
+    },
+    {
+      "id": "node-4",
+      "value": 0.2,
+      "label": "water quality",
+      "type": "outcome"
+    },
+    {
+      "id": "node-5",
+      "value": 0.5,
+      "label": "ecosystem health",
+      "type": "outcome"
+    }
+  ],
+  "edges": [
+    {
+      "source": "node-1",
+      "target": "node-4",
+      "weight": 0.8
+    },
+    {
+      "source": "node-2",
+      "target": "node-1",
+      "weight": 0.6
+    },
+    {
+      "source": "node-3",
+      "target": "node-1",
+      "weight": -0.5
+    },
+    {
+      "source": "node-1",
+      "target": "node-5",
+      "weight": 0.7
+    },
+    {
+      "source": "node-4",
+      "target": "node-5",
+      "weight": 0.9
+    }
+  ],
+  "activation": "sigmoid",
+  "threshold": 0.01,
+  "maxIterations": 100,
+  "compareToBaseline": true,
+  "modelInitialValues": {
+    "node-1": 0.8,
+    "node-2": 0.6,
+    "node-3": 0.4,
+    "node-4": 0.2,
+    "node-5": 0.5
+  },
+  "scenarioInitialValues": {
+    "node-1": 0.08,
+    "node-2": 0.6,
+    "node-3": 0.4,
+    "node-4": 0.2,
+    "node-5": 0.5
+  },
+  "clampedNodes": [
+    "node-1"
+  ]
+}
+INFO:root:=== Starting Baseline vs Scenario Comparison ===
+INFO:root:Model initial values: {'node-1': 0.8, 'node-2': 0.6, 'node-3': 0.4, 'node-4': 0.2, 'node-5': 0.5}
+INFO:root:Scenario initial values: {'node-1': 0.08, 'node-2': 0.6, 'node-3': 0.4, 'node-4': 0.2, 'node-5': 0.5}
+INFO:root:Clamped nodes: ['node-1']
+INFO:root:Applying model initial values: {'node-1': 0.8, 'node-2': 0.6, 'node-3': 0.4, 'node-4': 0.2, 'node-5': 0.5}
+INFO:root:Setting baseline node node-1 to 0.8
+INFO:root:Setting baseline node node-2 to 0.6
+INFO:root:Setting baseline node node-3 to 0.4
+INFO:root:Setting baseline node node-4 to 0.2
+INFO:root:Setting baseline node node-5 to 0.5
+INFO:root:Applying scenario initial values: {'node-1': 0.08, 'node-2': 0.6, 'node-3': 0.4, 'node-4': 0.2, 'node-5': 0.5}
+INFO:root:Setting scenario node node-1 to 0.08
+INFO:root:Setting scenario node node-2 to 0.6
+INFO:root:Setting scenario node node-3 to 0.4
+INFO:root:Setting scenario node node-4 to 0.2
+INFO:root:Setting scenario node node-5 to 0.5
+INFO:root:Baseline node values: [('node-1', 0.8), ('node-2', 0.6), ('node-3', 0.4), ('node-4', 0.2), ('node-5', 0.5)]
+INFO:root:Scenario node values: [('node-1', 0.08), ('node-2', 0.6), ('node-3', 0.4), ('node-4', 0.2), ('node-5', 0.5)]
+INFO:root:Running simulation...
+INFO:root:Initializing FCM Simulator
+INFO:root:Activation function: sigmoid
+INFO:root:Threshold: 0.01
+INFO:root:Max iterations: 100
+INFO:root:Adding nodes to graph:
+INFO:root:Adding edges to graph:
+INFO:root:Graph initialization complete
+INFO:root:Number of nodes: 5
+INFO:root:Number of edges: 5
+INFO:root:=== Starting Simulation ===
+INFO:root:Simulation converged
+INFO:root:Simulation completed after 4 iterations
+INFO:root:Converged: True
+INFO:root:Simulation completed successfully
+INFO:root:Running simulation...
+INFO:root:Initializing FCM Simulator
+INFO:root:Activation function: sigmoid
+INFO:root:Threshold: 0.01
+INFO:root:Max iterations: 100
+INFO:root:Adding nodes to graph:
+INFO:root:Adding edges to graph:
+INFO:root:Graph initialization complete
+INFO:root:Number of nodes: 5
+INFO:root:Number of edges: 5
+INFO:root:=== Starting Simulation ===
+INFO:root:Simulation converged
+INFO:root:Simulation completed after 3 iterations
+INFO:root:Converged: True
+INFO:root:Simulation completed successfully
+INFO:werkzeug:127.0.0.1 - - [11/May/2025 12:06:47] "POST /api/simulate HTTP/1.1" 200 -
+INFO:root:Received simulation request: {
+  "schemaVersion": "1.0.0",
+  "nodes": [
+    {
+      "id": "node-1",
+      "value": 0.08,
+      "label": "groundwater level",
+      "type": "driver"
+    },
+    {
+      "id": "node-2",
+      "value": 0.6,
+      "label": "precipitation",
+      "type": "driver"
+    },
+    {
+      "id": "node-3",
+      "value": 0.4,
+      "label": "agricultural demand",
+      "type": "regular"
+    },
+    {
+      "id": "node-4",
+      "value": 0.2,
+      "label": "water quality",
+      "type": "outcome"
+    },
+    {
+      "id": "node-5",
+      "value": 0.5,
+      "label": "ecosystem health",
+      "type": "outcome"
+    }
+  ],
+  "edges": [
+    {
+      "source": "node-1",
+      "target": "node-4",
+      "weight": 0.8
+    },
+    {
+      "source": "node-2",
+      "target": "node-1",
+      "weight": 0.6
+    },
+    {
+      "source": "node-3",
+      "target": "node-1",
+      "weight": -0.5
+    },
+    {
+      "source": "node-1",
+      "target": "node-5",
+      "weight": 0.7
+    },
+    {
+      "source": "node-4",
+      "target": "node-5",
+      "weight": 0.9
+    }
+  ],
+  "activation": "tanh",
+  "threshold": 0.01,
+  "maxIterations": 100,
+  "compareToBaseline": true,
+  "modelInitialValues": {
+    "node-1": 0.8,
+    "node-2": 0.6,
+    "node-3": 0.4,
+    "node-4": 0.2,
+    "node-5": 0.5
+  },
+  "scenarioInitialValues": {
+    "node-1": 0.08,
+    "node-2": 0.6,
+    "node-3": 0.4,
+    "node-4": 0.2,
+    "node-5": 0.5
+  },
+  "clampedNodes": [
+    "node-1"
+  ]
+}
+INFO:root:=== Starting Baseline vs Scenario Comparison ===
+INFO:root:Model initial values: {'node-1': 0.8, 'node-2': 0.6, 'node-3': 0.4, 'node-4': 0.2, 'node-5': 0.5}
+INFO:root:Scenario initial values: {'node-1': 0.08, 'node-2': 0.6, 'node-3': 0.4, 'node-4': 0.2, 'node-5': 0.5}
+INFO:root:Clamped nodes: ['node-1']
+INFO:root:Applying model initial values: {'node-1': 0.8, 'node-2': 0.6, 'node-3': 0.4, 'node-4': 0.2, 'node-5': 0.5}
+INFO:root:Setting baseline node node-1 to 0.8
+INFO:root:Setting baseline node node-2 to 0.6
+INFO:root:Setting baseline node node-3 to 0.4
+INFO:root:Setting baseline node node-4 to 0.2
+INFO:root:Setting baseline node node-5 to 0.5
+INFO:root:Applying scenario initial values: {'node-1': 0.08, 'node-2': 0.6, 'node-3': 0.4, 'node-4': 0.2, 'node-5': 0.5}
+INFO:root:Setting scenario node node-1 to 0.08
+INFO:root:Setting scenario node node-2 to 0.6
+INFO:root:Setting scenario node node-3 to 0.4
+INFO:root:Setting scenario node node-4 to 0.2
+INFO:root:Setting scenario node node-5 to 0.5
+INFO:root:Baseline node values: [('node-1', 0.8), ('node-2', 0.6), ('node-3', 0.4), ('node-4', 0.2), ('node-5', 0.5)]
+INFO:root:Scenario node values: [('node-1', 0.08), ('node-2', 0.6), ('node-3', 0.4), ('node-4', 0.2), ('node-5', 0.5)]
+INFO:root:Running simulation...
+INFO:root:Initializing FCM Simulator
+INFO:root:Activation function: tanh
+INFO:root:Threshold: 0.01
+INFO:root:Max iterations: 100
+INFO:root:Adding nodes to graph:
+INFO:root:Adding edges to graph:
+INFO:root:Graph initialization complete
+INFO:root:Number of nodes: 5
+INFO:root:Number of edges: 5
+INFO:root:=== Starting Simulation ===
+INFO:root:Simulation converged
+INFO:root:Simulation completed after 5 iterations
+INFO:root:Converged: True
+INFO:root:Simulation completed successfully
+INFO:root:Running simulation...
+INFO:root:Initializing FCM Simulator
+INFO:root:Activation function: tanh
+INFO:root:Threshold: 0.01
+INFO:root:Max iterations: 100
+INFO:root:Adding nodes to graph:
+INFO:root:Adding edges to graph:
+INFO:root:Graph initialization complete
+INFO:root:Number of nodes: 5
+INFO:root:Number of edges: 5
+INFO:root:=== Starting Simulation ===
+INFO:root:Simulation converged
+INFO:root:Simulation completed after 3 iterations
+INFO:root:Converged: True
+INFO:root:Simulation completed successfully
+INFO:werkzeug:127.0.0.1 - - [11/May/2025 12:06:51] "POST /api/simulate HTTP/1.1" 200 -
+INFO:root:Received simulation request: {
+  "schemaVersion": "1.0.0",
+  "nodes": [
+    {
+      "id": "node-1",
+      "value": 0.08,
+      "label": "groundwater level",
+      "type": "driver"
+    },
+    {
+      "id": "node-2",
+      "value": 0.6,
+      "label": "precipitation",
+      "type": "driver"
+    },
+    {
+      "id": "node-3",
+      "value": 0.4,
+      "label": "agricultural demand",
+      "type": "regular"
+    },
+    {
+      "id": "node-4",
+      "value": 0.2,
+      "label": "water quality",
+      "type": "outcome"
+    },
+    {
+      "id": "node-5",
+      "value": 0.5,
+      "label": "ecosystem health",
+      "type": "outcome"
+    }
+  ],
+  "edges": [
+    {
+      "source": "node-1",
+      "target": "node-4",
+      "weight": 0.8
+    },
+    {
+      "source": "node-2",
+      "target": "node-1",
+      "weight": 0.6
+    },
+    {
+      "source": "node-3",
+      "target": "node-1",
+      "weight": -0.5
+    },
+    {
+      "source": "node-1",
+      "target": "node-5",
+      "weight": 0.7
+    },
+    {
+      "source": "node-4",
+      "target": "node-5",
+      "weight": 0.9
+    }
+  ],
+  "activation": "relu",
+  "threshold": 0.01,
+  "maxIterations": 100,
+  "compareToBaseline": true,
+  "modelInitialValues": {
+    "node-1": 0.8,
+    "node-2": 0.6,
+    "node-3": 0.4,
+    "node-4": 0.2,
+    "node-5": 0.5
+  },
+  "scenarioInitialValues": {
+    "node-1": 0.08,
+    "node-2": 0.6,
+    "node-3": 0.4,
+    "node-4": 0.2,
+    "node-5": 0.5
+  },
+  "clampedNodes": [
+    "node-1"
+  ]
+}
+INFO:root:=== Starting Baseline vs Scenario Comparison ===
+INFO:root:Model initial values: {'node-1': 0.8, 'node-2': 0.6, 'node-3': 0.4, 'node-4': 0.2, 'node-5': 0.5}
+INFO:root:Scenario initial values: {'node-1': 0.08, 'node-2': 0.6, 'node-3': 0.4, 'node-4': 0.2, 'node-5': 0.5}
+INFO:root:Clamped nodes: ['node-1']
+INFO:root:Applying model initial values: {'node-1': 0.8, 'node-2': 0.6, 'node-3': 0.4, 'node-4': 0.2, 'node-5': 0.5}
+INFO:root:Setting baseline node node-1 to 0.8
+INFO:root:Setting baseline node node-2 to 0.6
+INFO:root:Setting baseline node node-3 to 0.4
+INFO:root:Setting baseline node node-4 to 0.2
+INFO:root:Setting baseline node node-5 to 0.5
+INFO:root:Applying scenario initial values: {'node-1': 0.08, 'node-2': 0.6, 'node-3': 0.4, 'node-4': 0.2, 'node-5': 0.5}
+INFO:root:Setting scenario node node-1 to 0.08
+INFO:root:Setting scenario node node-2 to 0.6
+INFO:root:Setting scenario node node-3 to 0.4
+INFO:root:Setting scenario node node-4 to 0.2
+INFO:root:Setting scenario node node-5 to 0.5
+INFO:root:Baseline node values: [('node-1', 0.8), ('node-2', 0.6), ('node-3', 0.4), ('node-4', 0.2), ('node-5', 0.5)]
+INFO:root:Scenario node values: [('node-1', 0.08), ('node-2', 0.6), ('node-3', 0.4), ('node-4', 0.2), ('node-5', 0.5)]
+INFO:root:Running simulation...
+INFO:root:Initializing FCM Simulator
+INFO:root:Activation function: relu
+INFO:root:Threshold: 0.01
+INFO:root:Max iterations: 100
+INFO:root:Adding nodes to graph:
+INFO:root:Adding edges to graph:
+INFO:root:Graph initialization complete
+INFO:root:Number of nodes: 5
+INFO:root:Number of edges: 5
+INFO:root:=== Starting Simulation ===
+INFO:root:Simulation converged
+INFO:root:Simulation completed after 5 iterations
+INFO:root:Converged: True
+INFO:root:Simulation completed successfully
+INFO:root:Running simulation...
+INFO:root:Initializing FCM Simulator
+INFO:root:Activation function: relu
+INFO:root:Threshold: 0.01
+INFO:root:Max iterations: 100
+INFO:root:Adding nodes to graph:
+INFO:root:Adding edges to graph:
+INFO:root:Graph initialization complete
+INFO:root:Number of nodes: 5
+INFO:root:Number of edges: 5
+INFO:root:=== Starting Simulation ===
+INFO:root:Simulation converged
+INFO:root:Simulation completed after 3 iterations
+INFO:root:Converged: True
+INFO:root:Simulation completed successfully
+INFO:werkzeug:127.0.0.1 - - [11/May/2025 12:06:53] "POST /api/simulate HTTP/1.1" 200 -
+INFO:werkzeug: * Detected change in '/Users/kylemetta/Projects/MettaModeler/MettaModeler/python_sim/schemas/simulation_input_v1.py', reloading
+INFO:werkzeug: * Restarting with watchdog (fsevents)
+INFO:root:Starting Flask app on port 5050
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 134-194-360
+INFO:werkzeug: * Detected change in '/Users/kylemetta/Projects/MettaModeler/MettaModeler/python_sim/schemas/model_v1.py', reloading
+INFO:werkzeug: * Restarting with watchdog (fsevents)
+INFO:root:Starting Flask app on port 5050
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 134-194-360
+INFO:werkzeug: * Detected change in '/Users/kylemetta/Projects/MettaModeler/MettaModeler/python_sim/schemas/scenario_v1.py', reloading
+INFO:werkzeug: * Restarting with watchdog (fsevents)
+INFO:root:Starting Flask app on port 5050
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 134-194-360
+INFO:werkzeug: * Detected change in '/Users/kylemetta/Projects/MettaModeler/MettaModeler/python_sim/schemas/simulation_input_v1.py', reloading
+INFO:werkzeug: * Restarting with watchdog (fsevents)
+INFO:root:Starting Flask app on port 5050
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 134-194-360
+INFO:werkzeug: * Detected change in '/Users/kylemetta/Projects/MettaModeler/MettaModeler/python_sim/schemas/simulation_input_v1.py', reloading
+INFO:werkzeug: * Restarting with watchdog (fsevents)
+INFO:root:Starting Flask app on port 5050
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 134-194-360
+INFO:werkzeug: * Detected change in '/Users/kylemetta/Projects/MettaModeler/MettaModeler/python_sim/schemas/project_v1.py', reloading
+INFO:werkzeug: * Restarting with watchdog (fsevents)
+INFO:root:Starting Flask app on port 5050
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 134-194-360
+INFO:werkzeug: * Detected change in '/Users/kylemetta/Projects/MettaModeler/MettaModeler/python_sim/schemas/scenario_v1.py', reloading
+INFO:werkzeug: * Restarting with watchdog (fsevents)
+INFO:root:Starting Flask app on port 5050
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 134-194-360
+INFO:root:Received simulation request: {
+  "schemaVersion": "1.0.0",
+  "nodes": [
+    {
+      "id": "node-1746981553850",
+      "value": 0.5,
+      "label": "New Node",
+      "type": "regular"
+    },
+    {
+      "id": "node-1746981556144",
+      "value": 0.5,
+      "label": "New Node",
+      "type": "regular"
+    }
+  ],
+  "edges": [
+    {
+      "source": "node-1746981553850",
+      "target": "node-1746981556144",
+      "weight": 0.5
+    },
+    {
+      "source": "node-1746981556144",
+      "target": "node-1746981553850",
+      "weight": -0.1
+    }
+  ],
+  "activation": "sigmoid",
+  "threshold": 0.001,
+  "maxIterations": 20,
+  "compareToBaseline": false,
+  "clampedNodes": [
+    "node-1746981553850"
+  ]
+}
+INFO:root:Running simulation...
+INFO:root:Initializing FCM Simulator
+INFO:root:Activation function: sigmoid
+INFO:root:Threshold: 0.001
+INFO:root:Max iterations: 20
+INFO:root:Adding nodes to graph:
+INFO:root:Adding edges to graph:
+INFO:root:Graph initialization complete
+INFO:root:Number of nodes: 2
+INFO:root:Number of edges: 2
+INFO:root:=== Starting Simulation ===
+INFO:root:Simulation converged
+INFO:root:Simulation completed after 2 iterations
+INFO:root:Converged: True
+INFO:root:Simulation completed successfully
+INFO:werkzeug:127.0.0.1 - - [11/May/2025 12:39:39] "POST /api/simulate HTTP/1.1" 200 -
+INFO:root:Received simulation request: {
+  "schemaVersion": "1.0.0",
+  "nodes": [
+    {
+      "id": "node-1746981553850",
+      "value": 0.07,
+      "label": "New Node",
+      "type": "regular"
+    },
+    {
+      "id": "node-1746981556144",
+      "value": 0.5,
+      "label": "New Node",
+      "type": "regular"
+    }
+  ],
+  "edges": [
+    {
+      "source": "node-1746981553850",
+      "target": "node-1746981556144",
+      "weight": 0.5
+    },
+    {
+      "source": "node-1746981556144",
+      "target": "node-1746981553850",
+      "weight": -0.1
+    }
+  ],
+  "activation": "sigmoid",
+  "threshold": 0.01,
+  "maxIterations": 100,
+  "compareToBaseline": true,
+  "modelInitialValues": {
+    "node-1746981553850": 0.5,
+    "node-1746981556144": 0.5
+  },
+  "scenarioInitialValues": {
+    "node-1746981553850": 0.07,
+    "node-1746981556144": 0.5
+  },
+  "clampedNodes": [
+    "node-1746981553850"
+  ]
+}
+INFO:root:=== Starting Baseline vs Scenario Comparison ===
+INFO:root:Model initial values: {'node-1746981553850': 0.5, 'node-1746981556144': 0.5}
+INFO:root:Scenario initial values: {'node-1746981553850': 0.07, 'node-1746981556144': 0.5}
+INFO:root:Clamped nodes: ['node-1746981553850']
+INFO:root:Applying model initial values: {'node-1746981553850': 0.5, 'node-1746981556144': 0.5}
+INFO:root:Setting baseline node node-1746981553850 to 0.5
+INFO:root:Setting baseline node node-1746981556144 to 0.5
+INFO:root:Applying scenario initial values: {'node-1746981553850': 0.07, 'node-1746981556144': 0.5}
+INFO:root:Setting scenario node node-1746981553850 to 0.07
+INFO:root:Setting scenario node node-1746981556144 to 0.5
+INFO:root:Baseline node values: [('node-1746981553850', 0.5), ('node-1746981556144', 0.5)]
+INFO:root:Scenario node values: [('node-1746981553850', 0.07), ('node-1746981556144', 0.5)]
+INFO:root:Running simulation...
+INFO:root:Initializing FCM Simulator
+INFO:root:Activation function: sigmoid
+INFO:root:Threshold: 0.01
+INFO:root:Max iterations: 100
+INFO:root:Adding nodes to graph:
+INFO:root:Adding edges to graph:
+INFO:root:Graph initialization complete
+INFO:root:Number of nodes: 2
+INFO:root:Number of edges: 2
+INFO:root:=== Starting Simulation ===
+INFO:root:Simulation converged
+INFO:root:Simulation completed after 2 iterations
+INFO:root:Converged: True
+INFO:root:Simulation completed successfully
+INFO:root:Running simulation...
+INFO:root:Initializing FCM Simulator
+INFO:root:Activation function: sigmoid
+INFO:root:Threshold: 0.01
+INFO:root:Max iterations: 100
+INFO:root:Adding nodes to graph:
+INFO:root:Adding edges to graph:
+INFO:root:Graph initialization complete
+INFO:root:Number of nodes: 2
+INFO:root:Number of edges: 2
+INFO:root:=== Starting Simulation ===
+INFO:root:Simulation converged
+INFO:root:Simulation completed after 1 iterations
+INFO:root:Converged: True
+INFO:root:Simulation completed successfully
+INFO:werkzeug:127.0.0.1 - - [11/May/2025 12:39:41] "POST /api/simulate HTTP/1.1" 200 -
+INFO:root:Received simulation request: {
+  "schemaVersion": "1.0.0",
+  "nodes": [
+    {
+      "id": "node-1746981553850",
+      "value": 0.07,
+      "label": "New Node",
+      "type": "regular"
+    },
+    {
+      "id": "node-1746981556144",
+      "value": 0.5,
+      "label": "New Node",
+      "type": "regular"
+    }
+  ],
+  "edges": [
+    {
+      "source": "node-1746981553850",
+      "target": "node-1746981556144",
+      "weight": 0.5
+    },
+    {
+      "source": "node-1746981556144",
+      "target": "node-1746981553850",
+      "weight": -0.1
+    }
+  ],
+  "activation": "tanh",
+  "threshold": 0.01,
+  "maxIterations": 100,
+  "compareToBaseline": true,
+  "modelInitialValues": {
+    "node-1746981553850": 0.5,
+    "node-1746981556144": 0.5
+  },
+  "scenarioInitialValues": {
+    "node-1746981553850": 0.07,
+    "node-1746981556144": 0.5
+  },
+  "clampedNodes": [
+    "node-1746981553850"
+  ]
+}
+INFO:root:=== Starting Baseline vs Scenario Comparison ===
+INFO:root:Model initial values: {'node-1746981553850': 0.5, 'node-1746981556144': 0.5}
+INFO:root:Scenario initial values: {'node-1746981553850': 0.07, 'node-1746981556144': 0.5}
+INFO:root:Clamped nodes: ['node-1746981553850']
+INFO:root:Applying model initial values: {'node-1746981553850': 0.5, 'node-1746981556144': 0.5}
+INFO:root:Setting baseline node node-1746981553850 to 0.5
+INFO:root:Setting baseline node node-1746981556144 to 0.5
+INFO:root:Applying scenario initial values: {'node-1746981553850': 0.07, 'node-1746981556144': 0.5}
+INFO:root:Setting scenario node node-1746981553850 to 0.07
+INFO:root:Setting scenario node node-1746981556144 to 0.5
+INFO:root:Baseline node values: [('node-1746981553850', 0.5), ('node-1746981556144', 0.5)]
+INFO:root:Scenario node values: [('node-1746981553850', 0.07), ('node-1746981556144', 0.5)]
+INFO:root:Running simulation...
+INFO:root:Initializing FCM Simulator
+INFO:root:Activation function: tanh
+INFO:root:Threshold: 0.01
+INFO:root:Max iterations: 100
+INFO:root:Adding nodes to graph:
+INFO:root:Adding edges to graph:
+INFO:root:Graph initialization complete
+INFO:root:Number of nodes: 2
+INFO:root:Number of edges: 2
+INFO:root:=== Starting Simulation ===
+INFO:root:Simulation converged
+INFO:root:Simulation completed after 5 iterations
+INFO:root:Converged: True
+INFO:root:Simulation completed successfully
+INFO:root:Running simulation...
+INFO:root:Initializing FCM Simulator
+INFO:root:Activation function: tanh
+INFO:root:Threshold: 0.01
+INFO:root:Max iterations: 100
+INFO:root:Adding nodes to graph:
+INFO:root:Adding edges to graph:
+INFO:root:Graph initialization complete
+INFO:root:Number of nodes: 2
+INFO:root:Number of edges: 2
+INFO:root:=== Starting Simulation ===
+INFO:root:Simulation converged
+INFO:root:Simulation completed after 2 iterations
+INFO:root:Converged: True
+INFO:root:Simulation completed successfully
+INFO:werkzeug:127.0.0.1 - - [11/May/2025 12:39:53] "POST /api/simulate HTTP/1.1" 200 -
+INFO:root:Analyze nodes count: 2
+INFO:root:Received simulation request: {
+  "schemaVersion": "1.0.0",
+  "nodes": [
+    {
+      "id": "node-1746981553850",
+      "value": 0.5,
+      "label": "New Node",
+      "type": "regular"
+    },
+    {
+      "id": "node-1746981556144",
+      "value": 0.5,
+      "label": "New Node",
+      "type": "regular"
+    }
+  ],
+  "edges": [
+    {
+      "source": "node-1746981553850",
+      "target": "node-1746981556144",
+      "weight": 0.5
+    },
+    {
+      "source": "node-1746981556144",
+      "target": "node-1746981553850",
+      "weight": -0.1
+    }
+  ],
+  "activation": "sigmoid",
+  "threshold": 0.001,
+  "maxIterations": 20,
+  "compareToBaseline": false
+}
+INFO:root:Analyze edges count: 2
+INFO:root:Running simulation...
+INFO:werkzeug:127.0.0.1 - - [11/May/2025 12:40:11] "POST /api/analyze HTTP/1.1" 200 -
+INFO:root:Initializing FCM Simulator
+INFO:root:Activation function: sigmoid
+INFO:root:Threshold: 0.001
+INFO:root:Max iterations: 20
+INFO:root:Adding nodes to graph:
+INFO:root:Adding edges to graph:
+INFO:root:Graph initialization complete
+INFO:root:Number of nodes: 2
+INFO:root:Number of edges: 2
+INFO:root:=== Starting Simulation ===
+INFO:root:Simulation converged
+INFO:root:Simulation completed after 3 iterations
+INFO:root:Converged: True
+INFO:root:Simulation completed successfully
+INFO:werkzeug:127.0.0.1 - - [11/May/2025 12:40:11] "POST /api/simulate HTTP/1.1" 200 -

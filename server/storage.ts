@@ -19,6 +19,9 @@ import session from "express-session";
 import connectPg from "connect-pg-simple";
 import createMemoryStore from "memorystore";
 import pg from "pg";
+import { ModelStorageSchema, ModelStorage } from './types/Model.v1.zod';
+import { ScenarioStorageSchema, type ScenarioStorage } from './types/Scenario.v1.zod';
+import { db } from "./db";
 const { Pool } = pg;
 
 export interface IStorage {
@@ -42,14 +45,14 @@ export interface IStorage {
   getModelsByProject(projectId: number): Promise<Model[]>;
   getModel(id: number): Promise<Model | undefined>;
   createModel(model: InsertModel): Promise<Model>;
-  updateModel(id: number, model: Partial<Model>): Promise<Model | undefined>;
+  updateModel(id: number | string, updates: Partial<Model>): Promise<Model | undefined>;
   deleteModel(id: number): Promise<boolean>;
   
   // Scenario operations
   getScenarios(): Promise<Scenario[]>;
   getScenariosByModel(modelId: number): Promise<Scenario[]>;
   getScenario(id: number): Promise<Scenario | undefined>;
-  createScenario(scenario: InsertScenario): Promise<Scenario>;
+  createScenario(scenario: ScenarioStorage): Promise<Scenario>;
   deleteScenario(id: number): Promise<boolean>;
 }
 
@@ -148,31 +151,56 @@ export class PostgresStorage implements IStorage {
   }
   
   async createModel(insertModel: InsertModel): Promise<Model> {
-    // Ensure nodes and edges are properly typed
-    const typedInsertModel = {
+    // Ensure nodes and edges are arrays of FCMNode/FCMEdge
+    const typedNodes: FCMNode[] = Array.isArray(insertModel.nodes) ? insertModel.nodes as FCMNode[] : [];
+    const typedEdges: FCMEdge[] = Array.isArray(insertModel.edges) ? insertModel.edges as FCMEdge[] : [];
+    const dbResult = await this.db.insert(models).values({
       ...insertModel,
-      nodes: insertModel.nodes as FCMNode[],
-      edges: insertModel.edges as FCMEdge[]
-    };
-    
-    const result = await this.db.insert(models).values([typedInsertModel]).returning();
-    return result[0];
+      nodes: typedNodes,
+      edges: typedEdges
+    }).returning();
+    return dbResult[0];
   }
   
-  async updateModel(id: number, updates: Partial<Model>): Promise<Model | undefined> {
-    // Ensure nodes and edges are properly typed if present
-    const typedUpdates = {
-      ...updates,
-      nodes: updates.nodes ? updates.nodes as FCMNode[] : undefined,
-      edges: updates.edges ? updates.edges as FCMEdge[] : undefined,
-      updatedAt: new Date() 
+  async updateModel(id: number | string, updates: Partial<Model>): Promise<Model | undefined> {
+    // Convert string ID to number if needed
+    const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+    if (isNaN(numericId)) {
+      throw new Error('Invalid model ID');
+    }
+
+    // Convert API model to storage model
+    const storageUpdates: Partial<ModelStorage> = {
+      updatedAt: new Date()
     };
+
+    if (updates.name) storageUpdates.name = updates.name;
+    if (updates.description !== undefined) storageUpdates.description = updates.description;
+    if (updates.nodes) storageUpdates.nodes = updates.nodes;
+    if (updates.edges) storageUpdates.edges = updates.edges;
+    if (updates.id) storageUpdates.id = parseInt(updates.id, 10);
+    if (updates.projectId) storageUpdates.projectId = parseInt(updates.projectId, 10);
     
-    const result = await this.db.update(models)
-      .set(typedUpdates)
-      .where(eq(models.id, id))
+    const dbResult = await this.db.update(models)
+      .set(storageUpdates)
+      .where(eq(models.id, numericId))
       .returning();
-    return result[0];
+
+    if (!dbResult[0]) return undefined;
+
+    // Convert storage model back to API model
+    const model = dbResult[0];
+    return {
+      schemaVersion: "1.0.0",
+      id: model.id.toString(),
+      projectId: model.projectId?.toString() || "0",
+      name: model.name,
+      description: model.description || undefined,
+      nodes: model.nodes || [],
+      edges: model.edges || [],
+      createdAt: model.createdAt?.toISOString() || new Date().toISOString(),
+      updatedAt: model.updatedAt?.toISOString() || new Date().toISOString()
+    };
   }
   
   async deleteModel(id: number): Promise<boolean> {
@@ -206,23 +234,19 @@ export class PostgresStorage implements IStorage {
     return { ...result[0], clampedNodes: result[0].clampedNodes || [] };
   }
   
-  async createScenario(insertScenario: InsertScenario): Promise<Scenario> {
-    const typedInsertScenario = {
-      ...insertScenario,
-      initialValues: insertScenario.initialValues as Record<string, number>,
-      clampedNodes: (insertScenario.clampedNodes || []) as string[],
-      simulationParams: {
-        activation: 'sigmoid' as const,
-        threshold: 0.001,
-        maxIterations: 20
-      },
-      results: insertScenario.results ? {
-        ...insertScenario.results,
-        timeSeries: insertScenario.results.timeSeries as Record<string, number[]>
-      } as SimulationResult : undefined
+  async createScenario(scenario: ScenarioStorage): Promise<Scenario> {
+    // Generate a new id if not provided
+    const id = scenario.id ?? this.scenarioId++;
+    const now = scenario.createdAt instanceof Date ? scenario.createdAt : new Date();
+    const updatedAt = scenario.updatedAt instanceof Date ? scenario.updatedAt : (scenario.updatedAt ? new Date(scenario.updatedAt) : now);
+    const scenarioObj: Scenario = {
+      ...scenario,
+      id,
+      createdAt: now,
+      updatedAt,
     };
-    const result = await this.db.insert(scenarios).values(typedInsertScenario).returning();
-    return { ...result[0], clampedNodes: result[0].clampedNodes || [] };
+    this.scenarios.set(id, scenarioObj);
+    return scenarioObj;
   }
   
   async deleteScenario(id: number): Promise<boolean> {
@@ -233,6 +257,31 @@ export class PostgresStorage implements IStorage {
       console.error("Error deleting scenario:", error);
       return false;
     }
+  }
+
+  async updateScenario(id: number, data: Partial<ScenarioStorage>): Promise<Scenario> {
+    let fixedResults = undefined;
+    if (data.results) {
+      fixedResults = {
+        ...data.results,
+        initialValues: data.results.initialValues ?? {},
+        timeSeries: Object.fromEntries(
+          Object.entries(data.results.timeSeries ?? {}).map(([k, v]) => [k, Array.isArray(v) ? v.map(Number) : []])
+        ),
+        finalState: data.results.finalState ?? {},
+      };
+    }
+    const updatedAt = new Date();
+    const dbData = {
+      ...data,
+      results: fixedResults,
+      updatedAt
+    };
+    const [scenario] = await this.db.update(scenarios)
+      .set(dbData)
+      .where(eq(scenarios.id, id))
+      .returning();
+    return scenario;
   }
 }
 
@@ -386,18 +435,47 @@ export class MemStorage implements IStorage {
     return model;
   }
   
-  async updateModel(id: number, updates: Partial<Model>): Promise<Model | undefined> {
-    const model = this.models.get(id);
+  async updateModel(id: number | string, updates: Partial<Model>): Promise<Model | undefined> {
+    // Convert string ID to number if needed
+    const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+    if (isNaN(numericId)) {
+      throw new Error('Invalid model ID');
+    }
+
+    const model = this.models.get(numericId);
     if (!model) return undefined;
+    
+    // Convert API model to storage model
+    const storageUpdates: Partial<ModelStorage> = {
+      updatedAt: new Date()
+    };
+
+    if (updates.name) storageUpdates.name = updates.name;
+    if (updates.description !== undefined) storageUpdates.description = updates.description;
+    if (updates.nodes) storageUpdates.nodes = updates.nodes;
+    if (updates.edges) storageUpdates.edges = updates.edges;
+    if (updates.id) storageUpdates.id = parseInt(updates.id, 10);
+    if (updates.projectId) storageUpdates.projectId = parseInt(updates.projectId, 10);
     
     const updatedModel = { 
       ...model, 
-      ...updates,
-      updatedAt: new Date(),
+      ...storageUpdates
     };
     
-    this.models.set(id, updatedModel);
-    return updatedModel;
+    this.models.set(numericId, updatedModel);
+
+    // Convert storage model back to API model
+    return {
+      schemaVersion: "1.0.0",
+      id: updatedModel.id.toString(),
+      projectId: updatedModel.projectId?.toString() || "0",
+      name: updatedModel.name,
+      description: updatedModel.description || undefined,
+      nodes: updatedModel.nodes || [],
+      edges: updatedModel.edges || [],
+      createdAt: updatedModel.createdAt?.toISOString() || new Date().toISOString(),
+      updatedAt: updatedModel.updatedAt?.toISOString() || new Date().toISOString()
+    };
   }
   
   async deleteModel(id: number): Promise<boolean> {
@@ -438,24 +516,19 @@ export class MemStorage implements IStorage {
     return { ...s, clampedNodes: Array.isArray(s.clampedNodes) ? s.clampedNodes : [], simulationParams: s.simulationParams ?? null };
   }
   
-  async createScenario(insertScenario: InsertScenario): Promise<Scenario> {
-    const id = this.scenarioId++;
-    const now = new Date();
-    // Type assertions to help TypeScript
-    const typedInitialValues = insertScenario.initialValues ? 
-      (insertScenario.initialValues as Record<string, number>) : null;
-    const scenario: Scenario = { 
+  async createScenario(scenario: ScenarioStorage): Promise<Scenario> {
+    // Generate a new id if not provided
+    const id = scenario.id ?? this.scenarioId++;
+    const now = scenario.createdAt instanceof Date ? scenario.createdAt : new Date();
+    const updatedAt = scenario.updatedAt instanceof Date ? scenario.updatedAt : (scenario.updatedAt ? new Date(scenario.updatedAt) : now);
+    const scenarioObj: Scenario = {
+      ...scenario,
       id,
-      name: insertScenario.name,
-      modelId: insertScenario.modelId || null,
-      initialValues: typedInitialValues,
-      results: insertScenario.results || null,
       createdAt: now,
-      clampedNodes: Array.isArray(insertScenario.clampedNodes) ? insertScenario.clampedNodes : [],
-      simulationParams: insertScenario.simulationParams ?? null,
+      updatedAt,
     };
-    this.scenarios.set(id, scenario);
-    return scenario;
+    this.scenarios.set(id, scenarioObj);
+    return scenarioObj;
   }
   
   async deleteScenario(id: number): Promise<boolean> {

@@ -131,6 +131,7 @@ export default function ScenarioManager({ model, selectedScenarioIds, setSelecte
       if (!results) {
         throw new Error("Simulation failed to complete");
       }
+      console.log('Full simulation results:', JSON.stringify(results, null, 2));
       const response = await apiRequest(
         "POST",
         "/api/scenarios",
@@ -139,7 +140,12 @@ export default function ScenarioManager({ model, selectedScenarioIds, setSelecte
           modelId: model.id,
           initialValues,
           clampedNodes,
-          results,
+          results: {
+            finalState: results.finalState,
+            timeSeries: results.timeSeries,
+            iterations: results.iterations,
+            converged: results.converged
+          },
           simulationParams: {
             activation: 'sigmoid',
             threshold: 0.001,

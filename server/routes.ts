@@ -16,6 +16,12 @@ import { setupAuth, isAuthenticated } from "./auth";
 import { exportService, ExportFormat, ExportType } from "./export";
 import { SimulationResult as PythonSimulationResult } from './types';
 import axios, { AxiosError } from "axios";
+import simulateRouter from './routes/simulate';
+import { ProjectSchema, ProjectStorageSchema, type ProjectStorage } from './types/Project.v1.zod';
+import { ModelSchema, ModelStorageSchema, type ModelStorage } from './types/Model.v1.zod';
+import { ScenarioSchema, ScenarioStorageSchema, type ScenarioStorage } from './types/Scenario.v1.zod';
+import { CreateModelSchema } from './types/Model.v1.zod';
+import { CreateScenarioSchema } from './types/Scenario.v1.zod';
 
 // Python simulation service URL
 const PYTHON_SIM_URL = process.env.PYTHON_SIM_URL || 'http://localhost:5050';
@@ -30,6 +36,9 @@ interface SimulationResponse {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
   setupAuth(app);
+
+  // Register the Zod-validated /api/simulate route
+  app.use(simulateRouter);
 
   // API routes
   // Projects
@@ -62,13 +71,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/projects", async (req: Request, res: Response) => {
     try {
-      const validatedData = insertProjectSchema.parse(req.body);
-      const project = await storage.createProject(validatedData);
+      // Validate request body first
+      const result = ProjectSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({
+          status: 400,
+          code: 'INVALID_PAYLOAD',
+          fieldErrors: result.error.errors
+        });
+      }
+
+      // Convert API schema to storage schema
+      const storageData = {
+        name: result.data.name,
+        description: result.data.description || null,
+        createdAt: new Date(result.data.createdAt),
+        updatedAt: null,
+        userId: null
+      };
+
+      const project = await storage.createProject(storageData);
       res.status(201).json(project);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: error.message });
-      }
+      console.error('Project creation error:', error);
       res.status(500).json({ message: "Failed to create project" });
     }
   });
@@ -80,8 +105,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid project ID" });
       }
 
-      const validatedData = insertProjectSchema.partial().parse(req.body);
-      const project = await storage.updateProject(id, validatedData);
+      const result = ProjectSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({
+          status: 400,
+          code: 'INVALID_PAYLOAD',
+          fieldErrors: result.error.errors
+        });
+      }
+      
+      // Convert API schema to storage schema
+      const storageData: Partial<ProjectStorage> = {};
+      if (result.data.name) storageData.name = result.data.name;
+      if (result.data.description !== undefined) storageData.description = result.data.description || null;
+      if (result.data.updatedAt) storageData.updatedAt = new Date(result.data.updatedAt);
+      
+      const project = await storage.updateProject(id, storageData);
       
       if (!project) {
         return res.status(404).json({ message: "Project not found" });
@@ -89,9 +128,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(project);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: error.message });
-      }
       res.status(500).json({ message: "Failed to update project" });
     }
   });
@@ -158,21 +194,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/models", async (req: Request, res: Response) => {
     try {
-      const validatedData = insertModelSchema.parse(req.body);
-      
-      // Type assertions to help TypeScript with nodes and edges
-      const typedData = {
-        ...validatedData,
-        nodes: validatedData.nodes ? (validatedData.nodes as FCMNode[]) : undefined,
-        edges: validatedData.edges ? (validatedData.edges as FCMEdge[]) : undefined
+      const result = CreateModelSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({
+          status: 400,
+          code: 'INVALID_PAYLOAD',
+          fieldErrors: result.error.errors
+        });
+      }
+
+      // Generate fields on the server
+      const now = new Date();
+      // Let the DB autoincrement the id
+      const storageData = {
+        ...result.data,
+        createdAt: now,
+        updatedAt: now
       };
-      
-      const model = await storage.createModel(typedData);
+
+      const model = await storage.createModel(storageData);
       res.status(201).json(model);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: error.message });
-      }
       res.status(500).json({ message: "Failed to create model" });
     }
   });
@@ -184,16 +226,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid model ID" });
       }
 
-      const validatedData = insertModelSchema.partial().parse(req.body);
+      const result = ModelSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({
+          status: 400,
+          code: 'INVALID_PAYLOAD',
+          fieldErrors: result.error.errors
+        });
+      }
       
-      // Type assertions to help TypeScript with nodes and edges
-      const typedData = {
-        ...validatedData,
-        nodes: validatedData.nodes ? (validatedData.nodes as FCMNode[]) : undefined,
-        edges: validatedData.edges ? (validatedData.edges as FCMEdge[]) : undefined
-      };
+      // Convert API schema to storage schema
+      const storageData: Partial<ModelStorage> = {};
+      if (result.data.projectId !== undefined) storageData.projectId = result.data.projectId;
+      if (result.data.name) storageData.name = result.data.name;
+      if (result.data.description !== undefined) storageData.description = result.data.description || null;
+      if (result.data.nodes) storageData.nodes = result.data.nodes;
+      if (result.data.edges) storageData.edges = result.data.edges;
+      if (result.data.updatedAt) storageData.updatedAt = new Date(result.data.updatedAt);
       
-      const model = await storage.updateModel(id, typedData);
+      const model = await storage.updateModel(id, storageData);
       
       if (!model) {
         return res.status(404).json({ message: "Model not found" });
@@ -201,9 +252,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(model);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: error.message });
-      }
+      console.error('Model update error:', error);
       res.status(500).json({ message: "Failed to update model" });
     }
   });
@@ -270,39 +319,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/scenarios", async (req: Request, res: Response) => {
     try {
-      // Handle case where modelId might be a string but schema expects a number
-      let data = { ...req.body };
-      if (typeof data.modelId === 'string') {
-        data.modelId = parseInt(data.modelId, 10);
+      const result = CreateScenarioSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({
+          status: 400,
+          code: 'INVALID_PAYLOAD',
+          fieldErrors: result.error.errors
+        });
       }
-      
-      const validatedData = insertScenarioSchema.parse(data);
-      
-      // Type assertions to help TypeScript with initialValues and results 
-      const typedData = {
-        ...validatedData,
-        initialValues: validatedData.initialValues ? 
-          (validatedData.initialValues as Record<string, number>) : undefined,
-        results: validatedData.results ? {
-          ...validatedData.results,
-          finalState: validatedData.results.finalState as Record<string, SimulationNode>,
-          baselineFinalState: validatedData.results.baselineFinalState as Record<string, SimulationNode> | undefined,
-          timeSeries: validatedData.results.timeSeries as Record<string, number[]>,
-          baselineTimeSeries: validatedData.results.baselineTimeSeries as Record<string, number[]> | undefined,
-          iterations: validatedData.results.iterations,
-          converged: validatedData.results.converged,
-          initialValues: validatedData.results.initialValues || {},
-          deltaState: validatedData.results.deltaState
-        } as SimulationResult : undefined
+
+      // Generate fields on the server
+      const now = new Date();
+      // Let the DB autoincrement the id
+      const storageData = {
+        ...result.data,
+        schemaVersion: '1.0.0',
+        createdAt: now,
+        updatedAt: now
       };
-      
-      const scenario = await storage.createScenario(typedData);
+
+      const scenario = await storage.createScenario(storageData);
       res.status(201).json(scenario);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: error.message });
-      }
-      console.error("Failed to create scenario:", error);
       res.status(500).json({ message: "Failed to create scenario" });
     }
   });
@@ -330,23 +368,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Build payload for Python backend
       const payload: any = {
+        schemaVersion: req.body.schemaVersion,
         nodes: req.body.nodes,
         edges: req.body.edges,
         activation: req.body.activation,
         threshold: req.body.threshold,
         maxIterations: req.body.maxIterations,
         clampedNodes: req.body.clampedNodes,
-        // Include initial values for baseline comparison
+        // Only include modelInitialValues and scenarioInitialValues if compareToBaseline is true
         ...(req.body.compareToBaseline
           ? {
               compareToBaseline: true,
               modelInitialValues: req.body.modelInitialValues,
               scenarioInitialValues: req.body.scenarioInitialValues
             }
-          : {
-              initialValues: req.body.initialValues
-            }
-        )
+          : {})
       };
       const response = await axios.post(`${PYTHON_SIM_URL}/api/simulate`, payload);
       return res.json(response.data);
