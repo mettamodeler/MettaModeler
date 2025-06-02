@@ -507,7 +507,7 @@ def _calculate_impact_metrics(
         
         # Calculate metrics
         auc = float(np.trapz(diff_series)) if len(diff_series) > 1 else 0.0
-        max_diff = max(diff_series, key=abs) if diff_series else 0.0
+        max_diff = max(abs(x) for x in diff_series) if diff_series else 0.0
         direction = fuzzy_categorize_direction(baseline_series, scenario_series, global_max_change)
         
         return {
