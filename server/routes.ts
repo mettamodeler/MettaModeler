@@ -23,7 +23,7 @@ import { CreateModelSchema } from './types/Model.v2.zod';
 import { CreateScenarioSchema } from './types/Scenario.v2.zod';
 
 // Python simulation service URL
-const PYTHON_SIM_URL = process.env.PYTHON_SIM_URL || 'http://localhost:5050';
+const PYTHON_SIM_URL = process.env.PYTHON_SIM_URL || 'https://mettamodeler-1.onrender.com';
 
 interface SimulationResponse {
   finalState: Record<string, number>;
