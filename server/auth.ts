@@ -46,8 +46,10 @@ export function setupAuth(app: Express) {
     store: storage.sessionStore,
     cookie: { 
       secure: process.env.NODE_ENV === "production",
+      sameSite: 'lax',
       maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
-    }
+    },
+    proxy: true // Trust the reverse proxy
   };
 
   app.use(session(sessionSettings));
