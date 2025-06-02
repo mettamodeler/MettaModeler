@@ -302,7 +302,14 @@ def run_simulation(
         
         # Return results in the correct format
         return {
-            'finalState': results.get('finalState', {}),
+            'finalState': {
+                node_id: {
+                    'id': node_id,
+                    'label': next((n['label'] for n in nodes if n['id'] == node_id), None),
+                    'value': value
+                }
+                for node_id, value in results.get('finalState', {}).items()
+            },
             'timeSeries': results.get('timeSeries', {}),
             'iterations': results.get('iterations', 0),
             'converged': results.get('converged', False),
