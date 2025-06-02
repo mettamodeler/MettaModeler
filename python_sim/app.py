@@ -341,9 +341,5 @@ def health_check():
     return jsonify({'status': 'ok'})
 
 if __name__ == '__main__':
-    # Get port from environment or use 5050 as default
     port = int(os.environ.get('PYTHON_SIM_PORT', 5050))
-    
-    # Run the Flask app
-    logging.info(f"Starting Flask app on port {port}")
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port)
