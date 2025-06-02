@@ -3,6 +3,6 @@ werkzeug==2.0.3
 flask-cors==3.0.10
 pydantic==2.0.0
 networkx==2.6.3
-numpy==2.2.0
+numpy>=1.23.2,<2.0.0
 pandas==2.2.0
 nbformat==5.1.3
