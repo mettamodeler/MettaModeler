@@ -1,22 +1,18 @@
 import React from 'react';
 import { useState, useEffect, useMemo } from 'react';
-import { 
-  FCMModel, 
-  SimulationResult,
-  SimulationNode
-} from '@shared/schema';
-import { SimulationResultWithComparison, isComparisonSimulationResult, ComparisonSimulationResult, FCMNode } from '@/lib/types';
-import { toStringId } from '@/lib/utils';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { FCMModel, SimulationResult, SimulationResultWithComparison, isComparisonSimulationResult, ComparisonSimulationResult, FCMNode } from '../../lib/types';
+import { toStringId } from '../../lib/utils';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line, Cell, Legend } from 'recharts';
 import { CompareConvergencePlot } from './CompareConvergencePlot';
 import * as Select from '@radix-ui/react-select';
 import { ChevronDownIcon, InfoCircledIcon } from '@radix-ui/react-icons';
-import { runSimulation as runSimulationApi } from '@/lib/simulation';
+import { runSimulation as runSimulationApi } from '../../lib/simulation';
 import { FaLock } from 'react-icons/fa';
-import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '../../components/ui/tooltip';
 import { Bar as ChartJsBar } from 'react-chartjs-2';
+import { apiRequest } from '../../lib/queryClient';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -66,20 +62,14 @@ const ScenarioComparison: React.FC<ScenarioComparisonProps> = ({ model, scenario
   type ActivationType = 'sigmoid' | 'tanh' | 'relu' | 'linear';
   const [activation, setActivation] = useState<ActivationType>('sigmoid');
   
-  // Auto-select the single scenario if there's only one, or clear if none
-  useEffect(() => {
-    if (scenarios.length === 1) {
-      if (selectedScenarioId !== scenarios[0].id.toString()) {
-        setSelectedScenarioId(scenarios[0].id.toString());
-      }
-    } else if (scenarios.length === 0 && selectedScenarioId) {
-      setSelectedScenarioId(null);
-    }
-  }, [scenarios, selectedScenarioId, setSelectedScenarioId]);
+  const safeScenarios = scenarios.map(s => ({
+    ...s,
+    initialValues: s.initialValues || {}
+  }));
 
   const selectedScenario = useMemo(() => 
-    scenarios.find((s: { id: string }) => s.id.toString() === selectedScenarioId),
-    [scenarios, selectedScenarioId]
+    safeScenarios.find((s: { id: string }) => s.id.toString() === selectedScenarioId),
+    [safeScenarios, selectedScenarioId]
   );
 
   // Get node labels and colors
@@ -99,65 +89,79 @@ const ScenarioComparison: React.FC<ScenarioComparisonProps> = ({ model, scenario
 
   // Run simulation when scenario changes
   useEffect(() => {
-    if (!selectedScenario) {
-      setComparisonResult(null);
-      return;
-    }
-
-    // Log selected scenario for audit
-    console.log('Selected scenario for comparison:', selectedScenario);
+    let isMounted = true;
 
     const runComparison = async () => {
+      if (!selectedScenario || !isMounted) {
+        return;
+      }
+
       setIsLoading(true);
+
       try {
-        // Extract model's default node values
-        const modelDefaults = Object.fromEntries(
-          model.nodes.map(node => [toStringId(node.id), node.value])
-        );
-        // Extract scenario's node values
-        const scenarioValues = Object.fromEntries(
-          model.nodes.map(node => [
-            toStringId(node.id),
-            selectedScenario.initialValues[toStringId(node.id)] ?? node.value
-          ])
-        );
-        // Log for audit
-        console.log('runComparison: modelInitialValues', modelDefaults);
-        console.log('runComparison: scenarioInitialValues', scenarioValues);
-        console.log('runComparison: clampedNodes', selectedScenario.clampedNodes);
-        // Call simulation API with both sets
+        console.log('About to run simulation with selectedScenario:', selectedScenario);
+        console.log('About to run simulation with initialValues:', selectedScenario.initialValues);
+
+        const params = {
+          compareToBaseline: true,
+          activation,
+          threshold: 0.001,
+          maxIterations: 20,
+          clampedNodes: selectedScenario.clampedNodes || [],
+          modelInitialValues: Object.fromEntries(model.nodes.map(node => [toStringId(node.id), node.value])),
+          scenarioInitialValues: selectedScenario.initialValues
+        };
+
+        // Call simulation API with the original model nodes (not scenarioNodes)
         const result = await runSimulationApi(
           model,
-          scenarioValues,
-          {
-            compareToBaseline: true,
-            modelInitialValues: modelDefaults,
-            scenarioInitialValues: scenarioValues,
-            clampedNodes: selectedScenario.clampedNodes,
-            activation
-          }
+          {}, // don't override node values here
+          params
         );
         
-        console.log('Received comparison result:', result);
-        
-        // Ensure the result is a comparison result
-        if (isComparisonSimulationResult(result)) {
-          console.log('Baseline time series:', result.baselineTimeSeries);
-          console.log('Scenario time series:', result.comparisonTimeSeries);
+        if (isMounted) {
           setComparisonResult(result);
-        } else {
-          console.error('Expected a comparison result, but received a single result.');
-          setComparisonResult(null);
+          
+          // Save the comparison results back to the scenario
+          if (result && isComparisonSimulationResult(result)) {
+            try {
+              await apiRequest('PATCH', `/api/scenarios/${selectedScenario.id}`, {
+                results: {
+                  finalState: result.comparisonFinalState,
+                  timeSeries: result.comparisonTimeSeries,
+                  iterations: result.iterations,
+                  converged: result.converged,
+                  baselineFinalState: result.baselineFinalState,
+                  baselineTimeSeries: result.baselineTimeSeries,
+                  baselineIterations: result.iterations,
+                  baselineConverged: result.converged
+                }
+              });
+            } catch (error) {
+              console.error('Error saving comparison results:', error);
+            }
+          }
         }
       } catch (error) {
-        console.error('Failed to run scenario comparison:', error);
-        setComparisonResult(null);
+        console.error('Error running comparison:', error);
+        if (isMounted) {
+          setComparisonResult(null);
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
+
+    // Reset comparison result and run new simulation when scenario changes
+    setComparisonResult(null);
     runComparison();
-  }, [selectedScenario, model, activation]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedScenario?.id, model.id, activation]); // Only depend on scenario ID, model ID, and activation
 
   // Debug: log when comparisonResult changes
   useEffect(() => {
@@ -172,6 +176,12 @@ const ScenarioComparison: React.FC<ScenarioComparisonProps> = ({ model, scenario
 
     return model.nodes.map((node: FCMNode) => {
       const nodeId = toStringId(node.id);
+      // Defensive check: ensure baselineFinalState and comparisonFinalState exist and have the expected node
+      if (!comparisonResult.baselineFinalState || !comparisonResult.comparisonFinalState || 
+          !(nodeId in comparisonResult.baselineFinalState) || !(nodeId in comparisonResult.comparisonFinalState)) {
+        console.warn(`Node ${nodeId} missing from comparison result.`);
+        return null;
+      }
       const baselineNode = comparisonResult.baselineFinalState[nodeId];
       const comparisonNode = comparisonResult.comparisonFinalState[nodeId];
       
@@ -297,6 +307,22 @@ const ScenarioComparison: React.FC<ScenarioComparisonProps> = ({ model, scenario
       setComparisonResult(null);
     };
   }, []);
+
+  // Auto-select the only scenario if there is one and it's not already selected
+  useEffect(() => {
+    if (scenarios.length === 1) {
+      const onlyId = scenarios[0].id.toString();
+      if (selectedScenarioId !== onlyId) {
+        setSelectedScenarioId(onlyId);
+      }
+    } else if (
+      selectedScenarioId &&
+      !scenarios.some(s => s.id.toString() === selectedScenarioId)
+    ) {
+      // If the selected ID is not in the list, clear it
+      setSelectedScenarioId(null);
+    }
+  }, [scenarios, selectedScenarioId, setSelectedScenarioId]);
 
   if (scenarios.length === 0) {
     return (
@@ -424,10 +450,13 @@ const ScenarioComparison: React.FC<ScenarioComparisonProps> = ({ model, scenario
                   </Popover.Root>
                 </div>
               </div>
-              <Select.Root 
-                value={selectedScenarioId ?? (scenarios[0]?.id?.toString() ?? '')} 
-                onValueChange={v => setSelectedScenarioId(v)} 
-                disabled={scenarios.length === 1}
+              <Select.Root
+                value={
+                  selectedScenarioId && scenarios.some(s => s.id.toString() === selectedScenarioId)
+                    ? selectedScenarioId
+                    : ''
+                }
+                onValueChange={v => setSelectedScenarioId(v)}
               >
                 <Select.Trigger className="w-[200px] flex items-center justify-between px-3 py-2 bg-[hsl(var(--muted))] border border-[hsl(var(--border))] rounded-md shadow-sm text-[hsl(var(--foreground))]">
                   <Select.Value>

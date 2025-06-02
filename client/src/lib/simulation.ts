@@ -25,6 +25,8 @@ export async function runSimulation(
     maxIterations: 100
   }
 ): Promise<ExtendedSimulationResult> {
+  // Debug: print call stack and params
+  console.trace('runSimulation called with params:', params);
   // Prepare data for Python simulation API
   const nodes = model.nodes.map((node: FCMNode) => ({
     id: node.id,
@@ -50,15 +52,14 @@ export async function runSimulation(
     compareToBaseline: Boolean(params.compareToBaseline),
     ...(params.compareToBaseline
       ? {
-          modelInitialValues: Object.fromEntries(model.nodes.map(n => [n.id, n.value])),
-          scenarioInitialValues: initialValues
+          modelInitialValues: params.modelInitialValues || Object.fromEntries(model.nodes.map(n => [n.id, n.value])),
+          scenarioInitialValues: params.scenarioInitialValues || initialValues
         }
-      : {})
-    ,
+      : {}),
     ...(params.clampedNodes ? { clampedNodes: params.clampedNodes } : {})
   };
 
-  console.log('Simulation API payload:', payload);
+  console.log('Simulation API payload:', JSON.stringify(payload, null, 2));
 
   const response = await fetch('/api/simulate', {
     method: 'POST',
@@ -73,20 +74,6 @@ export async function runSimulation(
   }
 
   const result = await response.json();
-
-  // Log the raw result for debugging
-  console.log('Raw simulation result:', result);
-
-  // Format the result to include both timeSeries and timeSeriesData for compatibility
-  const formattedResult: ExtendedSimulationResult = {
-    ...result,
-    timeSeriesData: result.timeSeries || {},
-    timeSeries: result.timeSeries || {},
-    iterations: result.iterations || 0,
-    converged: result.converged || false,
-    finalValues: result.finalState || {},
-    params
-  };
-
-  return formattedResult;
+  console.log('Raw simulation result:', JSON.stringify(result, null, 2));
+  return result;
 } 

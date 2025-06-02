@@ -38,10 +38,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // API routes
   // Projects
-  app.get("/api/projects", async (_req: Request, res: Response) => {
+  app.get("/api/projects", isAuthenticated, async (req: Request, res: Response) => {
     try {
+      const userId = req.user?.id;
       const projects = await storage.getProjects();
-      res.json(projects);
+      // Only return projects belonging to the current user
+      const userProjects = projects.filter(p => p.userId === userId);
+      res.json(userProjects);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch projects" });
     }
@@ -65,10 +68,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/projects", async (req: Request, res: Response) => {
+  app.post("/api/projects", isAuthenticated, async (req: Request, res: Response) => {
     try {
-      // Validate request body first
-      const result = ProjectSchema.safeParse(req.body);
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ message: "Not authenticated" });
+
+      const now = new Date();
+      const project = {
+        name: req.body.name,
+        description: req.body.description || null,
+        userId,
+        createdAt: now,
+        updatedAt: now
+      };
+
+      const result = ProjectSchema.safeParse(project);
       if (!result.success) {
         return res.status(400).json({
           status: 400,
@@ -77,19 +91,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Convert API schema to storage schema
-      const storageData = {
-        name: result.data.name,
-        description: result.data.description || null,
-        createdAt: new Date(result.data.createdAt),
-        updatedAt: null,
-        userId: null
-      };
-
-      const project = await storage.createProject(storageData);
-      res.status(201).json(project);
+      const created = await storage.createProject(result.data);
+      res.status(201).json(created);
     } catch (error) {
-      console.error('Project creation error:', error);
       res.status(500).json({ message: "Failed to create project" });
     }
   });
@@ -306,16 +310,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!scenario) {
         return res.status(404).json({ message: "Scenario not found" });
       }
-
-      res.json(scenario);
+      console.log("Scenario from DB:", scenario);
+      const safeScenario = ScenarioSchema.parse(scenario);
+      console.log("Scenario after Zod validation:", safeScenario);
+      res.json(safeScenario);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch scenario" });
+      res.status(500).json({ message: "Failed to fetch scenario", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
-  app.post("/api/scenarios", async (req: Request, res: Response) => {
+  app.post("/api/scenarios", isAuthenticated, async (req: Request, res: Response) => {
+    console.log("RAW REQ.BODY at /api/scenarios POST:", JSON.stringify(req.body, null, 2));
     try {
+      const userId = req.user?.id;
+      const now = new Date();
+
+      // Validate only the user-supplied fields
       const result = CreateScenarioSchema.safeParse(req.body);
+      console.log("Zod validation result:", JSON.stringify(result, null, 2));
       if (!result.success) {
         return res.status(400).json({
           status: 400,
@@ -324,20 +336,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Generate fields on the server
-      const now = new Date();
-      // Let the DB autoincrement the id
-      const storageData = {
+      // Compose the full scenario object for storage
+      const scenarioData = {
         ...result.data,
-        schemaVersion: '1.0.0',
+        userId, // if you want to track scenario ownership
         createdAt: now,
         updatedAt: now
       };
+      console.log("Scenario data to be inserted:", JSON.stringify(scenarioData, null, 2));
 
-      const scenario = await storage.createScenario(storageData);
-      res.status(201).json(scenario);
+      const scenario = await storage.createScenario(scenarioData);
+      console.log("Scenario from DB:", scenario);
+      const safeScenario = ScenarioSchema.parse(scenario);
+      console.log("Scenario after Zod validation:", safeScenario);
+      res.status(201).json(safeScenario);
     } catch (error) {
-      res.status(500).json({ message: "Failed to create scenario" });
+      res.status(500).json({ message: "Failed to create scenario", error: error instanceof Error ? error.message : String(error) });
+    }
+  });
+
+  app.patch("/api/scenarios/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid scenario ID" });
+      }
+
+      const scenario = await storage.updateScenario(id, req.body);
+      if (!scenario) {
+        return res.status(404).json({ message: "Scenario not found" });
+      }
+      console.log("Scenario from DB:", scenario);
+      const safeScenario = ScenarioSchema.parse(scenario);
+      console.log("Scenario after Zod validation:", safeScenario);
+      res.json(safeScenario);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update scenario", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -362,25 +396,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Python Simulation API Proxy
   app.post("/api/simulate", async (req: Request, res: Response) => {
     try {
-      // Build payload for Python backend
-      const payload: any = {
-        schemaVersion: req.body.schemaVersion,
-        nodes: req.body.nodes,
-        edges: req.body.edges,
-        activation: req.body.activation,
-        threshold: req.body.threshold,
-        maxIterations: req.body.maxIterations,
-        clampedNodes: req.body.clampedNodes,
-        // Only include modelInitialValues and scenarioInitialValues if compareToBaseline is true
-        ...(req.body.compareToBaseline
-          ? {
-              compareToBaseline: true,
-              modelInitialValues: req.body.modelInitialValues,
-              scenarioInitialValues: req.body.scenarioInitialValues
-            }
-          : {})
+      // Log the incoming request payload for debugging
+      console.log('Received simulation request:', JSON.stringify(req.body, null, 2));
+
+      // Validate required fields
+      if (!req.body.nodes || !Array.isArray(req.body.nodes)) {
+        return res.status(400).json({
+          error: 'Invalid payload',
+          message: 'Missing or invalid nodes array'
+        });
+      }
+
+      if (!req.body.edges || !Array.isArray(req.body.edges)) {
+        return res.status(400).json({
+          error: 'Invalid payload',
+          message: 'Missing or invalid edges array'
+        });
+      }
+
+      // Only add schemaVersion if missing, do not override any other fields
+      const payload = {
+        ...req.body,
+        schemaVersion: req.body.schemaVersion || "1.0.0"
       };
-      const response = await axios.post(`${PYTHON_SIM_URL}/api/simulate`, payload);
+
+      // Forward to Python backend
+      console.log('Forwarding to Python backend:', JSON.stringify(payload, null, 2));
+      const response = await axios.post(`${PYTHON_SIM_URL}/api/simulate`, payload, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      // Log the response for debugging
+      console.log('Python simulation response:', JSON.stringify(response.data, null, 2));
+
+      // Ensure the response is returned correctly
       return res.json(response.data);
     } catch (error) {
       console.error('Simulation error:', error);

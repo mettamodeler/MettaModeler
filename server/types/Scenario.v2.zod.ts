@@ -13,6 +13,7 @@ export const ScenarioSchema = z.object({
   name: z.string(),
   description: z.string().nullable(),
   nodes: z.array(SimulationNodeSchema),
+  initialValues: z.record(z.string(), z.number()),
   createdAt: z.string().or(z.date()),
   updatedAt: z.string().or(z.date()).nullable()
 });
@@ -23,6 +24,7 @@ export const ScenarioStorageSchema = z.object({
   name: z.string(),
   description: z.string().nullable(),
   nodes: z.array(SimulationNodeSchema),
+  initialValues: z.record(z.string(), z.number()),
   createdAt: z.date(),
   updatedAt: z.date().nullable()
 });

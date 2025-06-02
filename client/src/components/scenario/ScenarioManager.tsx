@@ -20,6 +20,7 @@ import { apiRequest } from "@/lib/queryClient";
 import ScenarioComparison from "./ScenarioComparison";
 import { FaLock, FaLockOpen, FaInfoCircle } from 'react-icons/fa';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
+import React from "react";
 
 interface Scenario {
   id: string;
@@ -85,7 +86,12 @@ export default function ScenarioManager({ model, selectedScenarioIds, setSelecte
       
       const data = await response.json();
       console.log("Fetched scenarios:", data);
-      setScenarios(data);
+      // Ensure every scenario has initialValues
+      const safeData = data.map((s: any) => ({
+        ...s,
+        initialValues: s.initialValues || {}
+      }));
+      setScenarios(safeData);
     } catch (error) {
       console.error("Error fetching scenarios:", error);
       toast({
@@ -132,6 +138,12 @@ export default function ScenarioManager({ model, selectedScenarioIds, setSelecte
         throw new Error("Simulation failed to complete");
       }
       console.log('Full simulation results:', JSON.stringify(results, null, 2));
+      // Build a complete initialValues object for all nodes
+      const fullInitialValues = model.nodes.reduce((acc, node) => {
+        acc[node.id] = initialValues[node.id] ?? node.value;
+        return acc;
+      }, {} as Record<string, number>);
+      console.log('Saving scenario with initialValues:', fullInitialValues);
       const response = await apiRequest(
         "POST",
         "/api/scenarios",
@@ -142,9 +154,9 @@ export default function ScenarioManager({ model, selectedScenarioIds, setSelecte
           nodes: model.nodes.map(node => ({
             id: node.id,
             label: node.label,
-            value: initialValues[node.id] || 0
+            value: fullInitialValues[node.id]
           })),
-          initialValues,
+          initialValues: fullInitialValues,
           clampedNodes,
           results: {
             finalState: results.finalState,
@@ -159,6 +171,7 @@ export default function ScenarioManager({ model, selectedScenarioIds, setSelecte
           }
         }
       );
+      console.log('Created scenario:', response);
       setScenarios(prev => [...prev, response]);
       setNewScenarioName("");
       setNewScenarioDialogOpen(false);
@@ -220,28 +233,45 @@ export default function ScenarioManager({ model, selectedScenarioIds, setSelecte
   };
 
   // Toggle scenario selection
-  const toggleScenarioSelection = (scenario: Scenario) => {
-    const newSelected = new Set(selectedScenarioIds);
-    
-    if (newSelected.has(scenario.id)) {
-      newSelected.delete(scenario.id);
-    } else {
-      newSelected.add(scenario.id);
-    }
-    
-    setSelectedScenarioIds(newSelected);
-  };
+  const toggleScenarioSelection = React.useCallback((scenario: Scenario) => {
+    setSelectedScenarioIds(prev => {
+      const newSelected = new Set(prev);
+      if (newSelected.has(scenario.id)) {
+        newSelected.delete(scenario.id);
+      } else {
+        newSelected.add(scenario.id);
+      }
+      return newSelected;
+    });
+  }, []);
 
   // Handle initial value change
   const handleInitialValueChange = (nodeId: string, value: number) => {
-    setInitialValues(prev => ({
-      ...prev,
-      [nodeId]: value
-    }));
+    setInitialValues(prev => {
+      const updated = { ...prev, [nodeId]: value };
+      console.log('Slider changed:', nodeId, value, 'Updated initialValues:', updated);
+      return updated;
+    });
   };
 
   // Filter scenarios based on selection
-  const selectedScenariosList = scenarios.filter(s => selectedScenarioIds.has(s.id));
+  const selectedScenariosList = React.useMemo(() => 
+    scenarios.filter(s => selectedScenarioIds.has(s.id)),
+    [scenarios, selectedScenarioIds]
+  );
+
+  // Cleanup when component unmounts
+  useEffect(() => {
+    return () => {
+      setSelectedScenarioIds(new Set());
+    };
+  }, []);
+
+  // Before rendering, log all scenarios and their createdAt values
+  console.log("All scenarios:", scenarios);
+  scenarios.forEach(s => {
+    console.log("Scenario createdAt:", s.createdAt, "Type:", typeof s.createdAt);
+  });
 
   return (
     <div className="space-y-6">
@@ -280,7 +310,9 @@ export default function ScenarioManager({ model, selectedScenarioIds, setSelecte
                   >
                     <td className="p-3 font-medium text-[hsl(var(--foreground))]">{scenario.name}</td>
                     <td className="p-3 text-[hsl(var(--muted-foreground))]">
-                      {format(new Date(scenario.createdAt), "MMM d, yyyy")}
+                      {scenario.createdAt && !isNaN(new Date(scenario.createdAt))
+                        ? format(new Date(scenario.createdAt), "MMM d, yyyy")
+                        : "N/A"}
                     </td>
                     <td className="p-3">
                       {scenario.results ? (

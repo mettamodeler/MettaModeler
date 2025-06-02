@@ -7,6 +7,7 @@ import {
   FCMEdge,
   SimulationResult,
   SimulationParameters,
+  SimulationNode,
   users,
   projects,
   models,
@@ -19,10 +20,28 @@ import session from "express-session";
 import connectPg from "connect-pg-simple";
 import createMemoryStore from "memorystore";
 import pg from "pg";
-import { ModelStorageSchema, ModelStorage } from './types/Model.v1.zod';
-import { ScenarioStorageSchema, type ScenarioStorage } from './types/Scenario.v1.zod';
 import { db } from "./db";
+import { toCamelScenario } from './utils/caseMapping';
 const { Pool } = pg;
+
+export interface CreateModelData {
+  name: string;
+  description?: string | null;
+  projectId?: number | null;
+  nodes: FCMNode[];
+  edges: FCMEdge[];
+}
+
+export interface CreateScenarioData {
+  name: string;
+  modelId: number;
+  description?: string | null;
+  nodes: SimulationNode[];
+  initialValues: Record<string, number>;
+  results?: SimulationResult;
+  simulationParams?: SimulationParameters;
+  clampedNodes?: string[];
+}
 
 export interface IStorage {
   // Session storage
@@ -43,16 +62,17 @@ export interface IStorage {
   // Model operations
   getModels(): Promise<Model[]>;
   getModelsByProject(projectId: number): Promise<Model[]>;
-  getModel(id: number): Promise<Model | undefined>;
-  createModel(model: InsertModel): Promise<Model>;
-  updateModel(id: number | string, updates: Partial<Model>): Promise<Model | undefined>;
+  getModel(id: number): Promise<Model | null>;
+  createModel(data: CreateModelData): Promise<Model>;
+  updateModel(id: number, data: Partial<Model>): Promise<Model>;
   deleteModel(id: number): Promise<boolean>;
   
   // Scenario operations
-  getScenarios(): Promise<Scenario[]>;
-  getScenariosByModel(modelId: number): Promise<Scenario[]>;
-  getScenario(id: number): Promise<Scenario | undefined>;
-  createScenario(scenario: ScenarioStorage): Promise<Scenario>;
+  getScenarios(): Promise<any[]>;
+  getScenariosByModel(modelId: number): Promise<any[]>;
+  getScenario(id: number): Promise<any | null>;
+  createScenario(data: CreateScenarioData): Promise<any>;
+  updateScenario(id: number, data: Partial<Scenario>): Promise<any>;
   deleteScenario(id: number): Promise<boolean>;
 }
 
@@ -60,14 +80,15 @@ export class PostgresStorage implements IStorage {
   private db: ReturnType<typeof drizzle>;
   sessionStore: any;
   
-  constructor() {
-    // Create a PostgreSQL connection
-    const queryClient = postgres(process.env.DATABASE_URL || "");
-    this.db = drizzle(queryClient);
+  constructor(db: ReturnType<typeof drizzle>) {
+    this.db = db;
     
     // Create PostgreSQL session store
     const PostgresSessionStore = connectPg(session);
-    const pgPool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const pgPool = new Pool({ 
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+    });
     this.sessionStore = new PostgresSessionStore({ 
       pool: pgPool, 
       tableName: 'user_sessions', 
@@ -138,150 +159,123 @@ export class PostgresStorage implements IStorage {
   
   // MODEL OPERATIONS
   async getModels(): Promise<Model[]> {
-    return await this.db.select().from(models);
+    const results = await this.db.select().from(models);
+    return results;
   }
   
   async getModelsByProject(projectId: number): Promise<Model[]> {
-    return await this.db.select().from(models).where(eq(models.projectId, projectId));
+    const results = await this.db.select().from(models).where(eq(models.projectId, projectId));
+    return results;
   }
   
-  async getModel(id: number): Promise<Model | undefined> {
+  async getModel(id: number): Promise<Model | null> {
     const result = await this.db.select().from(models).where(eq(models.id, id));
-    return result[0];
+    return result[0] || null;
   }
   
-  async createModel(insertModel: InsertModel): Promise<Model> {
-    // Ensure nodes and edges are arrays of FCMNode/FCMEdge
-    const typedNodes: FCMNode[] = Array.isArray(insertModel.nodes) ? insertModel.nodes as FCMNode[] : [];
-    const typedEdges: FCMEdge[] = Array.isArray(insertModel.edges) ? insertModel.edges as FCMEdge[] : [];
-    const dbResult = await this.db.insert(models).values({
-      ...insertModel,
-      nodes: typedNodes,
-      edges: typedEdges
-    }).returning();
-    return dbResult[0];
-  }
-  
-  async updateModel(id: number | string, updates: Partial<Model>): Promise<Model | undefined> {
-    // Convert string ID to number if needed
-    const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
-    if (isNaN(numericId)) {
-      throw new Error('Invalid model ID');
-    }
-
-    // Convert API model to storage model
-    const storageUpdates: Partial<ModelStorage> = {
+  async createModel(data: CreateModelData): Promise<Model> {
+    const [model] = await this.db.insert(models).values({
+      name: data.name,
+      description: data.description,
+      projectId: data.projectId,
+      nodes: data.nodes,
+      edges: data.edges,
+      createdAt: new Date(),
       updatedAt: new Date()
-    };
-
-    if (updates.name) storageUpdates.name = updates.name;
-    if (updates.description !== undefined) storageUpdates.description = updates.description;
-    if (updates.nodes) storageUpdates.nodes = updates.nodes;
-    if (updates.edges) storageUpdates.edges = updates.edges;
-    if (updates.id) storageUpdates.id = parseInt(updates.id, 10);
-    if (updates.projectId) storageUpdates.projectId = parseInt(updates.projectId, 10);
-    
-    const dbResult = await this.db.update(models)
-      .set(storageUpdates)
-      .where(eq(models.id, numericId))
+    }).returning();
+    return model;
+  }
+  
+  async updateModel(id: number, data: Partial<Model>): Promise<Model> {
+    const [model] = await this.db.update(models)
+      .set({
+        ...data,
+        updatedAt: new Date()
+      })
+      .where(eq(models.id, id))
       .returning();
-
-    if (!dbResult[0]) return undefined;
-
-    // Convert storage model back to API model
-    const model = dbResult[0];
-    return {
-      schemaVersion: "1.0.0",
-      id: model.id.toString(),
-      projectId: model.projectId?.toString() || "0",
-      name: model.name,
-      description: model.description || undefined,
-      nodes: model.nodes || [],
-      edges: model.edges || [],
-      createdAt: model.createdAt?.toISOString() || new Date().toISOString(),
-      updatedAt: model.updatedAt?.toISOString() || new Date().toISOString()
-    };
+    if (!model) throw new Error('Model not found');
+    return model;
   }
   
   async deleteModel(id: number): Promise<boolean> {
-    try {
-      // First delete all scenarios associated with this model
-      await this.db.delete(scenarios).where(eq(scenarios.modelId, id));
-      
-      // Then delete the model
-      const result = await this.db.delete(models).where(eq(models.id, id)).returning({ id: models.id });
-      return result.length > 0;
-    } catch (error) {
-      console.error("Error deleting model:", error);
-      return false;
-    }
+    const result = await this.db.delete(models).where(eq(models.id, id)).returning({ id: models.id });
+    return result.length > 0;
   }
   
   // SCENARIO OPERATIONS
-  async getScenarios(): Promise<Scenario[]> {
+  async getScenarios(): Promise<any[]> {
     const results = await this.db.select().from(scenarios);
-    return results.map(s => ({ ...s, clampedNodes: s.clampedNodes || [] }));
+    return results.map(toCamelScenario);
   }
   
-  async getScenariosByModel(modelId: number): Promise<Scenario[]> {
+  async getScenariosByModel(modelId: number): Promise<any[]> {
     const results = await this.db.select().from(scenarios).where(eq(scenarios.modelId, modelId));
-    return results.map(s => ({ ...s, clampedNodes: s.clampedNodes || [] }));
+    return results.map(toCamelScenario);
   }
   
-  async getScenario(id: number): Promise<Scenario | undefined> {
+  async getScenario(id: number): Promise<any | null> {
     const result = await this.db.select().from(scenarios).where(eq(scenarios.id, id));
-    if (!result[0]) return undefined;
-    return { ...result[0], clampedNodes: result[0].clampedNodes || [] };
+    if (!result[0]) return null;
+    return toCamelScenario(result[0]);
   }
   
-  async createScenario(scenario: ScenarioStorage): Promise<Scenario> {
-    // Generate a new id if not provided
-    const id = scenario.id ?? this.scenarioId++;
-    const now = scenario.createdAt instanceof Date ? scenario.createdAt : new Date();
-    const updatedAt = scenario.updatedAt instanceof Date ? scenario.updatedAt : (scenario.updatedAt ? new Date(scenario.updatedAt) : now);
-    const scenarioObj: Scenario = {
-      ...scenario,
-      id,
+  async createScenario(data: CreateScenarioData): Promise<any> {
+    const now = new Date();
+    const [scenario] = await this.db.insert(scenarios).values({
+      name: data.name,
+      modelId: data.modelId,
+      description: data.description,
+      nodes: data.nodes,
+      initialValues: data.initialValues,
+      results: data.results,
+      simulationParams: data.simulationParams,
+      clampedNodes: data.clampedNodes,
       createdAt: now,
-      updatedAt,
-    };
-    this.scenarios.set(id, scenarioObj);
-    return scenarioObj;
+      updatedAt: now
+    }).returning({
+      id: scenarios.id,
+      name: scenarios.name,
+      modelId: scenarios.modelId,
+      description: scenarios.description,
+      nodes: scenarios.nodes,
+      initialValues: scenarios.initialValues,
+      results: scenarios.results,
+      simulationParams: scenarios.simulationParams,
+      clampedNodes: scenarios.clampedNodes,
+      createdAt: scenarios.createdAt,
+      updatedAt: scenarios.updatedAt,
+    });
+    return toCamelScenario(scenario);
+  }
+  
+  async updateScenario(id: number, data: Partial<Scenario>): Promise<any> {
+    const [scenario] = await this.db.update(scenarios)
+      .set({
+        ...data,
+        updatedAt: new Date()
+      })
+      .where(eq(scenarios.id, id))
+      .returning({
+        id: scenarios.id,
+        name: scenarios.name,
+        modelId: scenarios.modelId,
+        description: scenarios.description,
+        nodes: scenarios.nodes,
+        initialValues: scenarios.initialValues,
+        results: scenarios.results,
+        simulationParams: scenarios.simulationParams,
+        clampedNodes: scenarios.clampedNodes,
+        createdAt: scenarios.createdAt,
+        updatedAt: scenarios.updatedAt,
+      });
+    if (!scenario) throw new Error('Scenario not found');
+    return toCamelScenario(scenario);
   }
   
   async deleteScenario(id: number): Promise<boolean> {
-    try {
-      const result = await this.db.delete(scenarios).where(eq(scenarios.id, id)).returning({ id: scenarios.id });
-      return result.length > 0;
-    } catch (error) {
-      console.error("Error deleting scenario:", error);
-      return false;
-    }
-  }
-
-  async updateScenario(id: number, data: Partial<ScenarioStorage>): Promise<Scenario> {
-    let fixedResults = undefined;
-    if (data.results) {
-      fixedResults = {
-        ...data.results,
-        initialValues: data.results.initialValues ?? {},
-        timeSeries: Object.fromEntries(
-          Object.entries(data.results.timeSeries ?? {}).map(([k, v]) => [k, Array.isArray(v) ? v.map(Number) : []])
-        ),
-        finalState: data.results.finalState ?? {},
-      };
-    }
-    const updatedAt = new Date();
-    const dbData = {
-      ...data,
-      results: fixedResults,
-      updatedAt
-    };
-    const [scenario] = await this.db.update(scenarios)
-      .set(dbData)
-      .where(eq(scenarios.id, id))
-      .returning();
-    return scenario;
+    const result = await this.db.delete(scenarios).where(eq(scenarios.id, id)).returning({ id: scenarios.id });
+    return result.length > 0;
   }
 }
 
@@ -297,7 +291,7 @@ export class MemStorage implements IStorage {
   private scenarioId: number;
   sessionStore: any;
 
-  constructor() {
+  constructor(initializeDemoData: boolean = false) {
     this.users = new Map();
     this.projects = new Map();
     this.models = new Map();
@@ -314,8 +308,9 @@ export class MemStorage implements IStorage {
       checkPeriod: 86400000 // 24 hours
     });
     
-    // Create demo data
-    this.initializeDemoData();
+    if (initializeDemoData) {
+      this.initializeDemoData();
+    }
   }
 
   // USER OPERATIONS
@@ -408,23 +403,24 @@ export class MemStorage implements IStorage {
       .filter(model => model.projectId === projectId);
   }
   
-  async getModel(id: number): Promise<Model | undefined> {
-    return this.models.get(id);
+  async getModel(id: number): Promise<Model | null> {
+    const model = this.models.get(id);
+    return model || null;
   }
   
-  async createModel(insertModel: InsertModel): Promise<Model> {
+  async createModel(data: CreateModelData): Promise<Model> {
     const id = this.modelId++;
     const now = new Date();
     
     // Type assertions to help TypeScript
-    const typedNodes = insertModel.nodes ? (insertModel.nodes as unknown as FCMNode[]) : [];
-    const typedEdges = insertModel.edges ? (insertModel.edges as unknown as FCMEdge[]) : [];
+    const typedNodes = data.nodes ? (data.nodes as unknown as FCMNode[]) : [];
+    const typedEdges = data.edges ? (data.edges as unknown as FCMEdge[]) : [];
     
     const model: Model = { 
       id,
-      name: insertModel.name,
-      description: insertModel.description || null,
-      projectId: insertModel.projectId || null,
+      name: data.name,
+      description: data.description || null,
+      projectId: data.projectId || null,
       nodes: typedNodes,
       edges: typedEdges,
       createdAt: now,
@@ -435,47 +431,18 @@ export class MemStorage implements IStorage {
     return model;
   }
   
-  async updateModel(id: number | string, updates: Partial<Model>): Promise<Model | undefined> {
-    // Convert string ID to number if needed
-    const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
-    if (isNaN(numericId)) {
-      throw new Error('Invalid model ID');
-    }
-
-    const model = this.models.get(numericId);
-    if (!model) return undefined;
-    
-    // Convert API model to storage model
-    const storageUpdates: Partial<ModelStorage> = {
-      updatedAt: new Date()
-    };
-
-    if (updates.name) storageUpdates.name = updates.name;
-    if (updates.description !== undefined) storageUpdates.description = updates.description;
-    if (updates.nodes) storageUpdates.nodes = updates.nodes;
-    if (updates.edges) storageUpdates.edges = updates.edges;
-    if (updates.id) storageUpdates.id = parseInt(updates.id, 10);
-    if (updates.projectId) storageUpdates.projectId = parseInt(updates.projectId, 10);
+  async updateModel(id: number, data: Partial<Model>): Promise<Model> {
+    const model = this.models.get(id);
+    if (!model) throw new Error('Model not found');
     
     const updatedModel = { 
       ...model, 
-      ...storageUpdates
+      ...data,
+      updatedAt: new Date()
     };
     
-    this.models.set(numericId, updatedModel);
-
-    // Convert storage model back to API model
-    return {
-      schemaVersion: "1.0.0",
-      id: updatedModel.id.toString(),
-      projectId: updatedModel.projectId?.toString() || "0",
-      name: updatedModel.name,
-      description: updatedModel.description || undefined,
-      nodes: updatedModel.nodes || [],
-      edges: updatedModel.edges || [],
-      createdAt: updatedModel.createdAt?.toISOString() || new Date().toISOString(),
-      updatedAt: updatedModel.updatedAt?.toISOString() || new Date().toISOString()
-    };
+    this.models.set(id, updatedModel);
+    return updatedModel;
   }
   
   async deleteModel(id: number): Promise<boolean> {
@@ -492,7 +459,7 @@ export class MemStorage implements IStorage {
   }
   
   // SCENARIO OPERATIONS
-  async getScenarios(): Promise<Scenario[]> {
+  async getScenarios(): Promise<any[]> {
     return Array.from(this.scenarios.values()).map(s => ({
       ...s,
       clampedNodes: Array.isArray(s.clampedNodes) ? s.clampedNodes : [],
@@ -500,7 +467,7 @@ export class MemStorage implements IStorage {
     }));
   }
   
-  async getScenariosByModel(modelId: number): Promise<Scenario[]> {
+  async getScenariosByModel(modelId: number): Promise<any[]> {
     return Array.from(this.scenarios.values())
       .filter(scenario => scenario.modelId === modelId)
       .map(s => ({
@@ -510,25 +477,46 @@ export class MemStorage implements IStorage {
       }));
   }
   
-  async getScenario(id: number): Promise<Scenario | undefined> {
+  async getScenario(id: number): Promise<any | null> {
     const s = this.scenarios.get(id);
-    if (!s) return undefined;
+    if (!s) return null;
     return { ...s, clampedNodes: Array.isArray(s.clampedNodes) ? s.clampedNodes : [], simulationParams: s.simulationParams ?? null };
   }
   
-  async createScenario(scenario: ScenarioStorage): Promise<Scenario> {
-    // Generate a new id if not provided
-    const id = scenario.id ?? this.scenarioId++;
-    const now = scenario.createdAt instanceof Date ? scenario.createdAt : new Date();
-    const updatedAt = scenario.updatedAt instanceof Date ? scenario.updatedAt : (scenario.updatedAt ? new Date(scenario.updatedAt) : now);
-    const scenarioObj: Scenario = {
-      ...scenario,
+  async createScenario(data: CreateScenarioData): Promise<any> {
+    const id = this.scenarioId++;
+    const now = new Date();
+    
+    const scenario: Scenario = {
       id,
+      name: data.name,
+      modelId: data.modelId,
+      description: data.description || null,
+      nodes: data.nodes,
+      initialValues: data.initialValues,
+      results: data.results || null,
+      simulationParams: data.simulationParams || null,
+      clampedNodes: data.clampedNodes || null,
       createdAt: now,
-      updatedAt,
+      updatedAt: now
     };
-    this.scenarios.set(id, scenarioObj);
-    return scenarioObj;
+    
+    this.scenarios.set(id, scenario);
+    return toCamelScenario(scenario);
+  }
+  
+  async updateScenario(id: number, data: Partial<Scenario>): Promise<any> {
+    const scenario = this.scenarios.get(id);
+    if (!scenario) throw new Error('Scenario not found');
+    
+    const updatedScenario = {
+      ...scenario,
+      ...data,
+      updatedAt: new Date()
+    };
+    
+    this.scenarios.set(id, updatedScenario);
+    return toCamelScenario(updatedScenario);
   }
   
   async deleteScenario(id: number): Promise<boolean> {
@@ -712,6 +700,6 @@ export class MemStorage implements IStorage {
 
 // Use PostgresStorage if DATABASE_URL is available, otherwise use MemStorage
 const usePostgres = !!process.env.DATABASE_URL;
-export const storage = usePostgres ? new PostgresStorage() : new MemStorage();
+export const storage = usePostgres ? new PostgresStorage(db as any) : new MemStorage(false);
 
 console.log(`Using ${usePostgres ? 'PostgreSQL' : 'in-memory'} storage for MettaModeler`);

@@ -54,6 +54,7 @@ export const scenarios = pgTable("scenarios", {
     maxIterations: 20
   }),
   clampedNodes: jsonb("clamped_nodes").$type<string[]>().default([]),
+  nodes: jsonb("nodes").$type<SimulationNode[]>().default([]),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
 });
@@ -140,6 +141,7 @@ export const insertScenarioSchema = createInsertSchema(scenarios).pick({
   results: true,
   simulationParams: true,
   clampedNodes: true,
+  nodes: true,
   createdAt: true,
   updatedAt: true
 });
