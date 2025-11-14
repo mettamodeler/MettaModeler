@@ -18,7 +18,7 @@ import { setupAuth, isAuthenticated } from "./auth";
 import { exportService, ExportFormat, ExportType } from "./export";
 import { SimulationResult as PythonSimulationResult } from './types';
 import axios, { AxiosError } from "axios";
-import { ProjectSchema, ProjectStorageSchema, type ProjectStorage } from './types/Project.v2.zod';
+import { ProjectSchema, ProjectStorageSchema, type ProjectStorage } from './types/generated/Project.v1.zod';
 import { ModelSchema, ModelStorageSchema, type ModelStorage } from './types/Model.v2.zod';
 import { ScenarioSchema, ScenarioStorageSchema, type ScenarioStorage } from './types/Scenario.v2.zod';
 import { CreateModelSchema } from './types/Model.v2.zod';

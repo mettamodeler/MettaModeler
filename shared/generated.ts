@@ -21,3 +21,9 @@ export type { SimulationResult } from '../server/types/generated/SimulationResul
 // Re-export NodeType enum
 export type NodeType = "driver" | "regular" | "outcome";
 
+// Entity Types (will be migrated in Phase 3C)
+export type { User } from '../server/types/generated/User.v1';
+export type { Project } from '../server/types/generated/Project.v1';
+export type { Model } from '../server/types/generated/Model.v1';
+export type { Scenario } from '../server/types/generated/Scenario.v1';
+

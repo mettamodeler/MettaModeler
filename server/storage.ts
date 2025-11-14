@@ -1,6 +1,6 @@
 import { 
-  User, InsertUser, 
-  Project, InsertProject, 
+  User, InsertUser, DrizzleUser,
+  Project, InsertProject, DrizzleProject,
   Model, InsertModel, 
   Scenario, InsertScenario,
   users,
@@ -50,15 +50,18 @@ export interface IStorage {
   sessionStore: any; // Using any to avoid complex typings with express-session
 
   // User operations
-  getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  // Note: User type is now from generated types, but database returns DrizzleUser
+  // They're compatible, but we use DrizzleUser for internal type safety
+  getUser(id: number): Promise<DrizzleUser | undefined>;
+  getUserByUsername(username: string): Promise<DrizzleUser | undefined>;
+  createUser(user: InsertUser): Promise<DrizzleUser>;
   
   // Project operations
-  getProjects(): Promise<Project[]>;
-  getProject(id: number): Promise<Project | undefined>;
-  createProject(project: InsertProject): Promise<Project>;
-  updateProject(id: number, project: Partial<Project>): Promise<Project | undefined>;
+  // Note: Project type is now from generated types, but database returns DrizzleProject
+  getProjects(): Promise<DrizzleProject[]>;
+  getProject(id: number): Promise<DrizzleProject | undefined>;
+  createProject(project: InsertProject): Promise<DrizzleProject>;
+  updateProject(id: number, project: Partial<DrizzleProject>): Promise<DrizzleProject | undefined>;
   deleteProject(id: number): Promise<boolean>;
   
   // Model operations
@@ -99,37 +102,37 @@ export class PostgresStorage implements IStorage {
   }
 
   // USER OPERATIONS
-  async getUser(id: number): Promise<User | undefined> {
+  async getUser(id: number): Promise<DrizzleUser | undefined> {
     const result = await this.db.select().from(users).where(eq(users.id, id));
     return result[0];
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
+  async getUserByUsername(username: string): Promise<DrizzleUser | undefined> {
     const result = await this.db.select().from(users).where(eq(users.username, username));
     return result[0];
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async createUser(insertUser: InsertUser): Promise<DrizzleUser> {
     const result = await this.db.insert(users).values(insertUser).returning();
     return result[0];
   }
   
   // PROJECT OPERATIONS
-  async getProjects(): Promise<Project[]> {
+  async getProjects(): Promise<DrizzleProject[]> {
     return await this.db.select().from(projects);
   }
   
-  async getProject(id: number): Promise<Project | undefined> {
+  async getProject(id: number): Promise<DrizzleProject | undefined> {
     const result = await this.db.select().from(projects).where(eq(projects.id, id));
     return result[0];
   }
   
-  async createProject(insertProject: InsertProject): Promise<Project> {
+  async createProject(insertProject: InsertProject): Promise<DrizzleProject> {
     const result = await this.db.insert(projects).values(insertProject).returning();
     return result[0];
   }
   
-  async updateProject(id: number, updates: Partial<Project>): Promise<Project | undefined> {
+  async updateProject(id: number, updates: Partial<DrizzleProject>): Promise<DrizzleProject | undefined> {
     const result = await this.db.update(projects)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(projects.id, id))
@@ -284,8 +287,8 @@ export class PostgresStorage implements IStorage {
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private projects: Map<number, Project>;
+  private users: Map<number, DrizzleUser>;
+  private projects: Map<number, DrizzleProject>;
   private models: Map<number, Model>;
   private scenarios: Map<number, Scenario>;
   
@@ -318,17 +321,17 @@ export class MemStorage implements IStorage {
   }
 
   // USER OPERATIONS
-  async getUser(id: number): Promise<User | undefined> {
+  async getUser(id: number): Promise<DrizzleUser | undefined> {
     return this.users.get(id);
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
+  async getUserByUsername(username: string): Promise<DrizzleUser | undefined> {
     return Array.from(this.users.values()).find(
       (user) => user.username === username,
     );
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async createUser(insertUser: InsertUser): Promise<DrizzleUser> {
     const id = this.userId++;
     const user = { ...insertUser, id, displayName: insertUser.displayName || null, role: insertUser.role || null };
     this.users.set(id, user);
@@ -336,19 +339,19 @@ export class MemStorage implements IStorage {
   }
   
   // PROJECT OPERATIONS
-  async getProjects(): Promise<Project[]> {
+  async getProjects(): Promise<DrizzleProject[]> {
     return Array.from(this.projects.values());
   }
   
-  async getProject(id: number): Promise<Project | undefined> {
+  async getProject(id: number): Promise<DrizzleProject | undefined> {
     return this.projects.get(id);
   }
   
-  async createProject(insertProject: InsertProject): Promise<Project> {
+  async createProject(insertProject: InsertProject): Promise<DrizzleProject> {
     const id = this.projectId++;
     const now = new Date();
     
-    const project: Project = { 
+    const project: DrizzleProject = { 
       id,
       name: insertProject.name,
       description: insertProject.description || null,
@@ -361,7 +364,7 @@ export class MemStorage implements IStorage {
     return project;
   }
   
-  async updateProject(id: number, updates: Partial<Project>): Promise<Project | undefined> {
+  async updateProject(id: number, updates: Partial<DrizzleProject>): Promise<DrizzleProject | undefined> {
     const project = this.projects.get(id);
     if (!project) return undefined;
     
@@ -558,13 +561,13 @@ export class MemStorage implements IStorage {
       },
     ];
     
-    const createdProjects: Project[] = [];
+    const createdProjects: DrizzleProject[] = [];
     
     projects.forEach(project => {
       const id = this.projectId++;
       const now = new Date();
       
-      const newProject: Project = {
+      const newProject: DrizzleProject = {
         ...project,
         id,
         createdAt: now,

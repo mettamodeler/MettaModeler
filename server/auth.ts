@@ -5,11 +5,14 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import { User as SelectUser } from "@shared/schema";
+import { User as DrizzleUser } from "@shared/schema";
+import { User as GeneratedUser } from "@shared/generated";
 
+// Use generated User type for Express.User (API responses)
+// Drizzle User type is still used for database operations
 declare global {
   namespace Express {
-    interface User extends SelectUser {}
+    interface User extends GeneratedUser {}
   }
 }
 
@@ -59,10 +62,18 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        const user = await storage.getUserByUsername(username);
-        if (!user || !(await comparePasswords(password, user.password))) {
+        const drizzleUser = await storage.getUserByUsername(username);
+        if (!drizzleUser || !(await comparePasswords(password, drizzleUser.password))) {
           return done(null, false);
         }
+        // Convert DrizzleUser to GeneratedUser (they're compatible)
+        const user: GeneratedUser = {
+          id: drizzleUser.id,
+          username: drizzleUser.username,
+          password: drizzleUser.password,
+          displayName: drizzleUser.displayName,
+          role: drizzleUser.role || undefined,
+        };
         return done(null, user);
       } catch (err) {
         return done(err);
@@ -70,10 +81,21 @@ export function setupAuth(app: Express) {
     }),
   );
 
-  passport.serializeUser((user, done) => done(null, user.id));
+  passport.serializeUser((user, done) => done(null, user.id!));
   passport.deserializeUser(async (id: number, done) => {
     try {
-      const user = await storage.getUser(id);
+      const drizzleUser = await storage.getUser(id);
+      if (!drizzleUser) {
+        return done(null, null);
+      }
+      // Convert DrizzleUser to GeneratedUser
+      const user: GeneratedUser = {
+        id: drizzleUser.id,
+        username: drizzleUser.username,
+        password: drizzleUser.password,
+        displayName: drizzleUser.displayName,
+        role: drizzleUser.role || undefined,
+      };
       done(null, user);
     } catch (err) {
       done(err);
@@ -93,12 +115,21 @@ export function setupAuth(app: Express) {
 
       // Create user with hashed password
       const hashedPassword = await hashPassword(password);
-      const user = await storage.createUser({
+      const drizzleUser = await storage.createUser({
         username,
         password: hashedPassword,
         displayName: displayName || null,
         role: "user",
       });
+
+      // Convert DrizzleUser to GeneratedUser for API response
+      const user: GeneratedUser = {
+        id: drizzleUser.id,
+        username: drizzleUser.username,
+        password: drizzleUser.password,
+        displayName: drizzleUser.displayName,
+        role: drizzleUser.role || undefined,
+      };
 
       // Log in the new user
       req.login(user, (err) => {
@@ -113,7 +144,7 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err: Error, user: SelectUser) => {
+    passport.authenticate("local", (err: Error, user: DrizzleUser) => {
       if (err) return next(err);
       if (!user) {
         return res.status(401).json({ error: "Invalid username or password" });
@@ -141,7 +172,7 @@ export function setupAuth(app: Express) {
     }
     
     // Return user without password
-    const { password, ...userWithoutPassword } = req.user as SelectUser;
+    const { password, ...userWithoutPassword } = req.user as GeneratedUser;
     res.json(userWithoutPassword);
   });
 }
