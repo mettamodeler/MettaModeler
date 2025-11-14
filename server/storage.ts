@@ -3,16 +3,18 @@ import {
   Project, InsertProject, 
   Model, InsertModel, 
   Scenario, InsertScenario,
-  FCMNode,
-  FCMEdge,
-  SimulationResult,
-  SimulationParameters,
-  SimulationNode,
   users,
   projects,
   models,
   scenarios
 } from "@shared/schema";
+import {
+  FCMNode,
+  FCMEdge,
+  SimulationResult,
+  SimulationParameters,
+  SimulationNode
+} from "@shared/generated";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { eq, and } from 'drizzle-orm';
@@ -222,6 +224,7 @@ export class PostgresStorage implements IStorage {
   
   async createScenario(data: CreateScenarioData): Promise<any> {
     const now = new Date();
+    console.log("createScenario received clampedNodes:", JSON.stringify(data.clampedNodes));
     const [scenario] = await this.db.insert(scenarios).values({
       name: data.name,
       modelId: data.modelId,
@@ -230,7 +233,7 @@ export class PostgresStorage implements IStorage {
       initialValues: data.initialValues,
       results: data.results,
       simulationParams: data.simulationParams,
-      clampedNodes: data.clampedNodes,
+      clampedNodes: Array.isArray(data.clampedNodes) ? data.clampedNodes : [],
       createdAt: now,
       updatedAt: now
     }).returning({
@@ -253,6 +256,7 @@ export class PostgresStorage implements IStorage {
     const [scenario] = await this.db.update(scenarios)
       .set({
         ...data,
+        clampedNodes: data.clampedNodes || [],
         updatedAt: new Date()
       })
       .where(eq(scenarios.id, id))

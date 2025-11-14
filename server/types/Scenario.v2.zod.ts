@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { SimulationNode } from "@shared/schema";
+import type { SimulationNode } from "@shared/generated";
 
 const SimulationNodeSchema = z.object({
   id: z.string(),
@@ -14,6 +14,7 @@ export const ScenarioSchema = z.object({
   description: z.string().nullable(),
   nodes: z.array(SimulationNodeSchema),
   initialValues: z.record(z.string(), z.number()),
+  clampedNodes: z.array(z.string()).default([]),
   createdAt: z.string().or(z.date()),
   updatedAt: z.string().or(z.date()).nullable()
 });
@@ -25,6 +26,7 @@ export const ScenarioStorageSchema = z.object({
   description: z.string().nullable(),
   nodes: z.array(SimulationNodeSchema),
   initialValues: z.record(z.string(), z.number()),
+  clampedNodes: z.array(z.string()).default([]),
   createdAt: z.date(),
   updatedAt: z.date().nullable()
 });

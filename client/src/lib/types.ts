@@ -1,4 +1,5 @@
-import { NodeType as SharedNodeType, FCMNode as SharedFCMNode, FCMEdge as SharedFCMEdge, FCMModel as SharedFCMModel, Project as SharedProject, Scenario as SharedScenario, SimulationParameters as SharedSimulationParameters, SimulationResult as SharedSimulationResult, SimulationNode as SharedSimulationNode } from '@shared/schema';
+import { NodeType as SharedNodeType, FCMModel as SharedFCMModel, Project as SharedProject, Scenario as SharedScenario } from '@shared/schema';
+import { FCMNode as SharedFCMNode, FCMEdge as SharedFCMEdge, SimulationParameters as SharedSimulationParameters, SimulationResult as SharedSimulationResult, SimulationNode as SharedSimulationNode } from '@shared/generated';
 
 export type NodeType = SharedNodeType;
 export type FCMNode = SharedFCMNode;

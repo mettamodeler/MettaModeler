@@ -6,12 +6,14 @@ import fetch from "node-fetch";
 import {
   insertProjectSchema,
   insertModelSchema,
-  insertScenarioSchema,
+  insertScenarioSchema
+} from "@shared/schema";
+import {
   FCMNode,
   FCMEdge,
   SimulationResult,
   SimulationNode
-} from "@shared/schema";
+} from "@shared/generated";
 import { setupAuth, isAuthenticated } from "./auth";
 import { exportService, ExportFormat, ExportType } from "./export";
 import { SimulationResult as PythonSimulationResult } from './types';
@@ -23,7 +25,7 @@ import { CreateModelSchema } from './types/Model.v2.zod';
 import { CreateScenarioSchema } from './types/Scenario.v2.zod';
 
 // Python simulation service URL
-const PYTHON_SIM_URL = process.env.PYTHON_SIM_URL || 'https://mettamodeler-1.onrender.com';
+const PYTHON_SIM_URL = process.env.PYTHON_SIM_URL || 'http://localhost:5050';
 
 interface SimulationResponse {
   finalState: Record<string, number>;
@@ -320,7 +322,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/scenarios", isAuthenticated, async (req: Request, res: Response) => {
-    console.log("RAW REQ.BODY at /api/scenarios POST:", JSON.stringify(req.body, null, 2));
+    console.log("REQ.BODY:", JSON.stringify(req.body, null, 2));
     try {
       const userId = req.user?.id;
       const now = new Date();
@@ -431,14 +433,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log the response for debugging
       console.log('Python simulation response:', JSON.stringify(response.data, null, 2));
 
-      // Ensure the response is returned correctly
+      // Return the response data directly
       return res.json(response.data);
     } catch (error) {
       console.error('Simulation error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (axios.isAxiosError(error)) {
+        // If it's an Axios error, forward the Python service's error message
+        return res.status(error.response?.status || 500).json({
+          error: 'Failed to run simulation',
+          message: error.response?.data?.message || error.message
+        });
+      }
+      // For other errors, return a generic error
       return res.status(500).json({
         error: 'Failed to run simulation',
-        message: errorMessage
+        message: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   });

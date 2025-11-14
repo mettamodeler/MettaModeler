@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { FCMNode, FCMEdge } from "@shared/schema";
+import type { FCMNode, FCMEdge } from "@shared/generated";
 
 const FCMNodeSchema = z.object({
   id: z.string(),

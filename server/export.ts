@@ -1,5 +1,6 @@
 import Excel from 'exceljs';
-import { FCMModel, FCMNode, FCMEdge, Scenario, SimulationResult } from '@shared/schema';
+import { FCMModel, Scenario } from '@shared/schema';
+import { FCMNode, FCMEdge, SimulationResult } from '@shared/generated';
 import { Readable } from 'stream';
 import archiver from 'archiver';
 import fetch from 'node-fetch';

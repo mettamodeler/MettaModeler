@@ -33,13 +33,6 @@ export const models = pgTable("models", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Simulation parameters type
-export interface SimulationParameters {
-  activation: 'sigmoid' | 'tanh' | 'relu' | 'linear';
-  threshold: number;
-  maxIterations: number;
-}
-
 // Scenarios table
 export const scenarios = pgTable("scenarios", {
   id: serial("id").primaryKey(),
@@ -47,58 +40,30 @@ export const scenarios = pgTable("scenarios", {
   modelId: integer("model_id").references(() => models.id),
   description: text("description"),
   initialValues: jsonb("initial_values").$type<Record<string, number>>().default({}),
-  results: jsonb("results").$type<SimulationResult>(),
-  simulationParams: jsonb("simulation_params").$type<SimulationParameters>().default({
+  results: jsonb("results").$type<any>(),
+  simulationParams: jsonb("simulation_params").$type<any>().default({
     activation: 'sigmoid',
     threshold: 0.001,
     maxIterations: 20
   }),
   clampedNodes: jsonb("clamped_nodes").$type<string[]>().default([]),
-  nodes: jsonb("nodes").$type<SimulationNode[]>().default([]),
+  nodes: jsonb("nodes").$type<any[]>().default([]),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
 });
 
 // Types for Fuzzy Cognitive Maps
-export type NodeType = "driver" | "regular" | "outcome";
+// NOTE: FCMNode, FCMEdge, SimulationNode, SimulationResult, SimulationParameters
+// are now exported from @shared/generated (generated from JSON Schema)
+// These manual definitions are kept for backward compatibility during migration
+// and will be removed in Phase 3C.
 
-export interface FCMNode {
-  id: string;
-  type: NodeType;
-  label: string;
-  value: number;
-  positionX: number;
-  positionY: number;
-  color?: string;
-}
+// Re-export generated types for backward compatibility
+export type { NodeType } from './generated';
+export type { FCMNode, FCMEdge, SimulationNode, SimulationResult, SimulationParameters } from './generated';
 
-export interface FCMEdge {
-  id: string;
-  source: string;
-  target: string;
-  weight: number;
-  sourceHandle?: string;
-  targetHandle?: string;
-}
-
-export interface SimulationNode {
-  id: string;
-  label: string;
-  value: number;
-}
-
-export interface SimulationResult {
-  finalState: Record<string, SimulationNode>;
-  timeSeries: Record<string, number[]>;
-  iterations: number;
-  converged: boolean;
-  initialValues: Record<string, number>;
-  baselineFinalState?: Record<string, SimulationNode>;
-  baselineTimeSeries?: Record<string, number[]>;
-  baselineIterations?: number;
-  baselineConverged?: boolean;
-  deltaState?: Record<string, number>;
-}
+// FCMModel uses generated types from @shared/generated
+import type { FCMNode, FCMEdge } from './generated';
 
 export interface FCMModel {
   id: number;
