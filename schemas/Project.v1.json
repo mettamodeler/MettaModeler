@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://mettamodeler.com/schemas/Project.v1.json",
+  "title": "Project",
+  "description": "A project containing multiple FCM models",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "Unique project identifier"
+    },
+    "name": {
+      "type": "string",
+      "description": "Project name"
+    },
+    "description": {
+      "type": ["string", "null"],
+      "description": "Project description"
+    },
+    "userId": {
+      "type": ["integer", "null"],
+      "description": "ID of the user who owns this project"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when project was created"
+    },
+    "updatedAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Timestamp when project was last updated"
+    }
+  },
+  "required": ["name"]
+}

@@ -1,0 +1,184 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://mettamodeler.com/schemas/Scenario.v1.json",
+  "title": "Scenario",
+  "description": "A simulation scenario with modified node values and simulation parameters",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "Unique scenario identifier"
+    },
+    "name": {
+      "type": "string",
+      "description": "Scenario name"
+    },
+    "description": {
+      "type": ["string", "null"],
+      "description": "Scenario description"
+    },
+    "modelId": {
+      "type": "integer",
+      "description": "ID of the model this scenario belongs to"
+    },
+    "nodes": {
+      "type": "array",
+      "description": "Array of simulation nodes (snapshot at scenario creation)",
+      "items": {
+        "$ref": "#/$defs/SimulationNode"
+      },
+      "default": []
+    },
+    "initialValues": {
+      "type": "object",
+      "description": "Initial node values for this scenario",
+      "additionalProperties": {
+        "type": "number"
+      },
+      "default": {}
+    },
+    "clampedNodes": {
+      "type": "array",
+      "description": "Node IDs that should remain clamped during simulation",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "simulationParams": {
+      "$ref": "#/$defs/SimulationParameters",
+      "description": "Simulation parameters for this scenario"
+    },
+    "results": {
+      "$ref": "#/$defs/SimulationResult",
+      "description": "Simulation results (populated after running simulation)"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when scenario was created"
+    },
+    "updatedAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Timestamp when scenario was last updated"
+    }
+  },
+  "required": ["name", "modelId"],
+  "$defs": {
+    "SimulationNode": {
+      "type": "object",
+      "description": "A node used in simulation",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique node identifier"
+        },
+        "label": {
+          "type": "string",
+          "description": "Human-readable node label"
+        },
+        "value": {
+          "type": "number",
+          "description": "Node value"
+        }
+      },
+      "required": ["id", "label", "value"]
+    },
+    "SimulationParameters": {
+      "type": "object",
+      "description": "Parameters for FCM simulation",
+      "properties": {
+        "activation": {
+          "type": "string",
+          "enum": ["sigmoid", "tanh", "relu", "linear"],
+          "default": "sigmoid",
+          "description": "Activation function"
+        },
+        "threshold": {
+          "type": "number",
+          "default": 0.001,
+          "description": "Convergence threshold"
+        },
+        "maxIterations": {
+          "type": "integer",
+          "default": 20,
+          "description": "Maximum iterations"
+        }
+      },
+      "required": []
+    },
+    "SimulationResult": {
+      "type": "object",
+      "description": "Results from running a simulation",
+      "properties": {
+        "finalState": {
+          "type": "object",
+          "description": "Final state of all nodes after simulation",
+          "additionalProperties": {
+            "$ref": "#/$defs/SimulationNode"
+          }
+        },
+        "timeSeries": {
+          "type": "object",
+          "description": "Time series data for each node",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "iterations": {
+          "type": "integer",
+          "description": "Number of iterations until convergence"
+        },
+        "converged": {
+          "type": "boolean",
+          "description": "Whether the simulation converged"
+        },
+        "initialValues": {
+          "type": "object",
+          "description": "Initial values used for simulation",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "baselineFinalState": {
+          "type": "object",
+          "description": "Final state from baseline simulation (if comparison was run)",
+          "additionalProperties": {
+            "$ref": "#/$defs/SimulationNode"
+          }
+        },
+        "baselineTimeSeries": {
+          "type": "object",
+          "description": "Time series from baseline simulation",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "baselineIterations": {
+          "type": "integer",
+          "description": "Iterations for baseline simulation"
+        },
+        "baselineConverged": {
+          "type": "boolean",
+          "description": "Whether baseline simulation converged"
+        },
+        "deltaState": {
+          "type": "object",
+          "description": "Difference between scenario and baseline final states",
+          "additionalProperties": {
+            "type": "number"
+          }
+        }
+      },
+      "required": ["finalState", "timeSeries", "iterations", "converged", "initialValues"]
+    }
+  }
+}
+

@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://mettamodeler.com/schemas/User.v1.json",
+  "title": "User",
+  "description": "User account in MettaModeler",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "description": "Unique user identifier"
+    },
+    "username": {
+      "type": "string",
+      "description": "Unique username"
+    },
+    "password": {
+      "type": "string",
+      "description": "Hashed password (never returned in API responses)"
+    },
+    "displayName": {
+      "type": ["string", "null"],
+      "description": "User's display name"
+    },
+    "role": {
+      "type": "string",
+      "default": "user",
+      "description": "User role (user, admin, etc.)"
+    }
+  },
+  "required": ["username", "password"]
+}
+
