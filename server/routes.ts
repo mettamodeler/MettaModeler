@@ -19,10 +19,10 @@ import { exportService, ExportFormat, ExportType } from "./export";
 import { SimulationResult as PythonSimulationResult } from './types';
 import axios, { AxiosError } from "axios";
 import { ProjectSchema, ProjectStorageSchema, type ProjectStorage } from './types/generated/Project.v1.zod';
-import { ModelSchema, ModelStorageSchema, type ModelStorage } from './types/Model.v2.zod';
+import { ModelSchema, ModelStorageSchema, type ModelStorage, CreateModelSchema } from './types/generated/Model.v1.zod';
 import { ScenarioSchema, ScenarioStorageSchema, type ScenarioStorage } from './types/Scenario.v2.zod';
-import { CreateModelSchema } from './types/Model.v2.zod';
 import { CreateScenarioSchema } from './types/Scenario.v2.zod';
+import { CreateModelData } from './storage';
 
 // Python simulation service URL
 const PYTHON_SIM_URL = process.env.PYTHON_SIM_URL || 'http://localhost:5050';
@@ -207,14 +207,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Generate fields on the server
       const now = new Date();
-      // Let the DB autoincrement the id
-      const storageData = {
-        ...result.data,
-        createdAt: now,
-        updatedAt: now
+      // Convert CreateModelSchema result to CreateModelData
+      const modelData: CreateModelData = {
+        name: result.data.name,
+        description: result.data.description || null,
+        projectId: result.data.projectId,
+        nodes: result.data.nodes || [],
+        edges: result.data.edges || [],
       };
 
-      const model = await storage.createModel(storageData);
+      const model = await storage.createModel(modelData);
       res.status(201).json(model);
     } catch (error) {
       res.status(500).json({ message: "Failed to create model" });

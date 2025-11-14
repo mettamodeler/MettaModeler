@@ -1,7 +1,7 @@
 import { 
   User, InsertUser, DrizzleUser,
   Project, InsertProject, DrizzleProject,
-  Model, InsertModel, 
+  Model, InsertModel, DrizzleModel,
   Scenario, InsertScenario,
   users,
   projects,
@@ -65,11 +65,12 @@ export interface IStorage {
   deleteProject(id: number): Promise<boolean>;
   
   // Model operations
-  getModels(): Promise<Model[]>;
-  getModelsByProject(projectId: number): Promise<Model[]>;
-  getModel(id: number): Promise<Model | null>;
-  createModel(data: CreateModelData): Promise<Model>;
-  updateModel(id: number, data: Partial<Model>): Promise<Model>;
+  // Note: Model type is now from generated types, but database returns DrizzleModel
+  getModels(): Promise<DrizzleModel[]>;
+  getModelsByProject(projectId: number): Promise<DrizzleModel[]>;
+  getModel(id: number): Promise<DrizzleModel | null>;
+  createModel(data: CreateModelData): Promise<DrizzleModel>;
+  updateModel(id: number, data: Partial<DrizzleModel>): Promise<DrizzleModel>;
   deleteModel(id: number): Promise<boolean>;
   
   // Scenario operations
@@ -163,22 +164,22 @@ export class PostgresStorage implements IStorage {
   }
   
   // MODEL OPERATIONS
-  async getModels(): Promise<Model[]> {
+  async getModels(): Promise<DrizzleModel[]> {
     const results = await this.db.select().from(models);
     return results;
   }
   
-  async getModelsByProject(projectId: number): Promise<Model[]> {
+  async getModelsByProject(projectId: number): Promise<DrizzleModel[]> {
     const results = await this.db.select().from(models).where(eq(models.projectId, projectId));
     return results;
   }
   
-  async getModel(id: number): Promise<Model | null> {
+  async getModel(id: number): Promise<DrizzleModel | null> {
     const result = await this.db.select().from(models).where(eq(models.id, id));
     return result[0] || null;
   }
   
-  async createModel(data: CreateModelData): Promise<Model> {
+  async createModel(data: CreateModelData): Promise<DrizzleModel> {
     const [model] = await this.db.insert(models).values({
       name: data.name,
       description: data.description,
@@ -191,7 +192,7 @@ export class PostgresStorage implements IStorage {
     return model;
   }
   
-  async updateModel(id: number, data: Partial<Model>): Promise<Model> {
+  async updateModel(id: number, data: Partial<DrizzleModel>): Promise<DrizzleModel> {
     const [model] = await this.db.update(models)
       .set({
         ...data,
@@ -289,7 +290,7 @@ export class PostgresStorage implements IStorage {
 export class MemStorage implements IStorage {
   private users: Map<number, DrizzleUser>;
   private projects: Map<number, DrizzleProject>;
-  private models: Map<number, Model>;
+  private models: Map<number, DrizzleModel>;
   private scenarios: Map<number, Scenario>;
   
   private userId: number;
@@ -401,21 +402,21 @@ export class MemStorage implements IStorage {
   }
   
   // MODEL OPERATIONS
-  async getModels(): Promise<Model[]> {
+  async getModels(): Promise<DrizzleModel[]> {
     return Array.from(this.models.values());
   }
   
-  async getModelsByProject(projectId: number): Promise<Model[]> {
+  async getModelsByProject(projectId: number): Promise<DrizzleModel[]> {
     return Array.from(this.models.values())
       .filter(model => model.projectId === projectId);
   }
   
-  async getModel(id: number): Promise<Model | null> {
+  async getModel(id: number): Promise<DrizzleModel | null> {
     const model = this.models.get(id);
     return model || null;
   }
   
-  async createModel(data: CreateModelData): Promise<Model> {
+  async createModel(data: CreateModelData): Promise<DrizzleModel> {
     const id = this.modelId++;
     const now = new Date();
     
@@ -423,7 +424,7 @@ export class MemStorage implements IStorage {
     const typedNodes = data.nodes ? (data.nodes as unknown as FCMNode[]) : [];
     const typedEdges = data.edges ? (data.edges as unknown as FCMEdge[]) : [];
     
-    const model: Model = { 
+    const model: DrizzleModel = { 
       id,
       name: data.name,
       description: data.description || null,
@@ -438,7 +439,7 @@ export class MemStorage implements IStorage {
     return model;
   }
   
-  async updateModel(id: number, data: Partial<Model>): Promise<Model> {
+  async updateModel(id: number, data: Partial<DrizzleModel>): Promise<DrizzleModel> {
     const model = this.models.get(id);
     if (!model) throw new Error('Model not found');
     
@@ -693,7 +694,7 @@ export class MemStorage implements IStorage {
       const id = this.modelId++;
       const now = new Date();
       
-      const newModel: Model = {
+      const newModel: DrizzleModel = {
         ...model,
         id,
         createdAt: now,
