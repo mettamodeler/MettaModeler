@@ -9,14 +9,14 @@
       "type": "array",
       "description": "Array of FCM nodes",
       "items": {
-        "$ref": "#/$defs/SimulationNode"
+        "$ref": "./SimulationNode.v1.json"
       }
     },
     "edges": {
       "type": "array",
       "description": "Array of FCM edges",
       "items": {
-        "$ref": "#/$defs/SimulationEdge"
+        "$ref": "./SimulationEdge.v1.json"
       }
     },
     "activation": {
@@ -78,50 +78,6 @@
       "description": "Additional metadata"
     }
   },
-  "required": ["nodes", "edges"],
-  "$defs": {
-    "SimulationNode": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique node identifier"
-        },
-        "label": {
-          "type": ["string", "null"],
-          "default": null,
-          "description": "Human-readable node label"
-        },
-        "value": {
-          "type": "number",
-          "description": "Initial node value"
-        },
-        "type": {
-          "type": ["string", "null"],
-          "default": null,
-          "description": "Node type (driver, regular, outcome)"
-        }
-      },
-      "required": ["id", "value"]
-    },
-    "SimulationEdge": {
-      "type": "object",
-      "properties": {
-        "source": {
-          "type": "string",
-          "description": "Source node ID"
-        },
-        "target": {
-          "type": "string",
-          "description": "Target node ID"
-        },
-        "weight": {
-          "type": "number",
-          "description": "Edge weight"
-        }
-      },
-      "required": ["source", "target", "weight"]
-    }
-  }
+  "required": ["nodes", "edges"]
 }
 

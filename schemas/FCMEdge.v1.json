@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://mettamodeler.com/schemas/FCMEdge.v1.json",
+  "title": "FCMEdge",
+  "description": "An edge connecting two nodes in the Fuzzy Cognitive Map graph",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique edge identifier"
+    },
+    "source": {
+      "type": "string",
+      "description": "Source node ID"
+    },
+    "target": {
+      "type": "string",
+      "description": "Target node ID"
+    },
+    "weight": {
+      "type": "number",
+      "description": "Edge weight (typically -1 to 1)"
+    },
+    "sourceHandle": {
+      "type": ["string", "null"],
+      "description": "Source handle identifier for React Flow"
+    },
+    "targetHandle": {
+      "type": ["string", "null"],
+      "description": "Target handle identifier for React Flow"
+    }
+  },
+  "required": ["id", "source", "target", "weight"]
+}
+

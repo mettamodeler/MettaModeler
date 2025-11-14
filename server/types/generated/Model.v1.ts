@@ -44,7 +44,7 @@ export interface Model {
   [k: string]: unknown;
 }
 /**
- * A node in the FCM graph
+ * A node in the Fuzzy Cognitive Map graph
  */
 export interface FCMNode {
   /**
@@ -78,7 +78,7 @@ export interface FCMNode {
   [k: string]: unknown;
 }
 /**
- * An edge connecting two nodes in the FCM graph
+ * An edge connecting two nodes in the Fuzzy Cognitive Map graph
  */
 export interface FCMEdge {
   /**

@@ -1,0 +1,3 @@
+import { z } from "zod"
+
+export default z.object({ "id": z.string().describe("Unique node identifier"), "type": z.enum(["driver","regular","outcome"]).describe("Node type"), "label": z.string().describe("Human-readable node label"), "value": z.number().describe("Initial node value"), "positionX": z.number().describe("X position in the visual editor"), "positionY": z.number().describe("Y position in the visual editor"), "color": z.union([z.string().describe("Node color (hex code)"), z.null().describe("Node color (hex code)")]).describe("Node color (hex code)").optional() }).describe("A node in the Fuzzy Cognitive Map graph")

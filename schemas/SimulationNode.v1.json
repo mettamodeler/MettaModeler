@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://mettamodeler.com/schemas/SimulationNode.v1.json",
+  "title": "SimulationNode",
+  "description": "A node used in FCM simulation",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique node identifier"
+    },
+    "label": {
+      "type": "string",
+      "description": "Human-readable node label"
+    },
+    "value": {
+      "type": "number",
+      "description": "Node value"
+    }
+  },
+  "required": ["id", "label", "value"]
+}
+

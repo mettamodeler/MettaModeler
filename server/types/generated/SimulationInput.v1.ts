@@ -71,6 +71,9 @@ export interface SimulationInput {
   };
   [k: string]: unknown;
 }
+/**
+ * A node used in FCM simulation
+ */
 export interface SimulationNode {
   /**
    * Unique node identifier
@@ -79,17 +82,16 @@ export interface SimulationNode {
   /**
    * Human-readable node label
    */
-  label?: string | null;
+  label: string;
   /**
-   * Initial node value
+   * Node value
    */
   value: number;
-  /**
-   * Node type (driver, regular, outcome)
-   */
-  type?: string | null;
   [k: string]: unknown;
 }
+/**
+ * An edge used in FCM simulation (simplified version without React Flow handles)
+ */
 export interface SimulationEdge {
   /**
    * Source node ID

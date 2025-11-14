@@ -1,0 +1,3 @@
+import { z } from "zod"
+
+export default z.object({ "id": z.string().describe("Unique edge identifier"), "source": z.string().describe("Source node ID"), "target": z.string().describe("Target node ID"), "weight": z.number().describe("Edge weight (typically -1 to 1)"), "sourceHandle": z.union([z.string().describe("Source handle identifier for React Flow"), z.null().describe("Source handle identifier for React Flow")]).describe("Source handle identifier for React Flow").optional(), "targetHandle": z.union([z.string().describe("Target handle identifier for React Flow"), z.null().describe("Target handle identifier for React Flow")]).describe("Target handle identifier for React Flow").optional() }).describe("An edge connecting two nodes in the Fuzzy Cognitive Map graph")

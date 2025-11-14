@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://mettamodeler.com/schemas/FCMNode.v1.json",
+  "title": "FCMNode",
+  "description": "A node in the Fuzzy Cognitive Map graph",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique node identifier"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["driver", "regular", "outcome"],
+      "description": "Node type"
+    },
+    "label": {
+      "type": "string",
+      "description": "Human-readable node label"
+    },
+    "value": {
+      "type": "number",
+      "description": "Initial node value"
+    },
+    "positionX": {
+      "type": "number",
+      "description": "X position in the visual editor"
+    },
+    "positionY": {
+      "type": "number",
+      "description": "Y position in the visual editor"
+    },
+    "color": {
+      "type": ["string", "null"],
+      "description": "Node color (hex code)"
+    }
+  },
+  "required": ["id", "type", "label", "value", "positionX", "positionY"]
+}
+

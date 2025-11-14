@@ -4,9 +4,10 @@
  * Generates TypeScript types, Zod schemas, and Python Pydantic models from JSON Schema files
  */
 
-import { readdir, writeFile } from 'fs/promises';
-import { join, basename, extname } from 'path';
+import { readdir, writeFile, readFile, mkdir } from 'fs/promises';
+import { join, basename, extname, dirname } from 'path';
 import { execSync } from 'child_process';
+import $RefParser from '@apidevtools/json-schema-ref-parser';
 
 const SCHEMAS_DIR = './schemas';
 const OUTPUT_DIRS = {
@@ -26,12 +27,37 @@ function getOutputName(schemaPath, extension) {
   return `${base}${extension}`;
 }
 
+async function bundleSchema(schemaPath) {
+  // Bundle schema to resolve all $ref
+  const bundled = await $RefParser.bundle(schemaPath, {
+    resolve: {
+      file: {
+        canRead: /\.json$/i,
+        read: async (file) => {
+          const content = await readFile(file.url, 'utf8');
+          return JSON.parse(content);
+        }
+      }
+    }
+  });
+  return bundled;
+}
+
 async function generateTypeScript(schemaPath, outputDir) {
   const outputFile = join(outputDir, getOutputName(schemaPath, '.ts'));
   try {
-    execSync(`npx json-schema-to-typescript "${schemaPath}" > "${outputFile}"`, {
+    // Bundle schema first to resolve $ref
+    const bundled = await bundleSchema(schemaPath);
+    const bundledPath = schemaPath.replace('.json', '.bundled.json');
+    await writeFile(bundledPath, JSON.stringify(bundled, null, 2));
+    
+    execSync(`npx json-schema-to-typescript "${bundledPath}" > "${outputFile}"`, {
       stdio: 'inherit'
     });
+    
+    // Clean up bundled file
+    await import('fs/promises').then(fs => fs.unlink(bundledPath).catch(() => {}));
+    
     console.log(`✓ Generated ${outputFile}`);
   } catch (error) {
     console.error(`✗ Failed to generate ${outputFile}:`, error.message);
@@ -42,9 +68,18 @@ async function generateTypeScript(schemaPath, outputDir) {
 async function generateZod(schemaPath) {
   const outputFile = join(OUTPUT_DIRS.zod, getOutputName(schemaPath, '.zod.ts'));
   try {
-    execSync(`npx json-schema-to-zod --input "${schemaPath}" --output "${outputFile}"`, {
+    // Bundle schema first to resolve $ref
+    const bundled = await bundleSchema(schemaPath);
+    const bundledPath = schemaPath.replace('.json', '.bundled.json');
+    await writeFile(bundledPath, JSON.stringify(bundled, null, 2));
+    
+    execSync(`npx json-schema-to-zod --input "${bundledPath}" --output "${outputFile}"`, {
       stdio: 'inherit'
     });
+    
+    // Clean up bundled file
+    await import('fs/promises').then(fs => fs.unlink(bundledPath).catch(() => {}));
+    
     console.log(`✓ Generated ${outputFile}`);
   } catch (error) {
     console.error(`✗ Failed to generate ${outputFile}:`, error.message);
@@ -56,9 +91,18 @@ async function generatePython(schemaPath) {
   const baseName = basename(schemaPath, '.json').toLowerCase().replace(/\./g, '_');
   const outputFile = join(OUTPUT_DIRS.python, `${baseName}.py`);
   try {
-    execSync(`datamodel-codegen --input "${schemaPath}" --input-file-type jsonschema --output "${outputFile}"`, {
+    // Bundle schema first to resolve $ref
+    const bundled = await bundleSchema(schemaPath);
+    const bundledPath = schemaPath.replace('.json', '.bundled.json');
+    await writeFile(bundledPath, JSON.stringify(bundled, null, 2));
+    
+    execSync(`datamodel-codegen --input "${bundledPath}" --input-file-type jsonschema --output "${outputFile}"`, {
       stdio: 'inherit'
     });
+    
+    // Clean up bundled file
+    await import('fs/promises').then(fs => fs.unlink(bundledPath).catch(() => {}));
+    
     console.log(`✓ Generated ${outputFile}`);
   } catch (error) {
     console.error(`✗ Failed to generate ${outputFile}:`, error.message);

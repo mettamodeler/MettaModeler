@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://mettamodeler.com/schemas/SimulationResult.v1.json",
+  "title": "SimulationResult",
+  "description": "Results from running a simulation",
+  "type": "object",
+  "properties": {
+    "finalState": {
+      "type": "object",
+      "description": "Final state of all nodes after simulation",
+      "additionalProperties": {
+        "$ref": "./SimulationNode.v1.json"
+      }
+    },
+    "timeSeries": {
+      "type": "object",
+      "description": "Time series data for each node",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      }
+    },
+    "iterations": {
+      "type": "integer",
+      "description": "Number of iterations until convergence"
+    },
+    "converged": {
+      "type": "boolean",
+      "description": "Whether the simulation converged"
+    },
+    "initialValues": {
+      "type": "object",
+      "description": "Initial values used for simulation",
+      "additionalProperties": {
+        "type": "number"
+      }
+    },
+    "baselineFinalState": {
+      "type": "object",
+      "description": "Final state from baseline simulation (if comparison was run)",
+      "additionalProperties": {
+        "$ref": "./SimulationNode.v1.json"
+      }
+    },
+    "baselineTimeSeries": {
+      "type": "object",
+      "description": "Time series from baseline simulation",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        }
+      }
+    },
+    "baselineIterations": {
+      "type": "integer",
+      "description": "Iterations for baseline simulation"
+    },
+    "baselineConverged": {
+      "type": "boolean",
+      "description": "Whether baseline simulation converged"
+    },
+    "deltaState": {
+      "type": "object",
+      "description": "Difference between scenario and baseline final states",
+      "additionalProperties": {
+        "type": "number"
+      }
+    }
+  },
+  "required": ["finalState", "timeSeries", "iterations", "converged", "initialValues"]
+}
+

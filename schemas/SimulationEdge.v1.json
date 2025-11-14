@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://mettamodeler.com/schemas/SimulationEdge.v1.json",
+  "title": "SimulationEdge",
+  "description": "An edge used in FCM simulation (simplified version without React Flow handles)",
+  "type": "object",
+  "properties": {
+    "source": {
+      "type": "string",
+      "description": "Source node ID"
+    },
+    "target": {
+      "type": "string",
+      "description": "Target node ID"
+    },
+    "weight": {
+      "type": "number",
+      "description": "Edge weight"
+    }
+  },
+  "required": ["source", "target", "weight"]
+}
+

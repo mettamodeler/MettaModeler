@@ -25,7 +25,7 @@
       "type": "array",
       "description": "Array of FCM nodes",
       "items": {
-        "$ref": "#/$defs/FCMNode"
+        "$ref": "./FCMNode.v1.json"
       },
       "default": []
     },
@@ -33,7 +33,7 @@
       "type": "array",
       "description": "Array of FCM edges",
       "items": {
-        "$ref": "#/$defs/FCMEdge"
+        "$ref": "./FCMEdge.v1.json"
       },
       "default": []
     },
@@ -48,75 +48,6 @@
       "description": "Timestamp when model was last updated"
     }
   },
-  "required": ["name", "projectId"],
-  "$defs": {
-    "FCMNode": {
-      "type": "object",
-      "description": "A node in the FCM graph",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique node identifier"
-        },
-        "type": {
-          "type": "string",
-          "enum": ["driver", "regular", "outcome"],
-          "description": "Node type"
-        },
-        "label": {
-          "type": "string",
-          "description": "Human-readable node label"
-        },
-        "value": {
-          "type": "number",
-          "description": "Initial node value"
-        },
-        "positionX": {
-          "type": "number",
-          "description": "X position in the visual editor"
-        },
-        "positionY": {
-          "type": "number",
-          "description": "Y position in the visual editor"
-        },
-        "color": {
-          "type": ["string", "null"],
-          "description": "Node color (hex code)"
-        }
-      },
-      "required": ["id", "type", "label", "value", "positionX", "positionY"]
-    },
-    "FCMEdge": {
-      "type": "object",
-      "description": "An edge connecting two nodes in the FCM graph",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique edge identifier"
-        },
-        "source": {
-          "type": "string",
-          "description": "Source node ID"
-        },
-        "target": {
-          "type": "string",
-          "description": "Target node ID"
-        },
-        "weight": {
-          "type": "number",
-          "description": "Edge weight (typically -1 to 1)"
-        },
-        "sourceHandle": {
-          "type": ["string", "null"],
-          "description": "Source handle identifier for React Flow"
-        },
-        "targetHandle": {
-          "type": ["string", "null"],
-          "description": "Target handle identifier for React Flow"
-        }
-      },
-      "required": ["id", "source", "target", "weight"]
-    }
-  }
+  "required": ["name", "projectId"]
 }
 

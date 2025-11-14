@@ -25,7 +25,7 @@
       "type": "array",
       "description": "Array of simulation nodes (snapshot at scenario creation)",
       "items": {
-        "$ref": "#/$defs/SimulationNode"
+        "$ref": "./SimulationNode.v1.json"
       },
       "default": []
     },
@@ -46,11 +46,11 @@
       "default": []
     },
     "simulationParams": {
-      "$ref": "#/$defs/SimulationParameters",
+      "$ref": "./SimulationParameters.v1.json",
       "description": "Simulation parameters for this scenario"
     },
     "results": {
-      "$ref": "#/$defs/SimulationResult",
+      "$ref": "./SimulationResult.v1.json",
       "description": "Simulation results (populated after running simulation)"
     },
     "createdAt": {
@@ -64,121 +64,6 @@
       "description": "Timestamp when scenario was last updated"
     }
   },
-  "required": ["name", "modelId"],
-  "$defs": {
-    "SimulationNode": {
-      "type": "object",
-      "description": "A node used in simulation",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique node identifier"
-        },
-        "label": {
-          "type": "string",
-          "description": "Human-readable node label"
-        },
-        "value": {
-          "type": "number",
-          "description": "Node value"
-        }
-      },
-      "required": ["id", "label", "value"]
-    },
-    "SimulationParameters": {
-      "type": "object",
-      "description": "Parameters for FCM simulation",
-      "properties": {
-        "activation": {
-          "type": "string",
-          "enum": ["sigmoid", "tanh", "relu", "linear"],
-          "default": "sigmoid",
-          "description": "Activation function"
-        },
-        "threshold": {
-          "type": "number",
-          "default": 0.001,
-          "description": "Convergence threshold"
-        },
-        "maxIterations": {
-          "type": "integer",
-          "default": 20,
-          "description": "Maximum iterations"
-        }
-      },
-      "required": []
-    },
-    "SimulationResult": {
-      "type": "object",
-      "description": "Results from running a simulation",
-      "properties": {
-        "finalState": {
-          "type": "object",
-          "description": "Final state of all nodes after simulation",
-          "additionalProperties": {
-            "$ref": "#/$defs/SimulationNode"
-          }
-        },
-        "timeSeries": {
-          "type": "object",
-          "description": "Time series data for each node",
-          "additionalProperties": {
-            "type": "array",
-            "items": {
-              "type": "number"
-            }
-          }
-        },
-        "iterations": {
-          "type": "integer",
-          "description": "Number of iterations until convergence"
-        },
-        "converged": {
-          "type": "boolean",
-          "description": "Whether the simulation converged"
-        },
-        "initialValues": {
-          "type": "object",
-          "description": "Initial values used for simulation",
-          "additionalProperties": {
-            "type": "number"
-          }
-        },
-        "baselineFinalState": {
-          "type": "object",
-          "description": "Final state from baseline simulation (if comparison was run)",
-          "additionalProperties": {
-            "$ref": "#/$defs/SimulationNode"
-          }
-        },
-        "baselineTimeSeries": {
-          "type": "object",
-          "description": "Time series from baseline simulation",
-          "additionalProperties": {
-            "type": "array",
-            "items": {
-              "type": "number"
-            }
-          }
-        },
-        "baselineIterations": {
-          "type": "integer",
-          "description": "Iterations for baseline simulation"
-        },
-        "baselineConverged": {
-          "type": "boolean",
-          "description": "Whether baseline simulation converged"
-        },
-        "deltaState": {
-          "type": "object",
-          "description": "Difference between scenario and baseline final states",
-          "additionalProperties": {
-            "type": "number"
-          }
-        }
-      },
-      "required": ["finalState", "timeSeries", "iterations", "converged", "initialValues"]
-    }
-  }
+  "required": ["name", "modelId"]
 }
 

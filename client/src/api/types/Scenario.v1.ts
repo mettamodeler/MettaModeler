@@ -52,7 +52,7 @@ export interface Scenario {
   [k: string]: unknown;
 }
 /**
- * A node used in simulation
+ * A node used in FCM simulation
  */
 export interface SimulationNode {
   /**
