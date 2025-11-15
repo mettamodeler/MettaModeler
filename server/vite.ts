@@ -9,26 +9,24 @@ import { nanoid } from "nanoid";
 
 // Get directory name for both ESM and bundled code
 // In bundled ESM, import.meta may not work, so we use process.cwd() as primary
-let __dirname: string;
+// Initialize with safe default first
+let __dirname: string = process.cwd();
+
 try {
   // Try import.meta.dirname first (Node.js 20.11+)
-  if (import.meta.dirname) {
+  if (typeof import.meta !== 'undefined' && import.meta.dirname) {
     __dirname = import.meta.dirname;
   } 
   // Fallback to import.meta.url (works in ESM)
-  else if (import.meta.url) {
+  else if (typeof import.meta !== 'undefined' && import.meta.url) {
     __dirname = path.dirname(fileURLToPath(import.meta.url));
-  } 
-  // Final fallback to process.cwd() (works in bundled code)
-  else {
-    __dirname = process.cwd();
   }
-} catch {
-  // If anything fails, use process.cwd() as safe fallback
-  __dirname = process.cwd();
+} catch (e) {
+  // If anything fails, keep the default (process.cwd())
+  // This is safe for production bundled code
 }
 
-// Ensure __dirname is always a string (safety check)
+// Final safety check - ensure __dirname is always a valid string
 if (!__dirname || typeof __dirname !== 'string') {
   __dirname = process.cwd();
 }
