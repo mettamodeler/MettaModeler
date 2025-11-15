@@ -30,6 +30,9 @@ start_python_service() {
         PYTHON_CMD=python3
     fi
     
+    # Set environment variable for Python service
+    export PYTHON_SIM_PORT=$PYTHON_PORT
+    
     # Start Flask app in background
     # Flask will bind to 0.0.0.0 to accept connections from the Node.js service
     nohup $PYTHON_CMD app.py > ../logs/python.log 2>&1 &
@@ -38,16 +41,24 @@ start_python_service() {
     
     echo "[$(date)] Python service started with PID: $PYTHON_PID"
     
-    # Wait for Python service to be ready
+    # Wait for Python service to be ready (with retries)
     echo "[$(date)] Waiting for Python service to initialize..."
-    sleep 3
+    MAX_RETRIES=10
+    RETRY_COUNT=0
+    while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+        sleep 1
+        if curl -f http://localhost:$PYTHON_PORT/api/health > /dev/null 2>&1; then
+            echo "[$(date)] ✅ Python service is ready"
+            return 0
+        fi
+        RETRY_COUNT=$((RETRY_COUNT + 1))
+        echo "[$(date)] Waiting for Python service... (attempt $RETRY_COUNT/$MAX_RETRIES)"
+    done
     
-    # Health check
-    if curl -f http://localhost:$PYTHON_PORT/api/health > /dev/null 2>&1; then
-        echo "[$(date)] ✅ Python service is ready"
-    else
-        echo "[$(date)] ⚠️  Python service health check failed, but continuing..."
-    fi
+    echo "[$(date)] ⚠️  Python service health check failed after $MAX_RETRIES attempts"
+    echo "[$(date)] Checking Python service logs..."
+    tail -n 20 ../logs/python.log || echo "No log file found"
+    echo "[$(date)] Continuing anyway..."
 }
 
 # Function to handle shutdown
