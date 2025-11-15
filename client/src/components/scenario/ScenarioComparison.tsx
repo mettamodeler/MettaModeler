@@ -1,5 +1,4 @@
-import React from 'react';
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { FCMModel, SimulationResult, SimulationResultWithComparison, isComparisonSimulationResult, ComparisonSimulationResult, FCMNode } from '../../lib/types';
 import { toStringId } from '../../lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
@@ -59,12 +58,14 @@ const CHART_COLOR_PALETTE = [
 const ScenarioComparison: React.FC<ScenarioComparisonProps> = ({ model, scenarios, nodeLabelsById, nodeTypesById, scenarioTab, setScenarioTab, selectedScenarioId, setSelectedScenarioId }) => {
   const [comparisonResult, setComparisonResult] = useState<SimulationResult | ComparisonSimulationResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   type ActivationType = 'sigmoid' | 'tanh' | 'relu' | 'linear';
   const [activation, setActivation] = useState<ActivationType>('sigmoid');
   
   const safeScenarios = scenarios.map(s => ({
     ...s,
-    initialValues: s.initialValues || {}
+    initialValues: s.initialValues || {},
+    clampedNodes: s.clampedNodes || []  // Ensure clampedNodes is always an array
   }));
 
   const selectedScenario = useMemo(() => 
@@ -99,7 +100,7 @@ const ScenarioComparison: React.FC<ScenarioComparisonProps> = ({ model, scenario
       setIsLoading(true);
 
       try {
-        console.log('About to run simulation with selectedScenario:', selectedScenario);
+        console.log('About to run simulation with selectedScenario:', JSON.stringify(selectedScenario, null, 2));
         console.log('About to run simulation with initialValues:', selectedScenario.initialValues);
 
         const params = {
@@ -107,7 +108,7 @@ const ScenarioComparison: React.FC<ScenarioComparisonProps> = ({ model, scenario
           activation,
           threshold: 0.001,
           maxIterations: 20,
-          clampedNodes: selectedScenario.clampedNodes || [],
+          clampedNodes: selectedScenario.clampedNodes || [], // Ensure clamped nodes are included
           modelInitialValues: Object.fromEntries(model.nodes.map(node => [toStringId(node.id), node.value])),
           scenarioInitialValues: selectedScenario.initialValues
         };
@@ -125,12 +126,16 @@ const ScenarioComparison: React.FC<ScenarioComparisonProps> = ({ model, scenario
           // Save the comparison results back to the scenario
           if (result && isComparisonSimulationResult(result)) {
             try {
+              // Ensure we include initialValues (required by SimulationResult schema)
+              const initialValues = selectedScenario.initialValues || {};
+              
               await apiRequest('PATCH', `/api/scenarios/${selectedScenario.id}`, {
                 results: {
                   finalState: result.comparisonFinalState,
                   timeSeries: result.comparisonTimeSeries,
                   iterations: result.iterations,
                   converged: result.converged,
+                  initialValues: initialValues,  // Required by SimulationResult schema
                   baselineFinalState: result.baselineFinalState,
                   baselineTimeSeries: result.baselineTimeSeries,
                   baselineIterations: result.iterations,

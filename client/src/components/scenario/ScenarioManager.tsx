@@ -86,10 +86,11 @@ export default function ScenarioManager({ model, selectedScenarioIds, setSelecte
       
       const data = await response.json();
       console.log("Fetched scenarios:", data);
-      // Ensure every scenario has initialValues
+      // Ensure every scenario has initialValues and clampedNodes
       const safeData = data.map((s: any) => ({
         ...s,
-        initialValues: s.initialValues || {}
+        initialValues: s.initialValues || {},
+        clampedNodes: s.clampedNodes || []
       }));
       setScenarios(safeData);
     } catch (error) {
@@ -144,6 +145,42 @@ export default function ScenarioManager({ model, selectedScenarioIds, setSelecte
         return acc;
       }, {} as Record<string, number>);
       console.log('Saving scenario with initialValues:', fullInitialValues);
+      
+      // Ensure finalState is in the correct format: Record<string, SimulationNode>
+      // The SimulationNode must have: { id: string, label: string, value: number }
+      // We need to extract the numeric value even if it's nested
+      let formattedFinalState: Record<string, { id: string; label: string; value: number }> = {};
+      if (results.finalState) {
+        Object.entries(results.finalState).forEach(([nodeId, nodeData]) => {
+          const node = model.nodes.find(n => n.id === nodeId);
+          if (!node) return;
+          
+          // Extract numeric value - handle various formats
+          let numericValue: number = 0;
+          if (typeof nodeData === 'number') {
+            // Simple case: finalState[nodeId] is a number
+            numericValue = nodeData;
+          } else if (typeof nodeData === 'object' && nodeData !== null) {
+            // Complex case: finalState[nodeId] is an object
+            if ('value' in nodeData) {
+              const valueProp = (nodeData as any).value;
+              if (typeof valueProp === 'number') {
+                numericValue = valueProp;
+              } else if (typeof valueProp === 'object' && valueProp !== null && 'value' in valueProp) {
+                // Nested value object
+                numericValue = typeof (valueProp as any).value === 'number' ? (valueProp as any).value : 0;
+              }
+            }
+          }
+          
+          formattedFinalState[nodeId] = {
+            id: node.id,
+            label: node.label,
+            value: numericValue
+          };
+        });
+      }
+      
       const response = await apiRequest(
         "POST",
         "/api/scenarios",
@@ -159,10 +196,11 @@ export default function ScenarioManager({ model, selectedScenarioIds, setSelecte
           initialValues: fullInitialValues,
           clampedNodes,
           results: {
-            finalState: results.finalState,
+            finalState: formattedFinalState,
             timeSeries: results.timeSeries,
             iterations: results.iterations,
-            converged: results.converged
+            converged: results.converged,
+            initialValues: fullInitialValues  // Required by SimulationResult schema
           },
           simulationParams: {
             activation: 'sigmoid',
