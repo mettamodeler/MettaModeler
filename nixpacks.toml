@@ -1,10 +1,12 @@
+providers = ["python", "node"]
+
 [phases.setup]
-nixPkgs = ["nodejs_20", "python312", "python312Packages.pip", "python312Packages.setuptools"]
+nixPkgs = ["pkgs.python312", "pkgs.nodejs_20"]
 
 [phases.install]
 cmds = [
   "npm install",
-  "cd python_sim && pip install --user -r requirements.txt && cd .."
+  "pip install -r python_sim/requirements.txt"
 ]
 
 [phases.build]
