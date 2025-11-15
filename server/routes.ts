@@ -282,9 +282,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/scenarios", async (_req: Request, res: Response) => {
     try {
       const scenarios = await storage.getScenarios();
-      res.json(scenarios);
+      // Validate and format each scenario to ensure API consistency
+      const safeScenarios = scenarios.map(scenario => {
+        try {
+          return ScenarioSchema.parse(scenario);
+        } catch (err) {
+          console.error("Error validating scenario:", err, scenario);
+          // Return a safe fallback if validation fails
+          return {
+            ...scenario,
+            initialValues: scenario.initialValues || {},
+            clampedNodes: scenario.clampedNodes || [],
+            nodes: scenario.nodes || [],
+            createdAt: scenario.createdAt instanceof Date 
+              ? scenario.createdAt.toISOString() 
+              : (scenario.createdAt || ""),
+            updatedAt: scenario.updatedAt instanceof Date 
+              ? scenario.updatedAt.toISOString() 
+              : (scenario.updatedAt || null),
+          };
+        }
+      });
+      res.json(safeScenarios);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch scenarios" });
+      console.error("Failed to fetch scenarios:", error);
+      res.status(500).json({ message: "Failed to fetch scenarios", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -296,9 +318,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const scenarios = await storage.getScenariosByModel(modelId);
-      res.json(scenarios);
+      // Validate and format each scenario to ensure API consistency
+      const safeScenarios = scenarios.map(scenario => {
+        try {
+          return ScenarioSchema.parse(scenario);
+        } catch (err) {
+          console.error("Error validating scenario:", err, scenario);
+          // Return a safe fallback if validation fails
+          return {
+            ...scenario,
+            initialValues: scenario.initialValues || {},
+            clampedNodes: scenario.clampedNodes || [],
+            nodes: scenario.nodes || [],
+            createdAt: scenario.createdAt instanceof Date 
+              ? scenario.createdAt.toISOString() 
+              : (scenario.createdAt || ""),
+            updatedAt: scenario.updatedAt instanceof Date 
+              ? scenario.updatedAt.toISOString() 
+              : (scenario.updatedAt || null),
+          };
+        }
+      });
+      res.json(safeScenarios);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch scenarios" });
+      console.error("Failed to fetch scenarios:", error);
+      res.status(500).json({ message: "Failed to fetch scenarios", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
