@@ -8,25 +8,30 @@ import viteConfig from "../vite.config";
 import { nanoid } from "nanoid";
 
 // Get directory name for both ESM and bundled code
-// In bundled ESM, import.meta may not work, so we use process.cwd() as primary
-// Initialize with safe default first
-let __dirname: string = process.cwd();
+// In production (bundled), import.meta doesn't work reliably, so use process.cwd()
+// In development, try to use import.meta for accurate paths
+const isProduction = process.env.NODE_ENV === 'production';
 
-try {
-  // Try import.meta.dirname first (Node.js 20.11+)
-  if (typeof import.meta !== 'undefined' && import.meta.dirname) {
-    __dirname = import.meta.dirname;
-  } 
-  // Fallback to import.meta.url (works in ESM)
-  else if (typeof import.meta !== 'undefined' && import.meta.url) {
-    __dirname = path.dirname(fileURLToPath(import.meta.url));
+let __dirname: string;
+if (isProduction) {
+  // In production, always use process.cwd() - it's reliable and works with bundled code
+  __dirname = process.cwd();
+} else {
+  // In development, try to get the actual directory
+  try {
+    if (import.meta.dirname) {
+      __dirname = import.meta.dirname;
+    } else if (import.meta.url) {
+      __dirname = path.dirname(fileURLToPath(import.meta.url));
+    } else {
+      __dirname = process.cwd();
+    }
+  } catch {
+    __dirname = process.cwd();
   }
-} catch (e) {
-  // If anything fails, keep the default (process.cwd())
-  // This is safe for production bundled code
 }
 
-// Final safety check - ensure __dirname is always a valid string
+// Final safety check
 if (!__dirname || typeof __dirname !== 'string') {
   __dirname = process.cwd();
 }
