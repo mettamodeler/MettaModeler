@@ -73,7 +73,35 @@ export async function runSimulation(
     throw new Error('Failed to run simulation');
   }
 
-  const result = await response.json();
+  const result: SimulationResult = await response.json();
   console.log('Raw simulation result:', JSON.stringify(result, null, 2));
-  return result;
+  
+  // Transform API response to ExtendedSimulationResult format
+  // Extract finalValues from finalState (convert SimulationNode objects to numbers)
+  const finalValues: Record<string, number> = {};
+  if (result.finalState) {
+    Object.entries(result.finalState).forEach(([nodeId, node]) => {
+      // Handle both SimulationNode objects and plain numbers
+      if (typeof node === 'object' && node !== null && 'value' in node) {
+        finalValues[nodeId] = (node as any).value;
+      } else if (typeof node === 'number') {
+        finalValues[nodeId] = node;
+      }
+    });
+  }
+  
+  // Create ExtendedSimulationResult with all required properties
+  const extendedResult: ExtendedSimulationResult = {
+    ...result,
+    timeSeriesData: result.timeSeries || {},
+    finalValues: finalValues,
+    params: {
+      activation: params.activation || 'sigmoid',
+      threshold: params.threshold || 0.01,
+      maxIterations: params.maxIterations || 100,
+      ...(params.clampedNodes ? { clampedNodes: params.clampedNodes } : {})
+    }
+  };
+  
+  return extendedResult;
 } 

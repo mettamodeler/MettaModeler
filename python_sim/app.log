@@ -611,3 +611,99 @@ INFO:root:Simulation converged
 INFO:root:Simulation completed after 3 iterations
 INFO:root:Converged: True
 INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 19:40:05] "POST /api/simulate HTTP/1.1" 200 -
+INFO:root:Received simulation request: {
+  "schemaVersion": "1.0.0",
+  "nodes": [
+    {
+      "id": "node-1763144842243",
+      "value": 0.5,
+      "label": "new node 1",
+      "type": "regular"
+    },
+    {
+      "id": "node-1763144842593",
+      "value": 0.5,
+      "label": "New 2",
+      "type": "regular"
+    },
+    {
+      "id": "node-1763144842876",
+      "value": 0.5,
+      "label": "New 4",
+      "type": "regular"
+    }
+  ],
+  "edges": [
+    {
+      "source": "node-1763144842243",
+      "target": "node-1763144842593",
+      "weight": 0.5
+    },
+    {
+      "source": "node-1763144842876",
+      "target": "node-1763144842593",
+      "weight": 0.5
+    },
+    {
+      "source": "node-1763144842876",
+      "target": "node-1763144842243",
+      "weight": 0.5
+    }
+  ],
+  "activation": "sigmoid",
+  "threshold": 0.001,
+  "maxIterations": 20,
+  "compareToBaseline": true,
+  "modelInitialValues": {
+    "node-1763144842243": 0.5,
+    "node-1763144842593": 0.5,
+    "node-1763144842876": 0.5
+  },
+  "scenarioInitialValues": {
+    "node-1763144842243": 1,
+    "node-1763144842593": 0.5,
+    "node-1763144842876": 0.5
+  },
+  "clampedNodes": []
+}
+INFO:root:=== Starting Baseline vs Scenario Comparison ===
+INFO:root:Model initial values: {'node-1763144842243': 0.5, 'node-1763144842593': 0.5, 'node-1763144842876': 0.5}
+INFO:root:Scenario initial values: {'node-1763144842243': 1, 'node-1763144842593': 0.5, 'node-1763144842876': 0.5}
+INFO:root:Clamped nodes: []
+INFO:root:Applying model initial values: {'node-1763144842243': 0.5, 'node-1763144842593': 0.5, 'node-1763144842876': 0.5}
+INFO:root:Setting baseline node node-1763144842243 to 0.5
+INFO:root:Setting baseline node node-1763144842593 to 0.5
+INFO:root:Setting baseline node node-1763144842876 to 0.5
+INFO:root:Applying scenario initial values: {'node-1763144842243': 1, 'node-1763144842593': 0.5, 'node-1763144842876': 0.5}
+INFO:root:Setting scenario node node-1763144842243 to 1
+INFO:root:Setting scenario node node-1763144842593 to 0.5
+INFO:root:Setting scenario node node-1763144842876 to 0.5
+INFO:root:Baseline node values: [('node-1763144842243', 0.5), ('node-1763144842593', 0.5), ('node-1763144842876', 0.5)]
+INFO:root:Scenario node values: [('node-1763144842243', 1), ('node-1763144842593', 0.5), ('node-1763144842876', 0.5)]
+INFO:root:Initializing FCM Simulator
+INFO:root:Activation function: sigmoid
+INFO:root:Threshold: 0.001
+INFO:root:Max iterations: 20
+INFO:root:Adding nodes to graph:
+INFO:root:Adding edges to graph:
+INFO:root:Graph initialization complete
+INFO:root:Number of nodes: 3
+INFO:root:Number of edges: 3
+INFO:root:=== Starting Simulation ===
+INFO:root:Simulation converged
+INFO:root:Simulation completed after 3 iterations
+INFO:root:Converged: True
+INFO:root:Initializing FCM Simulator
+INFO:root:Activation function: sigmoid
+INFO:root:Threshold: 0.001
+INFO:root:Max iterations: 20
+INFO:root:Adding nodes to graph:
+INFO:root:Adding edges to graph:
+INFO:root:Graph initialization complete
+INFO:root:Number of nodes: 3
+INFO:root:Number of edges: 3
+INFO:root:=== Starting Simulation ===
+INFO:root:Simulation converged
+INFO:root:Simulation completed after 3 iterations
+INFO:root:Converged: True
+INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 19:57:31] "POST /api/simulate HTTP/1.1" 200 -

@@ -62,11 +62,15 @@ const ScenarioComparison: React.FC<ScenarioComparisonProps> = ({ model, scenario
   type ActivationType = 'sigmoid' | 'tanh' | 'relu' | 'linear';
   const [activation, setActivation] = useState<ActivationType>('sigmoid');
   
-  const safeScenarios = scenarios.map(s => ({
-    ...s,
-    initialValues: s.initialValues || {},
-    clampedNodes: s.clampedNodes || []  // Ensure clampedNodes is always an array
-  }));
+  // Memoize safeScenarios to prevent unnecessary re-renders
+  const safeScenarios = useMemo(() => 
+    scenarios.map(s => ({
+      ...s,
+      initialValues: s.initialValues || {},
+      clampedNodes: s.clampedNodes || []  // Ensure clampedNodes is always an array
+    })),
+    [scenarios]
+  );
 
   const selectedScenario = useMemo(() => 
     safeScenarios.find((s: { id: string }) => s.id.toString() === selectedScenarioId),

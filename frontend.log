@@ -2438,3 +2438,260 @@
 [0]   updatedAt: '2025-11-15T00:40:05.978Z'
 [0] }
 [0] 7:40:06 PM [express] PATCH /api/scenarios/5 200 in 530ms :: {"id":5,"name":"low water","description"...
+[1] 7:57:30 PM [vite] hmr update /src/index.css, /src/components/simulation/SimulationPanel.tsx, /src/components/scenario/ScenarioManager.tsx, /src/components/scenario/ScenarioComparison.tsx
+[1] 7:57:30 PM [vite] hmr invalidate /src/components/scenario/ScenarioManager.tsx Could not Fast Refresh ("validateInitialValues" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[1] 7:57:30 PM [vite] hmr update /src/index.css, /src/pages/ModelEditor.tsx
+[0] Received simulation request: {
+[0]   "schemaVersion": "1.0.0",
+[0]   "nodes": [
+[0]     {
+[0]       "id": "node-1763144842243",
+[0]       "value": 0.5,
+[0]       "label": "new node 1",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763144842593",
+[0]       "value": 0.5,
+[0]       "label": "New 2",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763144842876",
+[0]       "value": 0.5,
+[0]       "label": "New 4",
+[0]       "type": "regular"
+[0]     }
+[0]   ],
+[0]   "edges": [
+[0]     {
+[0]       "source": "node-1763144842243",
+[0]       "target": "node-1763144842593",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842593",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842243",
+[0]       "weight": 0.5
+[0]     }
+[0]   ],
+[0]   "activation": "sigmoid",
+[0]   "threshold": 0.001,
+[0]   "maxIterations": 20,
+[0]   "compareToBaseline": true,
+[0]   "modelInitialValues": {
+[0]     "node-1763144842243": 0.5,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
+[0]   },
+[0]   "scenarioInitialValues": {
+[0]     "node-1763144842243": 1,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
+[0]   },
+[0]   "clampedNodes": []
+[0] }
+[0] Forwarding to Python backend: {
+[0]   "schemaVersion": "1.0.0",
+[0]   "nodes": [
+[0]     {
+[0]       "id": "node-1763144842243",
+[0]       "value": 0.5,
+[0]       "label": "new node 1",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763144842593",
+[0]       "value": 0.5,
+[0]       "label": "New 2",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763144842876",
+[0]       "value": 0.5,
+[0]       "label": "New 4",
+[0]       "type": "regular"
+[0]     }
+[0]   ],
+[0]   "edges": [
+[0]     {
+[0]       "source": "node-1763144842243",
+[0]       "target": "node-1763144842593",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842593",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842243",
+[0]       "weight": 0.5
+[0]     }
+[0]   ],
+[0]   "activation": "sigmoid",
+[0]   "threshold": 0.001,
+[0]   "maxIterations": 20,
+[0]   "compareToBaseline": true,
+[0]   "modelInitialValues": {
+[0]     "node-1763144842243": 0.5,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
+[0]   },
+[0]   "scenarioInitialValues": {
+[0]     "node-1763144842243": 1,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
+[0]   },
+[0]   "clampedNodes": []
+[0] }
+[0] Python simulation response: {
+[0]   "baselineFinalState": {
+[0]     "node-1763144842243": {
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "value": 0.5621765008857981
+[0]     },
+[0]     "node-1763144842593": {
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "value": 0.6297368933204371
+[0]     },
+[0]     "node-1763144842876": {
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "value": 0.5
+[0]     }
+[0]   },
+[0]   "baselineTimeSeries": {
+[0]     "node-1763144842243": [
+[0]       0.5,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981
+[0]     ],
+[0]     "node-1763144842593": [
+[0]       0.5,
+[0]       0.6224593312018546,
+[0]       0.6297368933204371,
+[0]       0.6297368933204371
+[0]     ],
+[0]     "node-1763144842876": [
+[0]       0.5,
+[0]       0.5,
+[0]       0.5,
+[0]       0.5
+[0]     ]
+[0]   },
+[0]   "clampedNodes": [],
+[0]   "comparisonFinalState": {
+[0]     "node-1763144842243": {
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "value": 0.5621765008857981
+[0]     },
+[0]     "node-1763144842593": {
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "value": 0.6297368933204371
+[0]     },
+[0]     "node-1763144842876": {
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "value": 0.5
+[0]     }
+[0]   },
+[0]   "comparisonTimeSeries": {
+[0]     "node-1763144842243": [
+[0]       1,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981
+[0]     ],
+[0]     "node-1763144842593": [
+[0]       0.5,
+[0]       0.679178699175393,
+[0]       0.6297368933204371,
+[0]       0.6297368933204371
+[0]     ],
+[0]     "node-1763144842876": [
+[0]       0.5,
+[0]       0.5,
+[0]       0.5,
+[0]       0.5
+[0]     ]
+[0]   },
+[0]   "converged": true,
+[0]   "deltaFinalState": {
+[0]     "node-1763144842243": {
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "value": 0
+[0]     },
+[0]     "node-1763144842593": {
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "value": 0
+[0]     },
+[0]     "node-1763144842876": {
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "value": 0
+[0]     }
+[0]   },
+[0]   "impactMetrics": {
+[0]     "node-1763144842243": {
+[0]       "auc": 0.25,
+[0]       "baseline": 0.5621765008857981,
+[0]       "delta": 0,
+[0]       "direction": "Temporary High Increase",
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "maxDifference": 0.5,
+[0]       "normalizedChangePercent": 0,
+[0]       "scenario": 0.5621765008857981
+[0]     },
+[0]     "node-1763144842593": {
+[0]       "auc": 0.05671936797353838,
+[0]       "baseline": 0.6297368933204371,
+[0]       "delta": 0,
+[0]       "direction": "Temporary High Increase",
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "maxDifference": 0.05671936797353838,
+[0]       "normalizedChangePercent": 0,
+[0]       "scenario": 0.6297368933204371
+[0]     },
+[0]     "node-1763144842876": {
+[0]       "auc": 0,
+[0]       "baseline": 0.5,
+[0]       "delta": 0,
+[0]       "direction": "No Change",
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "maxDifference": 0,
+[0]       "normalizedChangePercent": 0,
+[0]       "scenario": 0.5
+[0]     }
+[0]   },
+[0]   "iterations": 3
+[0] }
+[0] 7:57:32 PM [express] POST /api/simulate 200 in 1117ms :: {"baselineFinalState":{"node-1763144842243"...
+[0] 7:57:32 PM [express] GET /api/models/3/scenarios 200 in 1248ms :: [{"id":5,"name":"low water","model...
+[1] 7:58:12 PM [vite] hmr update /src/index.css, /src/components/simulation/SimulationPanel.tsx, /src/components/scenario/ScenarioManager.tsx, /src/components/scenario/ScenarioComparison.tsx
+[1] 7:58:13 PM [vite] hmr invalidate /src/components/scenario/ScenarioManager.tsx Could not Fast Refresh ("validateInitialValues" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[1] 7:58:13 PM [vite] hmr update /src/index.css, /src/pages/ModelEditor.tsx
+[0] 7:58:14 PM [express] GET /api/models/3/scenarios 304 in 1085ms :: [{"id":5,"name":"low water","model...
+[1] 8:00:17 PM [vite] hmr update /src/components/scenario/ScenarioComparison.tsx, /src/index.css
+[1] 8:00:27 PM [vite] hmr update /src/components/scenario/ScenarioComparison.tsx, /src/index.css
+[1] 8:02:54 PM [vite] hmr update /src/index.css, /src/components/simulation/SimulationPanel.tsx, /src/components/scenario/ScenarioManager.tsx, /src/components/scenario/ScenarioComparison.tsx
+[1] 8:02:54 PM [vite] hmr update /src/components/scenario/ScenarioComparison.tsx, /src/index.css
+[1] 8:02:54 PM [vite] hmr invalidate /src/components/scenario/ScenarioManager.tsx Could not Fast Refresh ("validateInitialValues" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[1] 8:02:54 PM [vite] hmr update /src/index.css, /src/pages/ModelEditor.tsx
+[0] 8:02:56 PM [express] GET /api/models/3/scenarios 304 in 1287ms :: [{"id":5,"name":"low water","model...
