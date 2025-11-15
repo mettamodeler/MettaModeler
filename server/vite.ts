@@ -9,30 +9,29 @@ import { nanoid } from "nanoid";
 
 // Get directory name for both ESM and bundled code
 // In bundled ESM, import.meta may not work, so we use process.cwd() as primary
-const getDirname = () => {
-  // Always use process.cwd() in production (bundled code)
-  // This is reliable since Railway runs from project root
-  if (process.env.NODE_ENV === 'production') {
-    return process.cwd();
+let __dirname: string;
+try {
+  // Try import.meta.dirname first (Node.js 20.11+)
+  if (import.meta.dirname) {
+    __dirname = import.meta.dirname;
+  } 
+  // Fallback to import.meta.url (works in ESM)
+  else if (import.meta.url) {
+    __dirname = path.dirname(fileURLToPath(import.meta.url));
+  } 
+  // Final fallback to process.cwd() (works in bundled code)
+  else {
+    __dirname = process.cwd();
   }
-  
-  // In development, try to use import.meta for better accuracy
-  try {
-    // Try import.meta.dirname first (Node.js 20.11+)
-    if (typeof import.meta !== 'undefined' && import.meta.dirname) {
-      return import.meta.dirname;
-    }
-    // Fallback to import.meta.url (works in ESM)
-    if (typeof import.meta !== 'undefined' && import.meta.url) {
-      return path.dirname(fileURLToPath(import.meta.url));
-    }
-  } catch {
-    // If neither works, use process.cwd() as fallback
-  }
-  return process.cwd();
-};
+} catch {
+  // If anything fails, use process.cwd() as safe fallback
+  __dirname = process.cwd();
+}
 
-const __dirname = getDirname() || process.cwd();
+// Ensure __dirname is always a string (safety check)
+if (!__dirname || typeof __dirname !== 'string') {
+  __dirname = process.cwd();
+}
 
 const viteLogger = createLogger();
 
