@@ -5,6 +5,12 @@ server/public
 vite.config.ts.*
 *.tar.gz
 
+# Log files - NEVER commit these
+*.log
+frontend.log
+python_sim/app.log
+client/frontend.log
+
 # Environment variables - NEVER commit these
 .env
 .env.*
