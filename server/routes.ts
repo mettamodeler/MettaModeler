@@ -282,25 +282,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/scenarios", async (_req: Request, res: Response) => {
     try {
       const scenarios = await storage.getScenarios();
-      // Validate and format each scenario to ensure API consistency
+      // Transform and validate each scenario to ensure API consistency
       const safeScenarios = scenarios.map(scenario => {
-        try {
-          return ScenarioSchema.parse(scenario);
-        } catch (err) {
-          console.error("Error validating scenario:", err, scenario);
-          // Return a safe fallback if validation fails
-          return {
-            ...scenario,
-            initialValues: scenario.initialValues || {},
-            clampedNodes: scenario.clampedNodes || [],
-            nodes: scenario.nodes || [],
-            createdAt: scenario.createdAt instanceof Date 
-              ? scenario.createdAt.toISOString() 
-              : (scenario.createdAt || ""),
-            updatedAt: scenario.updatedAt instanceof Date 
-              ? scenario.updatedAt.toISOString() 
-              : (scenario.updatedAt || null),
-          };
+        // Transform the scenario data to match API format
+        const transformed = {
+          ...scenario,
+          initialValues: scenario.initialValues || {},
+          clampedNodes: Array.isArray(scenario.clampedNodes) ? scenario.clampedNodes : [],
+          nodes: Array.isArray(scenario.nodes) ? scenario.nodes : [],
+          createdAt: scenario.createdAt instanceof Date 
+            ? scenario.createdAt.toISOString() 
+            : (typeof scenario.createdAt === 'string' ? scenario.createdAt : ""),
+          updatedAt: scenario.updatedAt instanceof Date 
+            ? scenario.updatedAt.toISOString() 
+            : (scenario.updatedAt === null || scenario.updatedAt === undefined ? null : String(scenario.updatedAt)),
+        };
+        
+        // Use safeParse to avoid throwing errors
+        const result = ScenarioSchema.safeParse(transformed);
+        if (result.success) {
+          return result.data;
+        } else {
+          console.error("Error validating scenario:", result.error, transformed);
+          // Return the transformed data even if validation fails
+          return transformed;
         }
       });
       res.json(safeScenarios);
@@ -318,25 +323,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const scenarios = await storage.getScenariosByModel(modelId);
-      // Validate and format each scenario to ensure API consistency
+      // Transform and validate each scenario to ensure API consistency
       const safeScenarios = scenarios.map(scenario => {
-        try {
-          return ScenarioSchema.parse(scenario);
-        } catch (err) {
-          console.error("Error validating scenario:", err, scenario);
-          // Return a safe fallback if validation fails
-          return {
-            ...scenario,
-            initialValues: scenario.initialValues || {},
-            clampedNodes: scenario.clampedNodes || [],
-            nodes: scenario.nodes || [],
-            createdAt: scenario.createdAt instanceof Date 
-              ? scenario.createdAt.toISOString() 
-              : (scenario.createdAt || ""),
-            updatedAt: scenario.updatedAt instanceof Date 
-              ? scenario.updatedAt.toISOString() 
-              : (scenario.updatedAt || null),
-          };
+        // Transform the scenario data to match API format
+        const transformed = {
+          ...scenario,
+          initialValues: scenario.initialValues || {},
+          clampedNodes: Array.isArray(scenario.clampedNodes) ? scenario.clampedNodes : [],
+          nodes: Array.isArray(scenario.nodes) ? scenario.nodes : [],
+          createdAt: scenario.createdAt instanceof Date 
+            ? scenario.createdAt.toISOString() 
+            : (typeof scenario.createdAt === 'string' ? scenario.createdAt : ""),
+          updatedAt: scenario.updatedAt instanceof Date 
+            ? scenario.updatedAt.toISOString() 
+            : (scenario.updatedAt === null || scenario.updatedAt === undefined ? null : String(scenario.updatedAt)),
+        };
+        
+        // Use safeParse to avoid throwing errors
+        const result = ScenarioSchema.safeParse(transformed);
+        if (result.success) {
+          return result.data;
+        } else {
+          console.error("Error validating scenario:", result.error, transformed);
+          // Return the transformed data even if validation fails
+          return transformed;
         }
       });
       res.json(safeScenarios);
@@ -357,11 +367,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!scenario) {
         return res.status(404).json({ message: "Scenario not found" });
       }
-      console.log("Scenario from DB:", scenario);
-      const safeScenario = ScenarioSchema.parse(scenario);
-      console.log("Scenario after Zod validation:", safeScenario);
-      res.json(safeScenario);
+      
+      // Transform the scenario data to match API format
+      const transformed = {
+        ...scenario,
+        initialValues: scenario.initialValues || {},
+        clampedNodes: Array.isArray(scenario.clampedNodes) ? scenario.clampedNodes : [],
+        nodes: Array.isArray(scenario.nodes) ? scenario.nodes : [],
+        createdAt: scenario.createdAt instanceof Date 
+          ? scenario.createdAt.toISOString() 
+          : (typeof scenario.createdAt === 'string' ? scenario.createdAt : ""),
+        updatedAt: scenario.updatedAt instanceof Date 
+          ? scenario.updatedAt.toISOString() 
+          : (scenario.updatedAt === null || scenario.updatedAt === undefined ? null : String(scenario.updatedAt)),
+      };
+      
+      // Use safeParse to avoid throwing errors
+      const result = ScenarioSchema.safeParse(transformed);
+      if (result.success) {
+        res.json(result.data);
+      } else {
+        console.error("Error validating scenario:", result.error, transformed);
+        // Return the transformed data even if validation fails
+        res.json(transformed);
+      }
     } catch (error) {
+      console.error("Failed to fetch scenario:", error);
       res.status(500).json({ message: "Failed to fetch scenario", error: error instanceof Error ? error.message : String(error) });
     }
   });
