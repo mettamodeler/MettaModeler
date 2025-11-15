@@ -1,7 +1,7 @@
 providers = ["python", "node"]
 
 [phases.setup]
-nixPkgs = ["pkgs.python312", "pkgs.nodejs_20"]
+nixPkgs = ["pkgs.python312"]
 
 [phases.install]
 cmds = [
