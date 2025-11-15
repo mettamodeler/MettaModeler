@@ -2695,3 +2695,1478 @@
 [1] 8:02:54 PM [vite] hmr invalidate /src/components/scenario/ScenarioManager.tsx Could not Fast Refresh ("validateInitialValues" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
 [1] 8:02:54 PM [vite] hmr update /src/index.css, /src/pages/ModelEditor.tsx
 [0] 8:02:56 PM [express] GET /api/models/3/scenarios 304 in 1287ms :: [{"id":5,"name":"low water","model...
+[0] 8:04:09 PM [express] GET /api/user 304 in 1023ms :: {"id":2,"username":"new_user2","displayName":nul...
+[0] 8:04:10 PM [express] GET /api/models 304 in 495ms :: [{"id":3,"name":"New Model","description":null,...
+[0] 8:04:11 PM [express] GET /api/projects 304 in 1008ms :: [{"id":2,"name":"New Project","description":...
+[0] 8:04:11 PM [express] GET /api/models/1 304 in 1109ms :: {"id":1,"name":"coffee 2","description":null...
+[0] 8:04:11 PM [express] GET /api/projects 304 in 439ms :: [{"id":2,"name":"New Project","description":n...
+[0] 8:04:11 PM [express] GET /api/models 304 in 467ms :: [{"id":3,"name":"New Model","description":null,...
+[0] 8:04:12 PM [express] PUT /api/models/1 200 in 544ms :: {"id":1,"name":"coffee 2","description":null,...
+[0] 8:04:13 PM [express] PUT /api/models/1 200 in 559ms :: {"id":1,"name":"coffee 2","description":null,...
+[0] 8:04:13 PM [express] GET /api/models/1/scenarios 200 in 550ms :: [{"id":2,"name":"coffee!","modelId"...
+[0] 8:04:13 PM [express] GET /api/models 200 in 460ms :: [{"id":3,"name":"New Model","description":null,...
+[0] 8:04:14 PM [express] GET /api/models/1 200 in 546ms :: {"id":1,"name":"coffee 2","description":null,...
+[0] Received simulation request: {
+[0]   "schemaVersion": "1.0.0",
+[0]   "nodes": [
+[0]     {
+[0]       "id": "node-1763138471606",
+[0]       "value": 0.5,
+[0]       "label": "Coffee",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763138472784",
+[0]       "value": 0.5,
+[0]       "label": "Anxiety",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763138473130",
+[0]       "value": 0.5,
+[0]       "label": "Productivity",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763138497762",
+[0]       "value": 0.5,
+[0]       "label": "Work Backlog",
+[0]       "type": "regular"
+[0]     }
+[0]   ],
+[0]   "edges": [
+[0]     {
+[0]       "source": "node-1763138471606",
+[0]       "target": "node-1763138473130",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763138473130",
+[0]       "target": "node-1763138497762",
+[0]       "weight": -0.7
+[0]     },
+[0]     {
+[0]       "source": "node-1763138497762",
+[0]       "target": "node-1763138472784",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763138471606",
+[0]       "target": "node-1763138472784",
+[0]       "weight": 0.5
+[0]     }
+[0]   ],
+[0]   "activation": "sigmoid",
+[0]   "threshold": 0.001,
+[0]   "maxIterations": 20,
+[0]   "compareToBaseline": true,
+[0]   "modelInitialValues": {
+[0]     "node-1763138471606": 0.5,
+[0]     "node-1763138472784": 0.5,
+[0]     "node-1763138473130": 0.5,
+[0]     "node-1763138497762": 0.5
+[0]   },
+[0]   "scenarioInitialValues": {
+[0]     "node-1763138471606": 1,
+[0]     "node-1763138472784": 0.5,
+[0]     "node-1763138473130": 0.5,
+[0]     "node-1763138497762": 0.5
+[0]   },
+[0]   "clampedNodes": []
+[0] }
+[0] Forwarding to Python backend: {
+[0]   "schemaVersion": "1.0.0",
+[0]   "nodes": [
+[0]     {
+[0]       "id": "node-1763138471606",
+[0]       "value": 0.5,
+[0]       "label": "Coffee",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763138472784",
+[0]       "value": 0.5,
+[0]       "label": "Anxiety",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763138473130",
+[0]       "value": 0.5,
+[0]       "label": "Productivity",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763138497762",
+[0]       "value": 0.5,
+[0]       "label": "Work Backlog",
+[0]       "type": "regular"
+[0]     }
+[0]   ],
+[0]   "edges": [
+[0]     {
+[0]       "source": "node-1763138471606",
+[0]       "target": "node-1763138473130",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763138473130",
+[0]       "target": "node-1763138497762",
+[0]       "weight": -0.7
+[0]     },
+[0]     {
+[0]       "source": "node-1763138497762",
+[0]       "target": "node-1763138472784",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763138471606",
+[0]       "target": "node-1763138472784",
+[0]       "weight": 0.5
+[0]     }
+[0]   ],
+[0]   "activation": "sigmoid",
+[0]   "threshold": 0.001,
+[0]   "maxIterations": 20,
+[0]   "compareToBaseline": true,
+[0]   "modelInitialValues": {
+[0]     "node-1763138471606": 0.5,
+[0]     "node-1763138472784": 0.5,
+[0]     "node-1763138473130": 0.5,
+[0]     "node-1763138497762": 0.5
+[0]   },
+[0]   "scenarioInitialValues": {
+[0]     "node-1763138471606": 1,
+[0]     "node-1763138472784": 0.5,
+[0]     "node-1763138473130": 0.5,
+[0]     "node-1763138497762": 0.5
+[0]   },
+[0]   "clampedNodes": []
+[0] }
+[0] Python simulation response: {
+[0]   "baselineFinalState": {
+[0]     "node-1763138471606": {
+[0]       "id": "node-1763138471606",
+[0]       "label": "Coffee",
+[0]       "value": 0.5
+[0]     },
+[0]     "node-1763138472784": {
+[0]       "id": "node-1763138472784",
+[0]       "label": "Anxiety",
+[0]       "value": 0.6109802885124016
+[0]     },
+[0]     "node-1763138473130": {
+[0]       "id": "node-1763138473130",
+[0]       "label": "Productivity",
+[0]       "value": 0.5621765008857981
+[0]     },
+[0]     "node-1763138497762": {
+[0]       "id": "node-1763138497762",
+[0]       "label": "Work Backlog",
+[0]       "value": 0.4028693661695084
+[0]     }
+[0]   },
+[0]   "baselineTimeSeries": {
+[0]     "node-1763138471606": [
+[0]       0.5,
+[0]       0.5,
+[0]       0.5,
+[0]       0.5,
+[0]       0.5
+[0]     ],
+[0]     "node-1763138472784": [
+[0]       0.5,
+[0]       0.6224593312018546,
+[0]       0.6122289463961529,
+[0]       0.6109802885124016,
+[0]       0.6109802885124016
+[0]     ],
+[0]     "node-1763138473130": [
+[0]       0.5,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981
+[0]     ],
+[0]     "node-1763138497762": [
+[0]       0.5,
+[0]       0.41338242108267,
+[0]       0.4028693661695084,
+[0]       0.4028693661695084,
+[0]       0.4028693661695084
+[0]     ]
+[0]   },
+[0]   "clampedNodes": [],
+[0]   "comparisonFinalState": {
+[0]     "node-1763138471606": {
+[0]       "id": "node-1763138471606",
+[0]       "label": "Coffee",
+[0]       "value": 0.5
+[0]     },
+[0]     "node-1763138472784": {
+[0]       "id": "node-1763138472784",
+[0]       "label": "Anxiety",
+[0]       "value": 0.6109802885124016
+[0]     },
+[0]     "node-1763138473130": {
+[0]       "id": "node-1763138473130",
+[0]       "label": "Productivity",
+[0]       "value": 0.5621765008857981
+[0]     },
+[0]     "node-1763138497762": {
+[0]       "id": "node-1763138497762",
+[0]       "label": "Work Backlog",
+[0]       "value": 0.4028693661695084
+[0]     }
+[0]   },
+[0]   "comparisonTimeSeries": {
+[0]     "node-1763138471606": [
+[0]       1,
+[0]       0.5,
+[0]       0.5,
+[0]       0.5,
+[0]       0.5,
+[0]       0.5
+[0]     ],
+[0]     "node-1763138472784": [
+[0]       0.5,
+[0]       0.679178699175393,
+[0]       0.6122289463961529,
+[0]       0.6097783112748605,
+[0]       0.6109802885124016,
+[0]       0.6109802885124016
+[0]     ],
+[0]     "node-1763138473130": [
+[0]       0.5,
+[0]       0.6224593312018546,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981
+[0]     ],
+[0]     "node-1763138497762": [
+[0]       0.5,
+[0]       0.41338242108267,
+[0]       0.39276091343520303,
+[0]       0.4028693661695084,
+[0]       0.4028693661695084,
+[0]       0.4028693661695084
+[0]     ]
+[0]   },
+[0]   "converged": true,
+[0]   "deltaFinalState": {
+[0]     "node-1763138471606": {
+[0]       "id": "node-1763138471606",
+[0]       "label": "Coffee",
+[0]       "value": 0
+[0]     },
+[0]     "node-1763138472784": {
+[0]       "id": "node-1763138472784",
+[0]       "label": "Anxiety",
+[0]       "value": 0
+[0]     },
+[0]     "node-1763138473130": {
+[0]       "id": "node-1763138473130",
+[0]       "label": "Productivity",
+[0]       "value": 0
+[0]     },
+[0]     "node-1763138497762": {
+[0]       "id": "node-1763138497762",
+[0]       "label": "Work Backlog",
+[0]       "value": 0
+[0]     }
+[0]   },
+[0]   "impactMetrics": {
+[0]     "node-1763138471606": {
+[0]       "auc": 0.25,
+[0]       "baseline": 0.5,
+[0]       "delta": 0,
+[0]       "direction": "Temporary High Increase",
+[0]       "id": "node-1763138471606",
+[0]       "label": "Coffee",
+[0]       "maxDifference": 0.5,
+[0]       "normalizedChangePercent": 0,
+[0]       "scenario": 0.5
+[0]     },
+[0]     "node-1763138472784": {
+[0]       "auc": 0.05551739073599726,
+[0]       "baseline": 0.6109802885124016,
+[0]       "delta": 0,
+[0]       "direction": "Temporary High Increase",
+[0]       "id": "node-1763138472784",
+[0]       "label": "Anxiety",
+[0]       "maxDifference": 0.05671936797353838,
+[0]       "normalizedChangePercent": 0,
+[0]       "scenario": 0.6109802885124016
+[0]     },
+[0]     "node-1763138473130": {
+[0]       "auc": 0.060282830316056524,
+[0]       "baseline": 0.5621765008857981,
+[0]       "delta": 0,
+[0]       "direction": "Temporary High Increase",
+[0]       "id": "node-1763138473130",
+[0]       "label": "Productivity",
+[0]       "maxDifference": 0.060282830316056524,
+[0]       "normalizedChangePercent": 0,
+[0]       "scenario": 0.5621765008857981
+[0]     },
+[0]     "node-1763138497762": {
+[0]       "auc": -0.010108452734305384,
+[0]       "baseline": 0.4028693661695084,
+[0]       "delta": 0,
+[0]       "direction": "Temporary High Decrease",
+[0]       "id": "node-1763138497762",
+[0]       "label": "Work Backlog",
+[0]       "maxDifference": -0.010108452734305384,
+[0]       "normalizedChangePercent": 0,
+[0]       "scenario": 0.4028693661695084
+[0]     }
+[0]   },
+[0]   "iterations": 5
+[0] }
+[0] 8:04:15 PM [express] POST /api/simulate 200 in 437ms :: {"baselineFinalState":{"node-1763138471606":...
+[0] Scenario from DB: {
+[0]   id: 2,
+[0]   name: 'coffee!',
+[0]   modelId: 1,
+[0]   description: '',
+[0]   initialValues: {
+[0]     'node-1763138471606': 1,
+[0]     'node-1763138472784': 0.5,
+[0]     'node-1763138473130': 0.5,
+[0]     'node-1763138497762': 0.5
+[0]   },
+[0]   results: {
+[0]     converged: true,
+[0]     finalState: {
+[0]       'node-1763138471606': [Object],
+[0]       'node-1763138472784': [Object],
+[0]       'node-1763138473130': [Object],
+[0]       'node-1763138497762': [Object]
+[0]     },
+[0]     iterations: 5,
+[0]     timeSeries: {
+[0]       'node-1763138471606': [Array],
+[0]       'node-1763138472784': [Array],
+[0]       'node-1763138473130': [Array],
+[0]       'node-1763138497762': [Array]
+[0]     },
+[0]     initialValues: {
+[0]       'node-1763138471606': 1,
+[0]       'node-1763138472784': 0.5,
+[0]       'node-1763138473130': 0.5,
+[0]       'node-1763138497762': 0.5
+[0]     },
+[0]     baselineConverged: true,
+[0]     baselineFinalState: {
+[0]       'node-1763138471606': [Object],
+[0]       'node-1763138472784': [Object],
+[0]       'node-1763138473130': [Object],
+[0]       'node-1763138497762': [Object]
+[0]     },
+[0]     baselineIterations: 5,
+[0]     baselineTimeSeries: {
+[0]       'node-1763138471606': [Array],
+[0]       'node-1763138472784': [Array],
+[0]       'node-1763138473130': [Array],
+[0]       'node-1763138497762': [Array]
+[0]     }
+[0]   },
+[0]   simulationParams: { threshold: 0.001, activation: 'sigmoid', maxIterations: 20 },
+[0]   clampedNodes: [],
+[0]   nodes: [
+[0]     { id: 'node-1763138471606', label: 'Coffee', value: 1 },
+[0]     { id: 'node-1763138472784', label: 'Anxiety', value: 0.5 },
+[0]     { id: 'node-1763138473130', label: 'Productivity', value: 0.5 },
+[0]     { id: 'node-1763138497762', label: 'Work Backlog', value: 0.5 }
+[0]   ],
+[0]   createdAt: '2025-11-14T16:49:49.776Z',
+[0]   updatedAt: '2025-11-15T01:04:16.036Z'
+[0] }
+[0] Scenario after Zod validation: {
+[0]   id: 2,
+[0]   name: 'coffee!',
+[0]   description: '',
+[0]   modelId: 1,
+[0]   nodes: [
+[0]     { id: 'node-1763138471606', label: 'Coffee', value: 1 },
+[0]     { id: 'node-1763138472784', label: 'Anxiety', value: 0.5 },
+[0]     { id: 'node-1763138473130', label: 'Productivity', value: 0.5 },
+[0]     { id: 'node-1763138497762', label: 'Work Backlog', value: 0.5 }
+[0]   ],
+[0]   initialValues: {
+[0]     'node-1763138471606': 1,
+[0]     'node-1763138472784': 0.5,
+[0]     'node-1763138473130': 0.5,
+[0]     'node-1763138497762': 0.5
+[0]   },
+[0]   clampedNodes: [],
+[0]   simulationParams: { activation: 'sigmoid', threshold: 0.001, maxIterations: 20 },
+[0]   results: {
+[0]     finalState: {
+[0]       'node-1763138471606': [Object],
+[0]       'node-1763138472784': [Object],
+[0]       'node-1763138473130': [Object],
+[0]       'node-1763138497762': [Object]
+[0]     },
+[0]     timeSeries: {
+[0]       'node-1763138471606': [Array],
+[0]       'node-1763138472784': [Array],
+[0]       'node-1763138473130': [Array],
+[0]       'node-1763138497762': [Array]
+[0]     },
+[0]     iterations: 5,
+[0]     converged: true,
+[0]     initialValues: {
+[0]       'node-1763138471606': 1,
+[0]       'node-1763138472784': 0.5,
+[0]       'node-1763138473130': 0.5,
+[0]       'node-1763138497762': 0.5
+[0]     },
+[0]     baselineFinalState: {
+[0]       'node-1763138471606': [Object],
+[0]       'node-1763138472784': [Object],
+[0]       'node-1763138473130': [Object],
+[0]       'node-1763138497762': [Object]
+[0]     },
+[0]     baselineTimeSeries: {
+[0]       'node-1763138471606': [Array],
+[0]       'node-1763138472784': [Array],
+[0]       'node-1763138473130': [Array],
+[0]       'node-1763138497762': [Array]
+[0]     },
+[0]     baselineIterations: 5,
+[0]     baselineConverged: true
+[0]   },
+[0]   createdAt: '2025-11-14T16:49:49.776Z',
+[0]   updatedAt: '2025-11-15T01:04:16.036Z'
+[0] }
+[0] 8:04:16 PM [express] PATCH /api/scenarios/2 200 in 568ms :: {"id":2,"name":"coffee!","description":"...
+[0] Received simulation request: {
+[0]   "schemaVersion": "1.0.0",
+[0]   "nodes": [
+[0]     {
+[0]       "id": "node-1763138471606",
+[0]       "value": 0.5,
+[0]       "label": "Coffee",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763138472784",
+[0]       "value": 0.5,
+[0]       "label": "Anxiety",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763138473130",
+[0]       "value": 0.5,
+[0]       "label": "Productivity",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763138497762",
+[0]       "value": 0.5,
+[0]       "label": "Work Backlog",
+[0]       "type": "regular"
+[0]     }
+[0]   ],
+[0]   "edges": [
+[0]     {
+[0]       "source": "node-1763138471606",
+[0]       "target": "node-1763138473130",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763138473130",
+[0]       "target": "node-1763138497762",
+[0]       "weight": -0.7
+[0]     },
+[0]     {
+[0]       "source": "node-1763138497762",
+[0]       "target": "node-1763138472784",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763138471606",
+[0]       "target": "node-1763138472784",
+[0]       "weight": 0.5
+[0]     }
+[0]   ],
+[0]   "activation": "sigmoid",
+[0]   "threshold": 0.001,
+[0]   "maxIterations": 20,
+[0]   "compareToBaseline": false,
+[0]   "clampedNodes": [
+[0]     "node-1763138472784"
+[0]   ]
+[0] }
+[0] Forwarding to Python backend: {
+[0]   "schemaVersion": "1.0.0",
+[0]   "nodes": [
+[0]     {
+[0]       "id": "node-1763138471606",
+[0]       "value": 0.5,
+[0]       "label": "Coffee",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763138472784",
+[0]       "value": 0.5,
+[0]       "label": "Anxiety",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763138473130",
+[0]       "value": 0.5,
+[0]       "label": "Productivity",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763138497762",
+[0]       "value": 0.5,
+[0]       "label": "Work Backlog",
+[0]       "type": "regular"
+[0]     }
+[0]   ],
+[0]   "edges": [
+[0]     {
+[0]       "source": "node-1763138471606",
+[0]       "target": "node-1763138473130",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763138473130",
+[0]       "target": "node-1763138497762",
+[0]       "weight": -0.7
+[0]     },
+[0]     {
+[0]       "source": "node-1763138497762",
+[0]       "target": "node-1763138472784",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763138471606",
+[0]       "target": "node-1763138472784",
+[0]       "weight": 0.5
+[0]     }
+[0]   ],
+[0]   "activation": "sigmoid",
+[0]   "threshold": 0.001,
+[0]   "maxIterations": 20,
+[0]   "compareToBaseline": false,
+[0]   "clampedNodes": [
+[0]     "node-1763138472784"
+[0]   ]
+[0] }
+[0] Python simulation response: {
+[0]   "clampedNodes": [
+[0]     "node-1763138472784"
+[0]   ],
+[0]   "converged": true,
+[0]   "finalState": {
+[0]     "node-1763138471606": {
+[0]       "id": "node-1763138471606",
+[0]       "label": "Coffee",
+[0]       "value": {
+[0]         "id": "node-1763138471606",
+[0]         "label": "Coffee",
+[0]         "value": 0.5
+[0]       }
+[0]     },
+[0]     "node-1763138472784": {
+[0]       "id": "node-1763138472784",
+[0]       "label": "Anxiety",
+[0]       "value": {
+[0]         "id": "node-1763138472784",
+[0]         "label": "Anxiety",
+[0]         "value": 0.5
+[0]       }
+[0]     },
+[0]     "node-1763138473130": {
+[0]       "id": "node-1763138473130",
+[0]       "label": "Productivity",
+[0]       "value": {
+[0]         "id": "node-1763138473130",
+[0]         "label": "Productivity",
+[0]         "value": 0.5621765008857981
+[0]       }
+[0]     },
+[0]     "node-1763138497762": {
+[0]       "id": "node-1763138497762",
+[0]       "label": "Work Backlog",
+[0]       "value": {
+[0]         "id": "node-1763138497762",
+[0]         "label": "Work Backlog",
+[0]         "value": 0.4028693661695084
+[0]       }
+[0]     }
+[0]   },
+[0]   "initialValues": {
+[0]     "node-1763138471606": 0.5,
+[0]     "node-1763138472784": 0.5,
+[0]     "node-1763138473130": 0.5,
+[0]     "node-1763138497762": 0.5
+[0]   },
+[0]   "iterations": 3,
+[0]   "timeSeries": {
+[0]     "node-1763138471606": [
+[0]       0.5,
+[0]       0.5,
+[0]       0.5,
+[0]       0.5
+[0]     ],
+[0]     "node-1763138472784": [
+[0]       0.5,
+[0]       0.5,
+[0]       0.5,
+[0]       0.5
+[0]     ],
+[0]     "node-1763138473130": [
+[0]       0.5,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981
+[0]     ],
+[0]     "node-1763138497762": [
+[0]       0.5,
+[0]       0.41338242108267,
+[0]       0.4028693661695084,
+[0]       0.4028693661695084
+[0]     ]
+[0]   }
+[0] }
+[0] 8:04:37 PM [express] POST /api/simulate 200 in 964ms :: {"clampedNodes":["node-1763138472784"],"conv...
+[0] REQ.BODY: {
+[0]   "name": "antianxiety",
+[0]   "modelId": 1,
+[0]   "description": "",
+[0]   "nodes": [
+[0]     {
+[0]       "id": "node-1763138471606",
+[0]       "label": "Coffee",
+[0]       "value": 0.5
+[0]     },
+[0]     {
+[0]       "id": "node-1763138472784",
+[0]       "label": "Anxiety",
+[0]       "value": 0
+[0]     },
+[0]     {
+[0]       "id": "node-1763138473130",
+[0]       "label": "Productivity",
+[0]       "value": 0.5
+[0]     },
+[0]     {
+[0]       "id": "node-1763138497762",
+[0]       "label": "Work Backlog",
+[0]       "value": 0.5
+[0]     }
+[0]   ],
+[0]   "initialValues": {
+[0]     "node-1763138471606": 0.5,
+[0]     "node-1763138472784": 0,
+[0]     "node-1763138473130": 0.5,
+[0]     "node-1763138497762": 0.5
+[0]   },
+[0]   "clampedNodes": [
+[0]     "node-1763138472784"
+[0]   ],
+[0]   "results": {
+[0]     "finalState": {
+[0]       "node-1763138471606": {
+[0]         "id": "node-1763138471606",
+[0]         "label": "Coffee",
+[0]         "value": 0.5
+[0]       },
+[0]       "node-1763138472784": {
+[0]         "id": "node-1763138472784",
+[0]         "label": "Anxiety",
+[0]         "value": 0.5
+[0]       },
+[0]       "node-1763138473130": {
+[0]         "id": "node-1763138473130",
+[0]         "label": "Productivity",
+[0]         "value": 0.5621765008857981
+[0]       },
+[0]       "node-1763138497762": {
+[0]         "id": "node-1763138497762",
+[0]         "label": "Work Backlog",
+[0]         "value": 0.4028693661695084
+[0]       }
+[0]     },
+[0]     "timeSeries": {
+[0]       "node-1763138471606": [
+[0]         0.5,
+[0]         0.5,
+[0]         0.5,
+[0]         0.5
+[0]       ],
+[0]       "node-1763138472784": [
+[0]         0.5,
+[0]         0.5,
+[0]         0.5,
+[0]         0.5
+[0]       ],
+[0]       "node-1763138473130": [
+[0]         0.5,
+[0]         0.5621765008857981,
+[0]         0.5621765008857981,
+[0]         0.5621765008857981
+[0]       ],
+[0]       "node-1763138497762": [
+[0]         0.5,
+[0]         0.41338242108267,
+[0]         0.4028693661695084,
+[0]         0.4028693661695084
+[0]       ]
+[0]     },
+[0]     "iterations": 3,
+[0]     "converged": true,
+[0]     "initialValues": {
+[0]       "node-1763138471606": 0.5,
+[0]       "node-1763138472784": 0,
+[0]       "node-1763138473130": 0.5,
+[0]       "node-1763138497762": 0.5
+[0]     }
+[0]   },
+[0]   "simulationParams": {
+[0]     "activation": "sigmoid",
+[0]     "threshold": 0.001,
+[0]     "maxIterations": 20
+[0]   }
+[0] }
+[0] Zod validation result: {
+[0]   "success": true,
+[0]   "data": {
+[0]     "name": "antianxiety",
+[0]     "description": "",
+[0]     "modelId": 1,
+[0]     "nodes": [
+[0]       {
+[0]         "id": "node-1763138471606",
+[0]         "label": "Coffee",
+[0]         "value": 0.5
+[0]       },
+[0]       {
+[0]         "id": "node-1763138472784",
+[0]         "label": "Anxiety",
+[0]         "value": 0
+[0]       },
+[0]       {
+[0]         "id": "node-1763138473130",
+[0]         "label": "Productivity",
+[0]         "value": 0.5
+[0]       },
+[0]       {
+[0]         "id": "node-1763138497762",
+[0]         "label": "Work Backlog",
+[0]         "value": 0.5
+[0]       }
+[0]     ],
+[0]     "initialValues": {
+[0]       "node-1763138471606": 0.5,
+[0]       "node-1763138472784": 0,
+[0]       "node-1763138473130": 0.5,
+[0]       "node-1763138497762": 0.5
+[0]     },
+[0]     "clampedNodes": [
+[0]       "node-1763138472784"
+[0]     ],
+[0]     "simulationParams": {
+[0]       "activation": "sigmoid",
+[0]       "threshold": 0.001,
+[0]       "maxIterations": 20
+[0]     },
+[0]     "results": {
+[0]       "finalState": {
+[0]         "node-1763138471606": {
+[0]           "id": "node-1763138471606",
+[0]           "label": "Coffee",
+[0]           "value": 0.5
+[0]         },
+[0]         "node-1763138472784": {
+[0]           "id": "node-1763138472784",
+[0]           "label": "Anxiety",
+[0]           "value": 0.5
+[0]         },
+[0]         "node-1763138473130": {
+[0]           "id": "node-1763138473130",
+[0]           "label": "Productivity",
+[0]           "value": 0.5621765008857981
+[0]         },
+[0]         "node-1763138497762": {
+[0]           "id": "node-1763138497762",
+[0]           "label": "Work Backlog",
+[0]           "value": 0.4028693661695084
+[0]         }
+[0]       },
+[0]       "timeSeries": {
+[0]         "node-1763138471606": [
+[0]           0.5,
+[0]           0.5,
+[0]           0.5,
+[0]           0.5
+[0]         ],
+[0]         "node-1763138472784": [
+[0]           0.5,
+[0]           0.5,
+[0]           0.5,
+[0]           0.5
+[0]         ],
+[0]         "node-1763138473130": [
+[0]           0.5,
+[0]           0.5621765008857981,
+[0]           0.5621765008857981,
+[0]           0.5621765008857981
+[0]         ],
+[0]         "node-1763138497762": [
+[0]           0.5,
+[0]           0.41338242108267,
+[0]           0.4028693661695084,
+[0]           0.4028693661695084
+[0]         ]
+[0]       },
+[0]       "iterations": 3,
+[0]       "converged": true,
+[0]       "initialValues": {
+[0]         "node-1763138471606": 0.5,
+[0]         "node-1763138472784": 0,
+[0]         "node-1763138473130": 0.5,
+[0]         "node-1763138497762": 0.5
+[0]       }
+[0]     }
+[0]   }
+[0] }
+[0] Scenario data to be inserted: {
+[0]   "name": "antianxiety",
+[0]   "modelId": 1,
+[0]   "description": null,
+[0]   "nodes": [
+[0]     {
+[0]       "id": "node-1763138471606",
+[0]       "label": "Coffee",
+[0]       "value": 0.5
+[0]     },
+[0]     {
+[0]       "id": "node-1763138472784",
+[0]       "label": "Anxiety",
+[0]       "value": 0
+[0]     },
+[0]     {
+[0]       "id": "node-1763138473130",
+[0]       "label": "Productivity",
+[0]       "value": 0.5
+[0]     },
+[0]     {
+[0]       "id": "node-1763138497762",
+[0]       "label": "Work Backlog",
+[0]       "value": 0.5
+[0]     }
+[0]   ],
+[0]   "initialValues": {
+[0]     "node-1763138471606": 0.5,
+[0]     "node-1763138472784": 0,
+[0]     "node-1763138473130": 0.5,
+[0]     "node-1763138497762": 0.5
+[0]   },
+[0]   "clampedNodes": [
+[0]     "node-1763138472784"
+[0]   ],
+[0]   "simulationParams": {
+[0]     "activation": "sigmoid",
+[0]     "threshold": 0.001,
+[0]     "maxIterations": 20
+[0]   },
+[0]   "results": {
+[0]     "finalState": {
+[0]       "node-1763138471606": {
+[0]         "id": "node-1763138471606",
+[0]         "label": "Coffee",
+[0]         "value": 0.5
+[0]       },
+[0]       "node-1763138472784": {
+[0]         "id": "node-1763138472784",
+[0]         "label": "Anxiety",
+[0]         "value": 0.5
+[0]       },
+[0]       "node-1763138473130": {
+[0]         "id": "node-1763138473130",
+[0]         "label": "Productivity",
+[0]         "value": 0.5621765008857981
+[0]       },
+[0]       "node-1763138497762": {
+[0]         "id": "node-1763138497762",
+[0]         "label": "Work Backlog",
+[0]         "value": 0.4028693661695084
+[0]       }
+[0]     },
+[0]     "timeSeries": {
+[0]       "node-1763138471606": [
+[0]         0.5,
+[0]         0.5,
+[0]         0.5,
+[0]         0.5
+[0]       ],
+[0]       "node-1763138472784": [
+[0]         0.5,
+[0]         0.5,
+[0]         0.5,
+[0]         0.5
+[0]       ],
+[0]       "node-1763138473130": [
+[0]         0.5,
+[0]         0.5621765008857981,
+[0]         0.5621765008857981,
+[0]         0.5621765008857981
+[0]       ],
+[0]       "node-1763138497762": [
+[0]         0.5,
+[0]         0.41338242108267,
+[0]         0.4028693661695084,
+[0]         0.4028693661695084
+[0]       ]
+[0]     },
+[0]     "iterations": 3,
+[0]     "converged": true,
+[0]     "initialValues": {
+[0]       "node-1763138471606": 0.5,
+[0]       "node-1763138472784": 0,
+[0]       "node-1763138473130": 0.5,
+[0]       "node-1763138497762": 0.5
+[0]     }
+[0]   }
+[0] }
+[0] createScenario received clampedNodes: ["node-1763138472784"]
+[0] Scenario from DB: {
+[0]   id: 6,
+[0]   name: 'antianxiety',
+[0]   modelId: 1,
+[0]   description: null,
+[0]   initialValues: {
+[0]     'node-1763138471606': 0.5,
+[0]     'node-1763138472784': 0,
+[0]     'node-1763138473130': 0.5,
+[0]     'node-1763138497762': 0.5
+[0]   },
+[0]   results: {
+[0]     converged: true,
+[0]     finalState: {
+[0]       'node-1763138471606': [Object],
+[0]       'node-1763138472784': [Object],
+[0]       'node-1763138473130': [Object],
+[0]       'node-1763138497762': [Object]
+[0]     },
+[0]     iterations: 3,
+[0]     timeSeries: {
+[0]       'node-1763138471606': [Array],
+[0]       'node-1763138472784': [Array],
+[0]       'node-1763138473130': [Array],
+[0]       'node-1763138497762': [Array]
+[0]     },
+[0]     initialValues: {
+[0]       'node-1763138471606': 0.5,
+[0]       'node-1763138472784': 0,
+[0]       'node-1763138473130': 0.5,
+[0]       'node-1763138497762': 0.5
+[0]     }
+[0]   },
+[0]   simulationParams: { threshold: 0.001, activation: 'sigmoid', maxIterations: 20 },
+[0]   clampedNodes: [ 'node-1763138472784' ],
+[0]   nodes: [
+[0]     { id: 'node-1763138471606', label: 'Coffee', value: 0.5 },
+[0]     { id: 'node-1763138472784', label: 'Anxiety', value: 0 },
+[0]     { id: 'node-1763138473130', label: 'Productivity', value: 0.5 },
+[0]     { id: 'node-1763138497762', label: 'Work Backlog', value: 0.5 }
+[0]   ],
+[0]   createdAt: '2025-11-15T01:04:37.431Z',
+[0]   updatedAt: '2025-11-15T01:04:37.431Z'
+[0] }
+[0] Scenario after Zod validation: {
+[0]   id: 6,
+[0]   name: 'antianxiety',
+[0]   description: null,
+[0]   modelId: 1,
+[0]   nodes: [
+[0]     { id: 'node-1763138471606', label: 'Coffee', value: 0.5 },
+[0]     { id: 'node-1763138472784', label: 'Anxiety', value: 0 },
+[0]     { id: 'node-1763138473130', label: 'Productivity', value: 0.5 },
+[0]     { id: 'node-1763138497762', label: 'Work Backlog', value: 0.5 }
+[0]   ],
+[0]   initialValues: {
+[0]     'node-1763138471606': 0.5,
+[0]     'node-1763138472784': 0,
+[0]     'node-1763138473130': 0.5,
+[0]     'node-1763138497762': 0.5
+[0]   },
+[0]   clampedNodes: [ 'node-1763138472784' ],
+[0]   simulationParams: { activation: 'sigmoid', threshold: 0.001, maxIterations: 20 },
+[0]   results: {
+[0]     finalState: {
+[0]       'node-1763138471606': [Object],
+[0]       'node-1763138472784': [Object],
+[0]       'node-1763138473130': [Object],
+[0]       'node-1763138497762': [Object]
+[0]     },
+[0]     timeSeries: {
+[0]       'node-1763138471606': [Array],
+[0]       'node-1763138472784': [Array],
+[0]       'node-1763138473130': [Array],
+[0]       'node-1763138497762': [Array]
+[0]     },
+[0]     iterations: 3,
+[0]     converged: true,
+[0]     initialValues: {
+[0]       'node-1763138471606': 0.5,
+[0]       'node-1763138472784': 0,
+[0]       'node-1763138473130': 0.5,
+[0]       'node-1763138497762': 0.5
+[0]     }
+[0]   },
+[0]   createdAt: '2025-11-15T01:04:37.431Z',
+[0]   updatedAt: '2025-11-15T01:04:37.431Z'
+[0] }
+[0] 8:04:37 PM [express] POST /api/scenarios 201 in 568ms :: {"id":6,"name":"antianxiety","description":...
+[0] Received simulation request: {
+[0]   "schemaVersion": "1.0.0",
+[0]   "nodes": [
+[0]     {
+[0]       "id": "node-1763138471606",
+[0]       "value": 0.5,
+[0]       "label": "Coffee",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763138472784",
+[0]       "value": 0.5,
+[0]       "label": "Anxiety",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763138473130",
+[0]       "value": 0.5,
+[0]       "label": "Productivity",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763138497762",
+[0]       "value": 0.5,
+[0]       "label": "Work Backlog",
+[0]       "type": "regular"
+[0]     }
+[0]   ],
+[0]   "edges": [
+[0]     {
+[0]       "source": "node-1763138471606",
+[0]       "target": "node-1763138473130",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763138473130",
+[0]       "target": "node-1763138497762",
+[0]       "weight": -0.7
+[0]     },
+[0]     {
+[0]       "source": "node-1763138497762",
+[0]       "target": "node-1763138472784",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763138471606",
+[0]       "target": "node-1763138472784",
+[0]       "weight": 0.5
+[0]     }
+[0]   ],
+[0]   "activation": "sigmoid",
+[0]   "threshold": 0.001,
+[0]   "maxIterations": 20,
+[0]   "compareToBaseline": true,
+[0]   "modelInitialValues": {
+[0]     "node-1763138471606": 0.5,
+[0]     "node-1763138472784": 0.5,
+[0]     "node-1763138473130": 0.5,
+[0]     "node-1763138497762": 0.5
+[0]   },
+[0]   "scenarioInitialValues": {
+[0]     "node-1763138471606": 0.5,
+[0]     "node-1763138472784": 0,
+[0]     "node-1763138473130": 0.5,
+[0]     "node-1763138497762": 0.5
+[0]   },
+[0]   "clampedNodes": [
+[0]     "node-1763138472784"
+[0]   ]
+[0] }
+[0] Forwarding to Python backend: {
+[0]   "schemaVersion": "1.0.0",
+[0]   "nodes": [
+[0]     {
+[0]       "id": "node-1763138471606",
+[0]       "value": 0.5,
+[0]       "label": "Coffee",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763138472784",
+[0]       "value": 0.5,
+[0]       "label": "Anxiety",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763138473130",
+[0]       "value": 0.5,
+[0]       "label": "Productivity",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763138497762",
+[0]       "value": 0.5,
+[0]       "label": "Work Backlog",
+[0]       "type": "regular"
+[0]     }
+[0]   ],
+[0]   "edges": [
+[0]     {
+[0]       "source": "node-1763138471606",
+[0]       "target": "node-1763138473130",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763138473130",
+[0]       "target": "node-1763138497762",
+[0]       "weight": -0.7
+[0]     },
+[0]     {
+[0]       "source": "node-1763138497762",
+[0]       "target": "node-1763138472784",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763138471606",
+[0]       "target": "node-1763138472784",
+[0]       "weight": 0.5
+[0]     }
+[0]   ],
+[0]   "activation": "sigmoid",
+[0]   "threshold": 0.001,
+[0]   "maxIterations": 20,
+[0]   "compareToBaseline": true,
+[0]   "modelInitialValues": {
+[0]     "node-1763138471606": 0.5,
+[0]     "node-1763138472784": 0.5,
+[0]     "node-1763138473130": 0.5,
+[0]     "node-1763138497762": 0.5
+[0]   },
+[0]   "scenarioInitialValues": {
+[0]     "node-1763138471606": 0.5,
+[0]     "node-1763138472784": 0,
+[0]     "node-1763138473130": 0.5,
+[0]     "node-1763138497762": 0.5
+[0]   },
+[0]   "clampedNodes": [
+[0]     "node-1763138472784"
+[0]   ]
+[0] }
+[0] Python simulation response: {
+[0]   "baselineFinalState": {
+[0]     "node-1763138471606": {
+[0]       "id": "node-1763138471606",
+[0]       "label": "Coffee",
+[0]       "value": 0.5
+[0]     },
+[0]     "node-1763138472784": {
+[0]       "id": "node-1763138472784",
+[0]       "label": "Anxiety",
+[0]       "value": 0.6109802885124016
+[0]     },
+[0]     "node-1763138473130": {
+[0]       "id": "node-1763138473130",
+[0]       "label": "Productivity",
+[0]       "value": 0.5621765008857981
+[0]     },
+[0]     "node-1763138497762": {
+[0]       "id": "node-1763138497762",
+[0]       "label": "Work Backlog",
+[0]       "value": 0.4028693661695084
+[0]     }
+[0]   },
+[0]   "baselineTimeSeries": {
+[0]     "node-1763138471606": [
+[0]       0.5,
+[0]       0.5,
+[0]       0.5,
+[0]       0.5,
+[0]       0.5
+[0]     ],
+[0]     "node-1763138472784": [
+[0]       0.5,
+[0]       0.6224593312018546,
+[0]       0.6122289463961529,
+[0]       0.6109802885124016,
+[0]       0.6109802885124016
+[0]     ],
+[0]     "node-1763138473130": [
+[0]       0.5,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981
+[0]     ],
+[0]     "node-1763138497762": [
+[0]       0.5,
+[0]       0.41338242108267,
+[0]       0.4028693661695084,
+[0]       0.4028693661695084,
+[0]       0.4028693661695084
+[0]     ]
+[0]   },
+[0]   "clampedNodes": [
+[0]     "node-1763138472784"
+[0]   ],
+[0]   "comparisonFinalState": {
+[0]     "node-1763138471606": {
+[0]       "id": "node-1763138471606",
+[0]       "label": "Coffee",
+[0]       "value": 0.5
+[0]     },
+[0]     "node-1763138472784": {
+[0]       "id": "node-1763138472784",
+[0]       "label": "Anxiety",
+[0]       "value": 0
+[0]     },
+[0]     "node-1763138473130": {
+[0]       "id": "node-1763138473130",
+[0]       "label": "Productivity",
+[0]       "value": 0.5621765008857981
+[0]     },
+[0]     "node-1763138497762": {
+[0]       "id": "node-1763138497762",
+[0]       "label": "Work Backlog",
+[0]       "value": 0.4028693661695084
+[0]     }
+[0]   },
+[0]   "comparisonTimeSeries": {
+[0]     "node-1763138471606": [
+[0]       0.5,
+[0]       0.5,
+[0]       0.5,
+[0]       0.5
+[0]     ],
+[0]     "node-1763138472784": [
+[0]       0,
+[0]       0,
+[0]       0,
+[0]       0
+[0]     ],
+[0]     "node-1763138473130": [
+[0]       0.5,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981
+[0]     ],
+[0]     "node-1763138497762": [
+[0]       0.5,
+[0]       0.41338242108267,
+[0]       0.4028693661695084,
+[0]       0.4028693661695084
+[0]     ]
+[0]   },
+[0]   "converged": true,
+[0]   "deltaFinalState": {
+[0]     "node-1763138471606": {
+[0]       "id": "node-1763138471606",
+[0]       "label": "Coffee",
+[0]       "value": 0
+[0]     },
+[0]     "node-1763138472784": {
+[0]       "id": "node-1763138472784",
+[0]       "label": "Anxiety",
+[0]       "value": -0.6109802885124016
+[0]     },
+[0]     "node-1763138473130": {
+[0]       "id": "node-1763138473130",
+[0]       "label": "Productivity",
+[0]       "value": 0
+[0]     },
+[0]     "node-1763138497762": {
+[0]       "id": "node-1763138497762",
+[0]       "label": "Work Backlog",
+[0]       "value": 0
+[0]     }
+[0]   },
+[0]   "impactMetrics": {
+[0]     "node-1763138471606": {
+[0]       "auc": 0,
+[0]       "baseline": 0.5,
+[0]       "delta": 0,
+[0]       "direction": "No Change",
+[0]       "id": "node-1763138471606",
+[0]       "label": "Coffee",
+[0]       "maxDifference": 0,
+[0]       "normalizedChangePercent": 0,
+[0]       "scenario": 0.5
+[0]     },
+[0]     "node-1763138472784": {
+[0]       "auc": -1.7901784218542083,
+[0]       "baseline": 0.6109802885124016,
+[0]       "delta": -0.6109802885124016,
+[0]       "direction": "High Decrease",
+[0]       "id": "node-1763138472784",
+[0]       "label": "Anxiety",
+[0]       "maxDifference": -0.6224593312018546,
+[0]       "normalizedChangePercent": -100,
+[0]       "scenario": 0
+[0]     },
+[0]     "node-1763138473130": {
+[0]       "auc": 0,
+[0]       "baseline": 0.5621765008857981,
+[0]       "delta": 0,
+[0]       "direction": "No Change",
+[0]       "id": "node-1763138473130",
+[0]       "label": "Productivity",
+[0]       "maxDifference": 0,
+[0]       "normalizedChangePercent": 0,
+[0]       "scenario": 0.5621765008857981
+[0]     },
+[0]     "node-1763138497762": {
+[0]       "auc": 0,
+[0]       "baseline": 0.4028693661695084,
+[0]       "delta": 0,
+[0]       "direction": "No Change",
+[0]       "id": "node-1763138497762",
+[0]       "label": "Work Backlog",
+[0]       "maxDifference": 0,
+[0]       "normalizedChangePercent": 0,
+[0]       "scenario": 0.4028693661695084
+[0]     }
+[0]   },
+[0]   "iterations": 4
+[0] }
+[0] 8:04:43 PM [express] POST /api/simulate 200 in 403ms :: {"baselineFinalState":{"node-1763138471606":...
+[0] Scenario from DB: {
+[0]   id: 6,
+[0]   name: 'antianxiety',
+[0]   modelId: 1,
+[0]   description: null,
+[0]   initialValues: {
+[0]     'node-1763138471606': 0.5,
+[0]     'node-1763138472784': 0,
+[0]     'node-1763138473130': 0.5,
+[0]     'node-1763138497762': 0.5
+[0]   },
+[0]   results: {
+[0]     converged: true,
+[0]     finalState: {
+[0]       'node-1763138471606': [Object],
+[0]       'node-1763138472784': [Object],
+[0]       'node-1763138473130': [Object],
+[0]       'node-1763138497762': [Object]
+[0]     },
+[0]     iterations: 4,
+[0]     timeSeries: {
+[0]       'node-1763138471606': [Array],
+[0]       'node-1763138472784': [Array],
+[0]       'node-1763138473130': [Array],
+[0]       'node-1763138497762': [Array]
+[0]     },
+[0]     initialValues: {
+[0]       'node-1763138471606': 0.5,
+[0]       'node-1763138472784': 0,
+[0]       'node-1763138473130': 0.5,
+[0]       'node-1763138497762': 0.5
+[0]     },
+[0]     baselineConverged: true,
+[0]     baselineFinalState: {
+[0]       'node-1763138471606': [Object],
+[0]       'node-1763138472784': [Object],
+[0]       'node-1763138473130': [Object],
+[0]       'node-1763138497762': [Object]
+[0]     },
+[0]     baselineIterations: 4,
+[0]     baselineTimeSeries: {
+[0]       'node-1763138471606': [Array],
+[0]       'node-1763138472784': [Array],
+[0]       'node-1763138473130': [Array],
+[0]       'node-1763138497762': [Array]
+[0]     }
+[0]   },
+[0]   simulationParams: { threshold: 0.001, activation: 'sigmoid', maxIterations: 20 },
+[0]   clampedNodes: [],
+[0]   nodes: [
+[0]     { id: 'node-1763138471606', label: 'Coffee', value: 0.5 },
+[0]     { id: 'node-1763138472784', label: 'Anxiety', value: 0 },
+[0]     { id: 'node-1763138473130', label: 'Productivity', value: 0.5 },
+[0]     { id: 'node-1763138497762', label: 'Work Backlog', value: 0.5 }
+[0]   ],
+[0]   createdAt: '2025-11-15T01:04:37.431Z',
+[0]   updatedAt: '2025-11-15T01:04:43.631Z'
+[0] }
+[0] Scenario after Zod validation: {
+[0]   id: 6,
+[0]   name: 'antianxiety',
+[0]   description: null,
+[0]   modelId: 1,
+[0]   nodes: [
+[0]     { id: 'node-1763138471606', label: 'Coffee', value: 0.5 },
+[0]     { id: 'node-1763138472784', label: 'Anxiety', value: 0 },
+[0]     { id: 'node-1763138473130', label: 'Productivity', value: 0.5 },
+[0]     { id: 'node-1763138497762', label: 'Work Backlog', value: 0.5 }
+[0]   ],
+[0]   initialValues: {
+[0]     'node-1763138471606': 0.5,
+[0]     'node-1763138472784': 0,
+[0]     'node-1763138473130': 0.5,
+[0]     'node-1763138497762': 0.5
+[0]   },
+[0]   clampedNodes: [],
+[0]   simulationParams: { activation: 'sigmoid', threshold: 0.001, maxIterations: 20 },
+[0]   results: {
+[0]     finalState: {
+[0]       'node-1763138471606': [Object],
+[0]       'node-1763138472784': [Object],
+[0]       'node-1763138473130': [Object],
+[0]       'node-1763138497762': [Object]
+[0]     },
+[0]     timeSeries: {
+[0]       'node-1763138471606': [Array],
+[0]       'node-1763138472784': [Array],
+[0]       'node-1763138473130': [Array],
+[0]       'node-1763138497762': [Array]
+[0]     },
+[0]     iterations: 4,
+[0]     converged: true,
+[0]     initialValues: {
+[0]       'node-1763138471606': 0.5,
+[0]       'node-1763138472784': 0,
+[0]       'node-1763138473130': 0.5,
+[0]       'node-1763138497762': 0.5
+[0]     },
+[0]     baselineFinalState: {
+[0]       'node-1763138471606': [Object],
+[0]       'node-1763138472784': [Object],
+[0]       'node-1763138473130': [Object],
+[0]       'node-1763138497762': [Object]
+[0]     },
+[0]     baselineTimeSeries: {
+[0]       'node-1763138471606': [Array],
+[0]       'node-1763138472784': [Array],
+[0]       'node-1763138473130': [Array],
+[0]       'node-1763138497762': [Array]
+[0]     },
+[0]     baselineIterations: 4,
+[0]     baselineConverged: true
+[0]   },
+[0]   createdAt: '2025-11-15T01:04:37.431Z',
+[0]   updatedAt: '2025-11-15T01:04:43.631Z'
+[0] }
+[0] 8:04:43 PM [express] PATCH /api/scenarios/6 200 in 546ms :: {"id":6,"name":"antianxiety","descriptio...
+[0] 8:37:19 PM [system] Uncaught Exception: {:shutdown, :db_termination}
+[0] tsx server/index.ts exited with code 0
+[1] 9:30:50 PM [vite] vite.config.ts changed, restarting server...
+[1] 9:30:50 PM [vite] server restarted.
+[1] 9:30:58 PM [vite] vite.config.ts changed, restarting server...
+[1] 9:30:58 PM [vite] server restarted.
+[1] 10:03:56 PM [vite] http proxy error: /api/user
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 10:21:39 PM [vite] vite.config.ts changed, restarting server...
+[1] 10:21:39 PM [vite] server restarted.

@@ -79,3 +79,4 @@ After deployment:
 - [Railway Variables Documentation](https://docs.railway.com/guides/variables#reference-variables)
 - Railway uses template syntax: `${{ SERVICE_NAME.VARIABLE_NAME }}`
 
+
