@@ -1,12 +1,14 @@
 providers = ["python", "node"]
 
 [phases.setup]
-nixPkgs = ["pkgs.python312"]
+nixPkgs = ["pkgs.python312Full"]
 
 [phases.install]
 cmds = [
   "npm install",
-  "python3 -m pip install -r python_sim/requirements.txt"
+  "python3 -m venv /app/venv",
+  "source /app/venv/bin/activate && pip install --upgrade pip",
+  "source /app/venv/bin/activate && pip install -r python_sim/requirements.txt"
 ]
 
 [phases.build]
