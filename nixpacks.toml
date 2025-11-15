@@ -6,7 +6,7 @@ nixPkgs = ["pkgs.python312"]
 [phases.install]
 cmds = [
   "npm install",
-  "pip install -r python_sim/requirements.txt"
+  "python3 -m pip install -r python_sim/requirements.txt"
 ]
 
 [phases.build]
