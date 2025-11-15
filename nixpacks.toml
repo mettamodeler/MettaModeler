@@ -1,10 +1,10 @@
 [phases.setup]
-nixPkgs = ["nodejs_20", "python312"]
+nixPkgs = ["nodejs_20", "python312", "pip"]
 
 [phases.install]
 cmds = [
   "npm install",
-  "cd python_sim && pip install -r requirements.txt && cd .."
+  "cd python_sim && python3 -m pip install -r requirements.txt && cd .."
 ]
 
 [phases.build]
