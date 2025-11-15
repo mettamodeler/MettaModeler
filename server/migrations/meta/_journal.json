@@ -8,6 +8,13 @@
       "when": 1747492906632,
       "tag": "0000_quiet_pixie",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1747500000000,
+      "tag": "0001_add_nodes_to_scenarios",
+      "breakpoints": true
     }
   ]
 }
