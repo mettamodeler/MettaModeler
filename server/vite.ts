@@ -1,10 +1,30 @@
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
 import viteConfig from "../vite.config";
 import { nanoid } from "nanoid";
+
+// Get directory name for both ESM and bundled code
+const getDirname = () => {
+  try {
+    // Try import.meta.dirname first (Node.js 20.11+)
+    if (import.meta.dirname) {
+      return import.meta.dirname;
+    }
+    // Fallback to import.meta.url (works in ESM)
+    if (import.meta.url) {
+      return path.dirname(fileURLToPath(import.meta.url));
+    }
+  } catch {
+    // If neither works, use process.cwd() as fallback
+  }
+  return process.cwd();
+};
+
+const __dirname = getDirname();
 
 const viteLogger = createLogger();
 
@@ -46,7 +66,7 @@ export async function setupVite(app: Express, server: Server) {
 
     try {
       const clientTemplate = path.resolve(
-        import.meta.dirname,
+        __dirname,
         "..",
         "client",
         "index.html",
@@ -68,7 +88,8 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  const distPath = path.resolve(import.meta.dirname, "public");
+  // In production, static files are in server/public (copied during build)
+  const distPath = path.resolve(__dirname, "public");
 
   if (!fs.existsSync(distPath)) {
     throw new Error(
