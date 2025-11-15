@@ -62,6 +62,14 @@ cleanup() {
 # Set up trap for cleanup
 trap cleanup SIGTERM SIGINT
 
+# Run database migrations before starting services
+echo "[$(date)] Running database migrations..."
+if node dist/migrate.js; then
+    echo "[$(date)] ✅ Migrations completed successfully"
+else
+    echo "[$(date)] ⚠️  Migration failed, but continuing (database may already be up to date)..."
+fi
+
 # Start Python service in background
 start_python_service
 
