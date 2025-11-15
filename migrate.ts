@@ -13,7 +13,7 @@ const runMigration = async () => {
 
   console.log('Running migrations...');
   
-  await migrate(db, { migrationsFolder: 'migrations' });
+  await migrate(db, { migrationsFolder: 'server/migrations' });
   
   console.log('Migrations completed!');
   
