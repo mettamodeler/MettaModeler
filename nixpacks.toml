@@ -1,0 +1,17 @@
+[phases.setup]
+nixPkgs = ["nodejs_20", "python312"]
+
+[phases.install]
+cmds = [
+  "npm install",
+  "cd python_sim && pip install -r requirements.txt && cd .."
+]
+
+[phases.build]
+cmds = [
+  "npm run build"
+]
+
+[start]
+cmd = "chmod +x start.sh && ./start.sh"
+
