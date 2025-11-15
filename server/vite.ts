@@ -8,14 +8,22 @@ import viteConfig from "../vite.config";
 import { nanoid } from "nanoid";
 
 // Get directory name for both ESM and bundled code
+// In bundled ESM, import.meta may not work, so we use process.cwd() as primary
 const getDirname = () => {
+  // Always use process.cwd() in production (bundled code)
+  // This is reliable since Railway runs from project root
+  if (process.env.NODE_ENV === 'production') {
+    return process.cwd();
+  }
+  
+  // In development, try to use import.meta for better accuracy
   try {
     // Try import.meta.dirname first (Node.js 20.11+)
-    if (import.meta.dirname) {
+    if (typeof import.meta !== 'undefined' && import.meta.dirname) {
       return import.meta.dirname;
     }
     // Fallback to import.meta.url (works in ESM)
-    if (import.meta.url) {
+    if (typeof import.meta !== 'undefined' && import.meta.url) {
       return path.dirname(fileURLToPath(import.meta.url));
     }
   } catch {
@@ -24,7 +32,7 @@ const getDirname = () => {
   return process.cwd();
 };
 
-const __dirname = getDirname();
+const __dirname = getDirname() || process.cwd();
 
 const viteLogger = createLogger();
 
