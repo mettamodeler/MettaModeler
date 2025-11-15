@@ -20,20 +20,35 @@ This guide will walk you through adding a PostgreSQL database to your Railway de
 
 ## Step 2: Connect Database to Your Main Service
 
+You have two options to connect the database:
+
+### Option A: Use Railway's "Connect" Feature (Easiest) ✅
+
+1. **In the PostgreSQL service:**
+   - Click on your PostgreSQL service
+   - Click the **"Connect"** button (or look for a "Connect" option)
+   - Select your main app service from the list
+   - Railway will automatically add `DATABASE_URL` as a reference variable
+
+### Option B: Manually Add Reference Variable
+
 1. **Go to your main service** (the Node.js service)
    - Click on your main service in Railway
 
-2. **Add DATABASE_URL environment variable**
+2. **Add DATABASE_URL as a reference variable**
    - Go to the **"Variables"** tab
    - Click **"+ New Variable"**
-   - Name: `DATABASE_URL`
-   - Value: Copy the `DATABASE_URL` from the PostgreSQL service
+   - **Name:** `DATABASE_URL`
+   - **Value:** `${{ PostgreSQL.DATABASE_URL }}`
+     - Replace `PostgreSQL` with your actual database service name
+     - You can use the autocomplete dropdown to find the correct service name
    - Click **"Add"**
 
-   **Note:** Railway can also auto-inject this if you use the "Connect" feature:
-   - In the PostgreSQL service, click **"Connect"**
-   - Select your main service
-   - Railway will automatically add `DATABASE_URL` to your service
+   **Important:** The service name is case-sensitive! Check your PostgreSQL service name exactly as it appears in Railway.
+
+3. **Verify the connection:**
+   - After adding the variable, you should see it shows as a "Reference Variable"
+   - It should display something like: `${{ PostgreSQL.DATABASE_URL }}`
 
 ## Step 3: Update Other Environment Variables
 
