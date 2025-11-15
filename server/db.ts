@@ -8,9 +8,14 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Create the connection with SSL required for Render
+// Create the connection with SSL required for Railway/Render
 const connectionString = process.env.DATABASE_URL;
-const client = postgres(connectionString, { ssl: { rejectUnauthorized: false } });
+// Railway and other cloud providers require SSL
+const client = postgres(connectionString, { 
+  ssl: process.env.DATABASE_URL?.includes('railway') || process.env.DATABASE_URL?.includes('render') 
+    ? { rejectUnauthorized: false } 
+    : undefined
+});
 
 // Create the database instance
 export const db = drizzle(client, { schema });

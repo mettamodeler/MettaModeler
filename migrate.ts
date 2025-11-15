@@ -8,7 +8,11 @@ const runMigration = async () => {
     throw new Error('DATABASE_URL is not defined');
   }
 
-  const connection = postgres(process.env.DATABASE_URL, { max: 1 });
+  // Railway requires SSL connections
+  const connection = postgres(process.env.DATABASE_URL, { 
+    max: 1,
+    ssl: { rejectUnauthorized: false }
+  });
   const db = drizzle(connection);
 
   console.log('Running migrations...');
