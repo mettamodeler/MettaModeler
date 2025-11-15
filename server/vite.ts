@@ -1,16 +1,10 @@
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
 import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
 import viteConfig from "../vite.config";
 import { nanoid } from "nanoid";
-
-// Get directory name for both ESM and bundled code
-// In bundled ESM code, import.meta is not available, so always use process.cwd()
-// This is safe because Railway runs from the project root
-const __dirname: string = process.cwd();
 
 const viteLogger = createLogger();
 
