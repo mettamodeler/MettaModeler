@@ -112,15 +112,15 @@ export const insertScenarioSchema = createInsertSchema(scenarios).pick({
 });
 
 // Select types
-// NOTE: User, Project, and Model types now come from generated types (Phase 3C migration)
-// Drizzle-inferred types available as users.$inferSelect, projects.$inferSelect, models.$inferSelect for database operations
-export type { User, Project, Model } from './generated';
-export type Scenario = typeof scenarios.$inferSelect;
+// NOTE: All entity types now come from generated types (Phase 3C migration complete)
+// Drizzle-inferred types available as users.$inferSelect, projects.$inferSelect, models.$inferSelect, scenarios.$inferSelect for database operations
+export type { User, Project, Model, Scenario } from './generated';
 
 // Drizzle-inferred types for database operations (internal use)
 export type DrizzleUser = typeof users.$inferSelect;
 export type DrizzleProject = typeof projects.$inferSelect;
 export type DrizzleModel = typeof models.$inferSelect;
+export type DrizzleScenario = typeof scenarios.$inferSelect;
 
 // Insert types
 export type InsertUser = z.infer<typeof insertUserSchema>;

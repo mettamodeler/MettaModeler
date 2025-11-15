@@ -2,7 +2,7 @@ import {
   User, InsertUser, DrizzleUser,
   Project, InsertProject, DrizzleProject,
   Model, InsertModel, DrizzleModel,
-  Scenario, InsertScenario,
+  Scenario, InsertScenario, DrizzleScenario,
   users,
   projects,
   models,
@@ -74,11 +74,12 @@ export interface IStorage {
   deleteModel(id: number): Promise<boolean>;
   
   // Scenario operations
-  getScenarios(): Promise<any[]>;
-  getScenariosByModel(modelId: number): Promise<any[]>;
-  getScenario(id: number): Promise<any | null>;
-  createScenario(data: CreateScenarioData): Promise<any>;
-  updateScenario(id: number, data: Partial<Scenario>): Promise<any>;
+  // Note: Scenario type is now from generated types, but database returns DrizzleScenario
+  getScenarios(): Promise<DrizzleScenario[]>;
+  getScenariosByModel(modelId: number): Promise<DrizzleScenario[]>;
+  getScenario(id: number): Promise<DrizzleScenario | null>;
+  createScenario(data: CreateScenarioData): Promise<DrizzleScenario>;
+  updateScenario(id: number, data: Partial<DrizzleScenario>): Promise<DrizzleScenario>;
   deleteScenario(id: number): Promise<boolean>;
 }
 
@@ -210,23 +211,23 @@ export class PostgresStorage implements IStorage {
   }
   
   // SCENARIO OPERATIONS
-  async getScenarios(): Promise<any[]> {
+  async getScenarios(): Promise<DrizzleScenario[]> {
     const results = await this.db.select().from(scenarios);
-    return results.map(toCamelScenario);
+    return results.map(toCamelScenario) as DrizzleScenario[];
   }
   
-  async getScenariosByModel(modelId: number): Promise<any[]> {
+  async getScenariosByModel(modelId: number): Promise<DrizzleScenario[]> {
     const results = await this.db.select().from(scenarios).where(eq(scenarios.modelId, modelId));
-    return results.map(toCamelScenario);
+    return results.map(toCamelScenario) as DrizzleScenario[];
   }
   
-  async getScenario(id: number): Promise<any | null> {
+  async getScenario(id: number): Promise<DrizzleScenario | null> {
     const result = await this.db.select().from(scenarios).where(eq(scenarios.id, id));
     if (!result[0]) return null;
-    return toCamelScenario(result[0]);
+    return toCamelScenario(result[0]) as DrizzleScenario;
   }
   
-  async createScenario(data: CreateScenarioData): Promise<any> {
+  async createScenario(data: CreateScenarioData): Promise<DrizzleScenario> {
     const now = new Date();
     console.log("createScenario received clampedNodes:", JSON.stringify(data.clampedNodes));
     const [scenario] = await this.db.insert(scenarios).values({
@@ -256,7 +257,7 @@ export class PostgresStorage implements IStorage {
     return toCamelScenario(scenario);
   }
   
-  async updateScenario(id: number, data: Partial<Scenario>): Promise<any> {
+  async updateScenario(id: number, data: Partial<DrizzleScenario>): Promise<DrizzleScenario> {
     const [scenario] = await this.db.update(scenarios)
       .set({
         ...data,
@@ -278,7 +279,7 @@ export class PostgresStorage implements IStorage {
         updatedAt: scenarios.updatedAt,
       });
     if (!scenario) throw new Error('Scenario not found');
-    return toCamelScenario(scenario);
+    return toCamelScenario(scenario) as DrizzleScenario;
   }
   
   async deleteScenario(id: number): Promise<boolean> {
@@ -291,7 +292,7 @@ export class MemStorage implements IStorage {
   private users: Map<number, DrizzleUser>;
   private projects: Map<number, DrizzleProject>;
   private models: Map<number, DrizzleModel>;
-  private scenarios: Map<number, Scenario>;
+  private scenarios: Map<number, DrizzleScenario>;
   
   private userId: number;
   private projectId: number;
@@ -467,35 +468,35 @@ export class MemStorage implements IStorage {
   }
   
   // SCENARIO OPERATIONS
-  async getScenarios(): Promise<any[]> {
+  async getScenarios(): Promise<DrizzleScenario[]> {
     return Array.from(this.scenarios.values()).map(s => ({
       ...s,
       clampedNodes: Array.isArray(s.clampedNodes) ? s.clampedNodes : [],
       simulationParams: s.simulationParams ?? null,
-    }));
+    })) as DrizzleScenario[];
   }
   
-  async getScenariosByModel(modelId: number): Promise<any[]> {
+  async getScenariosByModel(modelId: number): Promise<DrizzleScenario[]> {
     return Array.from(this.scenarios.values())
       .filter(scenario => scenario.modelId === modelId)
       .map(s => ({
         ...s,
         clampedNodes: Array.isArray(s.clampedNodes) ? s.clampedNodes : [],
         simulationParams: s.simulationParams ?? null,
-      }));
+      })) as DrizzleScenario[];
   }
   
-  async getScenario(id: number): Promise<any | null> {
+  async getScenario(id: number): Promise<DrizzleScenario | null> {
     const s = this.scenarios.get(id);
     if (!s) return null;
-    return { ...s, clampedNodes: Array.isArray(s.clampedNodes) ? s.clampedNodes : [], simulationParams: s.simulationParams ?? null };
+    return { ...s, clampedNodes: Array.isArray(s.clampedNodes) ? s.clampedNodes : [], simulationParams: s.simulationParams ?? null } as DrizzleScenario;
   }
   
-  async createScenario(data: CreateScenarioData): Promise<any> {
+  async createScenario(data: CreateScenarioData): Promise<DrizzleScenario> {
     const id = this.scenarioId++;
     const now = new Date();
     
-    const scenario: Scenario = {
+    const scenario: DrizzleScenario = {
       id,
       name: data.name,
       modelId: data.modelId,
@@ -510,10 +511,10 @@ export class MemStorage implements IStorage {
     };
     
     this.scenarios.set(id, scenario);
-    return toCamelScenario(scenario);
+    return toCamelScenario(scenario) as DrizzleScenario;
   }
   
-  async updateScenario(id: number, data: Partial<Scenario>): Promise<any> {
+  async updateScenario(id: number, data: Partial<DrizzleScenario>): Promise<DrizzleScenario> {
     const scenario = this.scenarios.get(id);
     if (!scenario) throw new Error('Scenario not found');
     
@@ -524,7 +525,7 @@ export class MemStorage implements IStorage {
     };
     
     this.scenarios.set(id, updatedScenario);
-    return toCamelScenario(updatedScenario);
+    return toCamelScenario(updatedScenario) as DrizzleScenario;
   }
   
   async deleteScenario(id: number): Promise<boolean> {

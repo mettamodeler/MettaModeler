@@ -20,9 +20,8 @@ import { SimulationResult as PythonSimulationResult } from './types';
 import axios, { AxiosError } from "axios";
 import { ProjectSchema, ProjectStorageSchema, type ProjectStorage } from './types/generated/Project.v1.zod';
 import { ModelSchema, ModelStorageSchema, type ModelStorage, CreateModelSchema } from './types/generated/Model.v1.zod';
-import { ScenarioSchema, ScenarioStorageSchema, type ScenarioStorage } from './types/Scenario.v2.zod';
-import { CreateScenarioSchema } from './types/Scenario.v2.zod';
-import { CreateModelData } from './storage';
+import { ScenarioSchema, ScenarioStorageSchema, type ScenarioStorage, CreateScenarioSchema } from './types/generated/Scenario.v1.zod';
+import { CreateModelData, CreateScenarioData } from './storage';
 
 // Python simulation service URL
 const PYTHON_SIM_URL = process.env.PYTHON_SIM_URL || 'http://localhost:5050';
@@ -341,11 +340,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Compose the full scenario object for storage
-      const scenarioData = {
-        ...result.data,
-        userId, // if you want to track scenario ownership
-        createdAt: now,
-        updatedAt: now
+      // Convert CreateScenarioSchema result to CreateScenarioData
+      const scenarioData: CreateScenarioData = {
+        name: result.data.name,
+        modelId: result.data.modelId,
+        description: result.data.description || null,
+        nodes: result.data.nodes || [],
+        initialValues: result.data.initialValues || {},
+        clampedNodes: result.data.clampedNodes || [],
+        simulationParams: result.data.simulationParams,
+        results: result.data.results,
       };
       console.log("Scenario data to be inserted:", JSON.stringify(scenarioData, null, 2));
 

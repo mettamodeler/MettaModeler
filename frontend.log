@@ -3,2367 +3,2438 @@
 > concurrently "tsx server/index.ts" "vite"
 
 [1] 
-[1]   VITE v5.4.14  ready in 415 ms
+[1]   VITE v5.4.14  ready in 311 ms
 [1] 
 [1]   ➜  Local:   http://localhost:5173/
 [1]   ➜  Network: use --host to expose
 [0] Using PostgreSQL storage for MettaModeler
 [0] Server running on port 3000
 [0] Expecting Python service at http://localhost:5050
-[0] 10:55:49 PM [express] GET /api/user 401 in 3ms :: {"error":"Not authenticated"}
-[0] 10:55:56 PM [express] POST /api/login 200 in 751ms :: {"id":3,"username":"testaccount","displayName":...
-[0] 10:55:56 PM [express] GET /api/projects 304 in 104ms :: [{"id":1,"name":"Ecology","description":null,...
-[0] 10:55:56 PM [express] GET /api/models 304 in 305ms :: [{"id":2,"name":"Coffee","description":null,"pr...
-[0] 10:56:00 PM [express] GET /api/models 304 in 95ms :: [{"id":2,"name":"Coffee","description":null,"pro...
-[0] 10:56:00 PM [express] GET /api/projects 304 in 815ms :: [{"id":1,"name":"Ecology","description":null,...
-[0] 10:56:01 PM [express] GET /api/projects 304 in 78ms :: [{"id":1,"name":"Ecology","description":null,"...
-[0] 10:56:01 PM [express] GET /api/models 304 in 82ms :: [{"id":2,"name":"Coffee","description":null,"pro...
-[0] 10:56:01 PM [express] GET /api/models/1 304 in 523ms :: {"id":1,"name":"Predator Prey Model","descrip...
-[0] 10:56:01 PM [express] GET /api/models 304 in 93ms :: [{"id":2,"name":"Coffee","description":null,"pro...
-[0] 10:56:01 PM [express] GET /api/projects 304 in 93ms :: [{"id":1,"name":"Ecology","description":null,"...
-[0] 10:56:02 PM [express] PUT /api/models/1 200 in 102ms :: {"id":1,"name":"Predator Prey Model","descrip...
-[0] 10:56:02 PM [express] PUT /api/models/1 200 in 105ms :: {"id":1,"name":"Predator Prey Model","descrip...
-[0] 10:56:02 PM [express] GET /api/models/1/scenarios 200 in 95ms :: [{"id":23,"name":"bunbunbun","modelI...
-[0] 10:56:02 PM [express] GET /api/models 200 in 79ms :: [{"id":2,"name":"Coffee","description":null,"pro...
-[0] 10:56:02 PM [express] GET /api/models/1 200 in 95ms :: {"id":1,"name":"Predator Prey Model","descript...
+[1] Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+[1]   npx update-browserslist-db@latest
+[1]   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+[0] 7:36:44 PM [express] GET /api/user 401 in 5ms :: {"error":"Not authenticated"}
+[0] 7:36:53 PM [express] GET /api/user 401 in 2ms :: {"error":"Not authenticated"}
+[0] 7:37:07 PM [express] GET /api/user 401 in 3ms :: {"error":"Not authenticated"}
+[0] 7:37:15 PM [express] POST /api/login 200 in 2174ms :: {"id":2,"username":"new_user2","displayName":n...
+[0] 7:37:16 PM [express] GET /api/projects 304 in 452ms :: [{"id":2,"name":"New Project","description":n...
+[0] 7:37:17 PM [express] GET /api/models 304 in 1092ms :: [{"id":3,"name":"New Model","description":null...
+[0] 7:37:19 PM [express] GET /api/models 304 in 471ms :: [{"id":3,"name":"New Model","description":null,...
+[0] 7:37:20 PM [express] GET /api/projects 304 in 1314ms :: [{"id":2,"name":"New Project","description":...
+[0] 7:37:20 PM [express] GET /api/models 304 in 459ms :: [{"id":3,"name":"New Model","description":null,...
+[0] 7:37:20 PM [express] GET /api/projects 304 in 460ms :: [{"id":2,"name":"New Project","description":n...
+[0] 7:37:21 PM [express] GET /api/models/3 304 in 1436ms :: {"id":3,"name":"New Model","description":nul...
+[0] 7:37:21 PM [express] GET /api/projects 304 in 455ms :: [{"id":2,"name":"New Project","description":n...
+[0] 7:37:21 PM [express] GET /api/models 304 in 462ms :: [{"id":3,"name":"New Model","description":null,...
+[0] 7:37:22 PM [express] PUT /api/models/3 200 in 567ms :: {"id":3,"name":"New Model","description":null...
+[0] 7:37:23 PM [express] PUT /api/models/3 200 in 542ms :: {"id":3,"name":"New Model","description":null...
+[0] 7:37:23 PM [express] GET /api/models 200 in 453ms :: [{"id":1,"name":"coffee 2","description":null,"...
+[0] 7:37:23 PM [express] GET /api/models/3 200 in 538ms :: {"id":3,"name":"New Model","description":null...
+[0] 7:37:25 PM [express] GET /api/models/3/scenarios 304 in 545ms :: []
+[0] 7:37:25 PM [express] PUT /api/models/3 200 in 552ms :: {"id":3,"name":"New Model","description":null...
+[0] 7:37:26 PM [express] PUT /api/models/3 200 in 540ms :: {"id":3,"name":"New Model","description":null...
+[0] 7:37:26 PM [express] GET /api/models 200 in 462ms :: [{"id":1,"name":"coffee 2","description":null,"...
+[0] 7:37:26 PM [express] GET /api/models/3 200 in 554ms :: {"id":3,"name":"New Model","description":null...
 [0] Received simulation request: {
 [0]   "schemaVersion": "1.0.0",
 [0]   "nodes": [
 [0]     {
-[0]       "id": "node-1747498392026",
+[0]       "id": "node-1763144842243",
 [0]       "value": 0.5,
-[0]       "label": "Bunnies",
+[0]       "label": "new node 1",
 [0]       "type": "regular"
 [0]     },
 [0]     {
-[0]       "id": "node-1747498393062",
+[0]       "id": "node-1763144842593",
 [0]       "value": 0.5,
-[0]       "label": "Grass",
+[0]       "label": "New 2",
 [0]       "type": "regular"
 [0]     },
 [0]     {
-[0]       "id": "node-1747498394292",
+[0]       "id": "node-1763144842876",
 [0]       "value": 0.5,
-[0]       "label": "Foxes",
+[0]       "label": "New 4",
 [0]       "type": "regular"
 [0]     }
 [0]   ],
 [0]   "edges": [
 [0]     {
-[0]       "source": "node-1747498392026",
-[0]       "target": "node-1747498394292",
+[0]       "source": "node-1763144842243",
+[0]       "target": "node-1763144842593",
 [0]       "weight": 0.5
 [0]     },
 [0]     {
-[0]       "source": "node-1747498394292",
-[0]       "target": "node-1747498392026",
-[0]       "weight": -0.5
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842593",
+[0]       "weight": 0.5
 [0]     },
 [0]     {
-[0]       "source": "node-1747498392026",
-[0]       "target": "node-1747498393062",
-[0]       "weight": -0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498393062",
-[0]       "target": "node-1747498392026",
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842243",
 [0]       "weight": 0.5
 [0]     }
 [0]   ],
 [0]   "activation": "sigmoid",
 [0]   "threshold": 0.001,
 [0]   "maxIterations": 20,
-[0]   "compareToBaseline": true,
-[0]   "modelInitialValues": {
-[0]     "node-1747498392026": 0.5,
-[0]     "node-1747498393062": 0.5,
-[0]     "node-1747498394292": 0.5
-[0]   },
-[0]   "scenarioInitialValues": {
-[0]     "node-1747498392026": 1,
-[0]     "node-1747498393062": 0.5,
-[0]     "node-1747498394292": 0.5
-[0]   },
-[0]   "clampedNodes": []
+[0]   "compareToBaseline": false,
+[0]   "clampedNodes": [
+[0]     "node-1763144842243"
+[0]   ]
 [0] }
 [0] Forwarding to Python backend: {
 [0]   "schemaVersion": "1.0.0",
 [0]   "nodes": [
 [0]     {
-[0]       "id": "node-1747498392026",
+[0]       "id": "node-1763144842243",
 [0]       "value": 0.5,
-[0]       "label": "Bunnies",
+[0]       "label": "new node 1",
 [0]       "type": "regular"
 [0]     },
 [0]     {
-[0]       "id": "node-1747498393062",
+[0]       "id": "node-1763144842593",
 [0]       "value": 0.5,
-[0]       "label": "Grass",
+[0]       "label": "New 2",
 [0]       "type": "regular"
 [0]     },
 [0]     {
-[0]       "id": "node-1747498394292",
+[0]       "id": "node-1763144842876",
 [0]       "value": 0.5,
-[0]       "label": "Foxes",
+[0]       "label": "New 4",
 [0]       "type": "regular"
 [0]     }
 [0]   ],
 [0]   "edges": [
 [0]     {
-[0]       "source": "node-1747498392026",
-[0]       "target": "node-1747498394292",
+[0]       "source": "node-1763144842243",
+[0]       "target": "node-1763144842593",
 [0]       "weight": 0.5
 [0]     },
 [0]     {
-[0]       "source": "node-1747498394292",
-[0]       "target": "node-1747498392026",
-[0]       "weight": -0.5
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842593",
+[0]       "weight": 0.5
 [0]     },
 [0]     {
-[0]       "source": "node-1747498392026",
-[0]       "target": "node-1747498393062",
-[0]       "weight": -0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498393062",
-[0]       "target": "node-1747498392026",
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842243",
 [0]       "weight": 0.5
 [0]     }
 [0]   ],
 [0]   "activation": "sigmoid",
 [0]   "threshold": 0.001,
 [0]   "maxIterations": 20,
-[0]   "compareToBaseline": true,
-[0]   "modelInitialValues": {
-[0]     "node-1747498392026": 0.5,
-[0]     "node-1747498393062": 0.5,
-[0]     "node-1747498394292": 0.5
-[0]   },
-[0]   "scenarioInitialValues": {
-[0]     "node-1747498392026": 1,
-[0]     "node-1747498393062": 0.5,
-[0]     "node-1747498394292": 0.5
-[0]   },
-[0]   "clampedNodes": []
+[0]   "compareToBaseline": false,
+[0]   "clampedNodes": [
+[0]     "node-1763144842243"
+[0]   ]
 [0] }
 [0] Python simulation response: {
-[0]   "baselineFinalState": {
-[0]     "node-1747498392026": {
-[0]       "id": "node-1747498392026",
-[0]       "label": "Bunnies",
-[0]       "value": 0.4849387496365568
+[0]   "clampedNodes": [
+[0]     "node-1763144842243"
+[0]   ],
+[0]   "converged": true,
+[0]   "finalState": {
+[0]     "node-1763144842243": {
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "value": {
+[0]         "id": "node-1763144842243",
+[0]         "label": "new node 1",
+[0]         "value": 0.5
+[0]       }
 [0]     },
-[0]     "node-1747498393062": {
-[0]       "id": "node-1747498393062",
-[0]       "label": "Grass",
-[0]       "value": 0.43973676721679505
+[0]     "node-1763144842593": {
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "value": {
+[0]         "id": "node-1763144842593",
+[0]         "label": "New 2",
+[0]         "value": 0.6224593312018546
+[0]       }
 [0]     },
-[0]     "node-1747498394292": {
-[0]       "id": "node-1747498394292",
-[0]       "label": "Foxes",
-[0]       "value": 0.5602632327832049
+[0]     "node-1763144842876": {
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "value": {
+[0]         "id": "node-1763144842876",
+[0]         "label": "New 4",
+[0]         "value": 0.5
+[0]       }
 [0]     }
 [0]   },
-[0]   "baselineTimeSeries": {
-[0]     "node-1747498392026": [
-[0]       0.5,
-[0]       0.5,
-[0]       0.48446088053521047,
-[0]       0.48446088053521047,
-[0]       0.4849387496365568
-[0]     ],
-[0]     "node-1747498393062": [
-[0]       0.5,
-[0]       0.43782349911420193,
-[0]       0.43782349911420193,
-[0]       0.43973676721679505,
-[0]       0.43973676721679505
-[0]     ],
-[0]     "node-1747498394292": [
-[0]       0.5,
-[0]       0.5621765008857981,
-[0]       0.5621765008857981,
-[0]       0.5602632327832049,
-[0]       0.5602632327832049
-[0]     ]
+[0]   "initialValues": {
+[0]     "node-1763144842243": 0.5,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
 [0]   },
-[0]   "clampedNodes": [],
-[0]   "comparisonFinalState": {
-[0]     "node-1747498392026": {
-[0]       "id": "node-1747498392026",
-[0]       "label": "Bunnies",
-[0]       "value": 0.4849387496365568
-[0]     },
-[0]     "node-1747498393062": {
-[0]       "id": "node-1747498393062",
-[0]       "label": "Grass",
-[0]       "value": 0.43962088313504544
-[0]     },
-[0]     "node-1747498394292": {
-[0]       "id": "node-1747498394292",
-[0]       "label": "Foxes",
-[0]       "value": 0.5603791168649546
-[0]     }
-[0]   },
-[0]   "comparisonTimeSeries": {
-[0]     "node-1747498392026": [
-[0]       1,
+[0]   "iterations": 2,
+[0]   "timeSeries": {
+[0]     "node-1763144842243": [
 [0]       0.5,
-[0]       0.469423368982364,
-[0]       0.48446088053521047,
-[0]       0.48540164563125265,
-[0]       0.4849387496365568
-[0]     ],
-[0]     "node-1747498393062": [
 [0]       0.5,
-[0]       0.3775406687981454,
-[0]       0.43782349911420193,
-[0]       0.44158998158654744,
-[0]       0.43973676721679505,
-[0]       0.43962088313504544
+[0]       0.5
 [0]     ],
-[0]     "node-1747498394292": [
+[0]     "node-1763144842593": [
 [0]       0.5,
 [0]       0.6224593312018546,
-[0]       0.5621765008857981,
-[0]       0.5584100184134525,
-[0]       0.5602632327832049,
-[0]       0.5603791168649546
+[0]       0.6224593312018546
+[0]     ],
+[0]     "node-1763144842876": [
+[0]       0.5,
+[0]       0.5,
+[0]       0.5
 [0]     ]
-[0]   },
-[0]   "converged": true,
-[0]   "deltaFinalState": {
-[0]     "node-1747498392026": {
-[0]       "id": "node-1747498392026",
-[0]       "label": "Bunnies",
-[0]       "value": 0
-[0]     },
-[0]     "node-1747498393062": {
-[0]       "id": "node-1747498393062",
-[0]       "label": "Grass",
-[0]       "value": -0.00011588408174961762
-[0]     },
-[0]     "node-1747498394292": {
-[0]       "id": "node-1747498394292",
-[0]       "label": "Foxes",
-[0]       "value": 0.00011588408174967313
-[0]     }
-[0]   },
-[0]   "impactMetrics": {
-[0]     "node-1747498392026": {
-[0]       "auc": 0.23519393644450143,
-[0]       "baseline": 0.4849387496365568,
-[0]       "delta": 0,
-[0]       "direction": "Oscillating (High)",
-[0]       "id": "node-1747498392026",
-[0]       "label": "Bunnies",
-[0]       "maxDifference": 0.5,
-[0]       "normalizedChangePercent": 0,
-[0]       "scenario": 0.4849387496365568
-[0]     },
-[0]     "node-1747498393062": {
-[0]       "auc": -0.058429615946304136,
-[0]       "baseline": 0.43973676721679505,
-[0]       "delta": -0.00011588408174961762,
-[0]       "direction": "Temporary Low Decrease",
-[0]       "id": "node-1747498393062",
-[0]       "label": "Grass",
-[0]       "maxDifference": -0.060282830316056524,
-[0]       "normalizedChangePercent": -0.02635305718989049,
-[0]       "scenario": 0.43962088313504544
-[0]     },
-[0]     "node-1747498394292": {
-[0]       "auc": 0.058429615946304136,
-[0]       "baseline": 0.5602632327832049,
-[0]       "delta": 0.00011588408174967313,
-[0]       "direction": "Temporary Low Increase",
-[0]       "id": "node-1747498394292",
-[0]       "label": "Foxes",
-[0]       "maxDifference": 0.060282830316056524,
-[0]       "normalizedChangePercent": 0.020679586062733304,
-[0]       "scenario": 0.5603791168649546
-[0]     }
-[0]   },
-[0]   "iterations": 5
+[0]   }
 [0] }
-[0] 10:56:04 PM [express] POST /api/simulate 200 in 164ms :: {"baselineFinalState":{"node-1747498392026":...
-[0] Scenario from DB: {
-[0]   id: 23,
-[0]   name: 'bunbunbun',
-[0]   modelId: 1,
-[0]   description: '',
-[0]   initialValues: {
-[0]     'node-1747498392026': 1,
-[0]     'node-1747498393062': 0.5,
-[0]     'node-1747498394292': 0.5
-[0]   },
-[0]   results: {
-[0]     converged: true,
-[0]     finalState: {
-[0]       'node-1747498392026': [Object],
-[0]       'node-1747498393062': [Object],
-[0]       'node-1747498394292': [Object]
+[0] 7:37:34 PM [express] POST /api/simulate 200 in 505ms :: {"clampedNodes":["node-1763144842243"],"conv...
+[0] REQ.BODY: {
+[0]   "name": "low water",
+[0]   "modelId": 3,
+[0]   "description": "",
+[0]   "nodes": [
+[0]     {
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "value": 0.84
 [0]     },
-[0]     iterations: 5,
-[0]     timeSeries: {
-[0]       'node-1747498392026': [Array],
-[0]       'node-1747498393062': [Array],
-[0]       'node-1747498394292': [Array]
+[0]     {
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "value": 0.5
 [0]     },
-[0]     baselineConverged: true,
-[0]     baselineFinalState: {
-[0]       'node-1747498392026': [Object],
-[0]       'node-1747498393062': [Object],
-[0]       'node-1747498394292': [Object]
-[0]     },
-[0]     baselineIterations: 5,
-[0]     baselineTimeSeries: {
-[0]       'node-1747498392026': [Array],
-[0]       'node-1747498393062': [Array],
-[0]       'node-1747498394292': [Array]
+[0]     {
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "value": 0.5
 [0]     }
-[0]   },
-[0]   simulationParams: { threshold: 0.001, activation: 'sigmoid', maxIterations: 20 },
-[0]   clampedNodes: [],
-[0]   nodes: [
-[0]     { id: 'node-1747498392026', label: 'Bunnies', value: 1 },
-[0]     { id: 'node-1747498393062', label: 'Grass', value: 0.5 },
-[0]     { id: 'node-1747498394292', label: 'Foxes', value: 0.5 }
 [0]   ],
-[0]   createdAt: '2025-05-18T02:53:32.146Z',
-[0]   updatedAt: '2025-05-18T02:56:04.647Z'
-[0] }
-[0] Scenario after Zod validation: {
-[0]   id: 23,
-[0]   modelId: 1,
-[0]   name: 'bunbunbun',
-[0]   description: '',
-[0]   nodes: [
-[0]     { id: 'node-1747498392026', label: 'Bunnies', value: 1 },
-[0]     { id: 'node-1747498393062', label: 'Grass', value: 0.5 },
-[0]     { id: 'node-1747498394292', label: 'Foxes', value: 0.5 }
-[0]   ],
-[0]   initialValues: {
-[0]     'node-1747498392026': 1,
-[0]     'node-1747498393062': 0.5,
-[0]     'node-1747498394292': 0.5
+[0]   "initialValues": {
+[0]     "node-1763144842243": 0.84,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
 [0]   },
-[0]   createdAt: '2025-05-18T02:53:32.146Z',
-[0]   updatedAt: '2025-05-18T02:56:04.647Z'
+[0]   "clampedNodes": [
+[0]     "node-1763144842243"
+[0]   ],
+[0]   "results": {
+[0]     "finalState": {
+[0]       "node-1763144842243": {
+[0]         "id": "node-1763144842243",
+[0]         "label": "new node 1",
+[0]         "value": {
+[0]           "id": "node-1763144842243",
+[0]           "label": "new node 1",
+[0]           "value": 0.5
+[0]         }
+[0]       },
+[0]       "node-1763144842593": {
+[0]         "id": "node-1763144842593",
+[0]         "label": "New 2",
+[0]         "value": {
+[0]           "id": "node-1763144842593",
+[0]           "label": "New 2",
+[0]           "value": 0.6224593312018546
+[0]         }
+[0]       },
+[0]       "node-1763144842876": {
+[0]         "id": "node-1763144842876",
+[0]         "label": "New 4",
+[0]         "value": {
+[0]           "id": "node-1763144842876",
+[0]           "label": "New 4",
+[0]           "value": 0.5
+[0]         }
+[0]       }
+[0]     },
+[0]     "timeSeries": {
+[0]       "node-1763144842243": [
+[0]         0.5,
+[0]         0.5,
+[0]         0.5
+[0]       ],
+[0]       "node-1763144842593": [
+[0]         0.5,
+[0]         0.6224593312018546,
+[0]         0.6224593312018546
+[0]       ],
+[0]       "node-1763144842876": [
+[0]         0.5,
+[0]         0.5,
+[0]         0.5
+[0]       ]
+[0]     },
+[0]     "iterations": 2,
+[0]     "converged": true,
+[0]     "initialValues": {
+[0]       "node-1763144842243": 0.84,
+[0]       "node-1763144842593": 0.5,
+[0]       "node-1763144842876": 0.5
+[0]     }
+[0]   },
+[0]   "simulationParams": {
+[0]     "activation": "sigmoid",
+[0]     "threshold": 0.001,
+[0]     "maxIterations": 20
+[0]   }
 [0] }
-[0] 10:56:04 PM [express] PATCH /api/scenarios/23 200 in 81ms :: {"id":23,"modelId":1,"name":"bunbunbun",...
+[0] Zod validation result: {
+[0]   "success": false,
+[0]   "error": {
+[0]     "issues": [
+[0]       {
+[0]         "code": "invalid_type",
+[0]         "expected": "number",
+[0]         "received": "object",
+[0]         "path": [
+[0]           "results",
+[0]           "finalState",
+[0]           "node-1763144842243",
+[0]           "value"
+[0]         ],
+[0]         "message": "Expected number, received object"
+[0]       },
+[0]       {
+[0]         "code": "invalid_type",
+[0]         "expected": "number",
+[0]         "received": "object",
+[0]         "path": [
+[0]           "results",
+[0]           "finalState",
+[0]           "node-1763144842593",
+[0]           "value"
+[0]         ],
+[0]         "message": "Expected number, received object"
+[0]       },
+[0]       {
+[0]         "code": "invalid_type",
+[0]         "expected": "number",
+[0]         "received": "object",
+[0]         "path": [
+[0]           "results",
+[0]           "finalState",
+[0]           "node-1763144842876",
+[0]           "value"
+[0]         ],
+[0]         "message": "Expected number, received object"
+[0]       }
+[0]     ],
+[0]     "name": "ZodError"
+[0]   }
+[0] }
+[0] 7:37:34 PM [express] POST /api/scenarios 400 in 368ms :: {"status":400,"code":"INVALID_PAYLOAD","fie...
+[1] 7:38:12 PM [vite] hmr update /src/components/scenario/ScenarioManager.tsx, /src/index.css
+[1] 7:38:12 PM [vite] hmr invalidate /src/components/scenario/ScenarioManager.tsx Could not Fast Refresh ("validateInitialValues" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[1] 7:38:12 PM [vite] hmr update /src/index.css, /src/pages/ModelEditor.tsx
+[0] 7:38:14 PM [express] GET /api/models/3/scenarios 304 in 1125ms :: []
+[1] 7:38:17 PM [vite] hmr update /src/components/scenario/ScenarioManager.tsx, /src/index.css
+[1] 7:38:17 PM [vite] hmr invalidate /src/components/scenario/ScenarioManager.tsx Could not Fast Refresh ("validateInitialValues" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[1] 7:38:17 PM [vite] hmr update /src/index.css, /src/pages/ModelEditor.tsx
+[0] 7:38:18 PM [express] GET /api/models/3/scenarios 304 in 549ms :: []
+[0] 7:38:23 PM [express] GET /api/user 200 in 371ms :: {"id":2,"username":"new_user2","displayName":null...
+[0] 7:38:24 PM [express] GET /api/models 304 in 451ms :: [{"id":1,"name":"coffee 2","description":null,"...
+[0] 7:38:25 PM [express] GET /api/projects 304 in 976ms :: [{"id":2,"name":"New Project","description":n...
+[0] 7:38:25 PM [express] GET /api/models/3 304 in 1078ms :: {"id":3,"name":"New Model","description":nul...
+[0] 7:38:25 PM [express] GET /api/projects 304 in 440ms :: [{"id":2,"name":"New Project","description":n...
+[0] 7:38:25 PM [express] GET /api/models 304 in 458ms :: [{"id":1,"name":"coffee 2","description":null,"...
+[0] 7:38:26 PM [express] PUT /api/models/3 200 in 562ms :: {"id":3,"name":"New Model","description":null...
+[0] 7:38:27 PM [express] PUT /api/models/3 200 in 532ms :: {"id":3,"name":"New Model","description":null...
+[0] 7:38:27 PM [express] GET /api/models/3/scenarios 304 in 537ms :: []
+[0] 7:38:27 PM [express] GET /api/models 200 in 458ms :: [{"id":3,"name":"New Model","description":null,...
+[0] 7:38:27 PM [express] GET /api/models/3 200 in 543ms :: {"id":3,"name":"New Model","description":null...
 [0] Received simulation request: {
 [0]   "schemaVersion": "1.0.0",
 [0]   "nodes": [
 [0]     {
-[0]       "id": "node-1747498392026",
+[0]       "id": "node-1763144842243",
 [0]       "value": 0.5,
-[0]       "label": "Bunnies",
+[0]       "label": "new node 1",
 [0]       "type": "regular"
 [0]     },
 [0]     {
-[0]       "id": "node-1747498393062",
+[0]       "id": "node-1763144842593",
 [0]       "value": 0.5,
-[0]       "label": "Grass",
+[0]       "label": "New 2",
 [0]       "type": "regular"
 [0]     },
 [0]     {
-[0]       "id": "node-1747498394292",
+[0]       "id": "node-1763144842876",
 [0]       "value": 0.5,
-[0]       "label": "Foxes",
-[0]       "type": "regular"
-[0]     }
-[0]   ],
-[0]   "edges": [
-[0]     {
-[0]       "source": "node-1747498392026",
-[0]       "target": "node-1747498394292",
-[0]       "weight": 0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498394292",
-[0]       "target": "node-1747498392026",
-[0]       "weight": -0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498392026",
-[0]       "target": "node-1747498393062",
-[0]       "weight": -0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498393062",
-[0]       "target": "node-1747498392026",
-[0]       "weight": 0.5
-[0]     }
-[0]   ],
-[0]   "activation": "tanh",
-[0]   "threshold": 0.001,
-[0]   "maxIterations": 20,
-[0]   "compareToBaseline": true,
-[0]   "modelInitialValues": {
-[0]     "node-1747498392026": 0.5,
-[0]     "node-1747498393062": 0.5,
-[0]     "node-1747498394292": 0.5
-[0]   },
-[0]   "scenarioInitialValues": {
-[0]     "node-1747498392026": 1,
-[0]     "node-1747498393062": 0.5,
-[0]     "node-1747498394292": 0.5
-[0]   },
-[0]   "clampedNodes": []
-[0] }
-[0] Forwarding to Python backend: {
-[0]   "schemaVersion": "1.0.0",
-[0]   "nodes": [
-[0]     {
-[0]       "id": "node-1747498392026",
-[0]       "value": 0.5,
-[0]       "label": "Bunnies",
-[0]       "type": "regular"
-[0]     },
-[0]     {
-[0]       "id": "node-1747498393062",
-[0]       "value": 0.5,
-[0]       "label": "Grass",
-[0]       "type": "regular"
-[0]     },
-[0]     {
-[0]       "id": "node-1747498394292",
-[0]       "value": 0.5,
-[0]       "label": "Foxes",
+[0]       "label": "New 4",
 [0]       "type": "regular"
 [0]     }
 [0]   ],
 [0]   "edges": [
 [0]     {
-[0]       "source": "node-1747498392026",
-[0]       "target": "node-1747498394292",
+[0]       "source": "node-1763144842243",
+[0]       "target": "node-1763144842593",
 [0]       "weight": 0.5
 [0]     },
 [0]     {
-[0]       "source": "node-1747498394292",
-[0]       "target": "node-1747498392026",
-[0]       "weight": -0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498392026",
-[0]       "target": "node-1747498393062",
-[0]       "weight": -0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498393062",
-[0]       "target": "node-1747498392026",
-[0]       "weight": 0.5
-[0]     }
-[0]   ],
-[0]   "activation": "tanh",
-[0]   "threshold": 0.001,
-[0]   "maxIterations": 20,
-[0]   "compareToBaseline": true,
-[0]   "modelInitialValues": {
-[0]     "node-1747498392026": 0.5,
-[0]     "node-1747498393062": 0.5,
-[0]     "node-1747498394292": 0.5
-[0]   },
-[0]   "scenarioInitialValues": {
-[0]     "node-1747498392026": 1,
-[0]     "node-1747498393062": 0.5,
-[0]     "node-1747498394292": 0.5
-[0]   },
-[0]   "clampedNodes": []
-[0] }
-[0] Python simulation response: {
-[0]   "baselineFinalState": {
-[0]     "node-1747498392026": {
-[0]       "id": "node-1747498392026",
-[0]       "label": "Bunnies",
-[0]       "value": -0.000926224824102848
-[0]     },
-[0]     "node-1747498393062": {
-[0]       "id": "node-1747498393062",
-[0]       "label": "Grass",
-[0]       "value": 0
-[0]     },
-[0]     "node-1747498394292": {
-[0]       "id": "node-1747498394292",
-[0]       "label": "Foxes",
-[0]       "value": 0
-[0]     }
-[0]   },
-[0]   "baselineTimeSeries": {
-[0]     "node-1747498392026": [
-[0]       0.5,
-[0]       0,
-[0]       -0.24013621895243303,
-[0]       0,
-[0]       0.11892891531062055,
-[0]       0,
-[0]       -0.05932472384696148,
-[0]       0,
-[0]       0.02964497662391194,
-[0]       0,
-[0]       -0.014820317679838267,
-[0]       0,
-[0]       0.007409887589866538,
-[0]       0,
-[0]       -0.0037049098911433975,
-[0]       0,
-[0]       0.0018524507076750428,
-[0]       0,
-[0]       -0.000926224824102848
-[0]     ],
-[0]     "node-1747498393062": [
-[0]       0.5,
-[0]       -0.24491866240370913,
-[0]       0,
-[0]       0.11949443602713215,
-[0]       0,
-[0]       -0.05939446744371068,
-[0]       0,
-[0]       0.029653665451239174,
-[0]       0,
-[0]       -0.014821402876684903,
-[0]       0,
-[0]       0.007410023211169322,
-[0]       0,
-[0]       -0.003704926842921988,
-[0]       0,
-[0]       0.001852452826619735,
-[0]       0,
-[0]       -0.0009262250889700711,
-[0]       0
-[0]     ],
-[0]     "node-1747498394292": [
-[0]       0.5,
-[0]       0.24491866240370913,
-[0]       0,
-[0]       -0.11949443602713215,
-[0]       0,
-[0]       0.05939446744371068,
-[0]       0,
-[0]       -0.029653665451239174,
-[0]       0,
-[0]       0.014821402876684903,
-[0]       0,
-[0]       -0.007410023211169322,
-[0]       0,
-[0]       0.003704926842921988,
-[0]       0,
-[0]       -0.001852452826619735,
-[0]       0,
-[0]       0.0009262250889700711,
-[0]       0
-[0]     ]
-[0]   },
-[0]   "clampedNodes": [],
-[0]   "comparisonFinalState": {
-[0]     "node-1747498392026": {
-[0]       "id": "node-1747498392026",
-[0]       "label": "Bunnies",
-[0]       "value": 0.0008103494023443638
-[0]     },
-[0]     "node-1747498393062": {
-[0]       "id": "node-1747498393062",
-[0]       "label": "Grass",
-[0]       "value": 0
-[0]     },
-[0]     "node-1747498394292": {
-[0]       "id": "node-1747498394292",
-[0]       "label": "Foxes",
-[0]       "value": 0
-[0]     }
-[0]   },
-[0]   "comparisonTimeSeries": {
-[0]     "node-1747498392026": [
-[0]       1,
-[0]       0,
-[0]       -0.4318081805950961,
-[0]       0,
-[0]       0.20946403880551528,
-[0]       0,
-[0]       -0.10397364519795164,
-[0]       0,
-[0]       0.051893382423026,
-[0]       0,
-[0]       -0.02593505285548358,
-[0]       0,
-[0]       0.01296607292971933,
-[0]       0,
-[0]       -0.006482854818078502,
-[0]       0,
-[0]       0.0032414047044560064,
-[0]       0,
-[0]       -0.0016206995141946074,
-[0]       0,
-[0]       0.0008103494023443638
-[0]     ],
-[0]     "node-1747498393062": [
-[0]       0.5,
-[0]       -0.46211715726000974,
-[0]       0,
-[0]       0.21261072500231093,
-[0]       0,
-[0]       -0.10435076403243451,
-[0]       0,
-[0]       0.051940039462653256,
-[0]       0,
-[0]       -0.025940870075332554,
-[0]       0,
-[0]       0.012966799617631823,
-[0]       0,
-[0]       -0.0064829456395604805,
-[0]       0,
-[0]       0.0032414160566879907,
-[0]       0,
-[0]       -0.0016207009332094417,
-[0]       0,
-[0]       0.0008103495797207755,
-[0]       0
-[0]     ],
-[0]     "node-1747498394292": [
-[0]       0.5,
-[0]       0.46211715726000974,
-[0]       0,
-[0]       -0.21261072500231093,
-[0]       0,
-[0]       0.10435076403243451,
-[0]       0,
-[0]       -0.051940039462653256,
-[0]       0,
-[0]       0.025940870075332554,
-[0]       0,
-[0]       -0.012966799617631823,
-[0]       0,
-[0]       0.0064829456395604805,
-[0]       0,
-[0]       -0.0032414160566879907,
-[0]       0,
-[0]       0.0016207009332094417,
-[0]       0,
-[0]       -0.0008103495797207755,
-[0]       0
-[0]     ]
-[0]   },
-[0]   "converged": true,
-[0]   "deltaFinalState": {
-[0]     "node-1747498392026": {
-[0]       "id": "node-1747498392026",
-[0]       "label": "Bunnies",
-[0]       "value": 0.001736574226447212
-[0]     },
-[0]     "node-1747498393062": {
-[0]       "id": "node-1747498393062",
-[0]       "label": "Grass",
-[0]       "value": 0
-[0]     },
-[0]     "node-1747498394292": {
-[0]       "id": "node-1747498394292",
-[0]       "label": "Foxes",
-[0]       "value": 0
-[0]     }
-[0]   },
-[0]   "impactMetrics": {
-[0]     "node-1747498392026": {
-[0]       "auc": 0.11916786818936298,
-[0]       "baseline": -0.000926224824102848,
-[0]       "delta": 0.001736574226447212,
-[0]       "direction": "Oscillating (High)",
-[0]       "id": "node-1747498392026",
-[0]       "label": "Bunnies",
-[0]       "maxDifference": 0.5,
-[0]       "normalizedChangePercent": 187.48949296724774,
-[0]       "scenario": 0.0008103494023443638
-[0]     },
-[0]     "node-1747498393062": {
-[0]       "auc": -0.15439835066142632,
-[0]       "baseline": 0,
-[0]       "delta": 0,
-[0]       "direction": "Oscillating (Medium)",
-[0]       "id": "node-1747498393062",
-[0]       "label": "Grass",
-[0]       "maxDifference": -0.2171984948563006,
-[0]       "normalizedChangePercent": 0,
-[0]       "scenario": 0
-[0]     },
-[0]     "node-1747498394292": {
-[0]       "auc": 0.15439835066142632,
-[0]       "baseline": 0,
-[0]       "delta": 0,
-[0]       "direction": "Oscillating (Medium)",
-[0]       "id": "node-1747498394292",
-[0]       "label": "Foxes",
-[0]       "maxDifference": 0.2171984948563006,
-[0]       "normalizedChangePercent": 0,
-[0]       "scenario": 0
-[0]     }
-[0]   },
-[0]   "iterations": 20
-[0] }
-[0] 10:56:10 PM [express] POST /api/simulate 200 in 82ms :: {"baselineFinalState":{"node-1747498392026":{...
-[0] Scenario from DB: {
-[0]   id: 23,
-[0]   name: 'bunbunbun',
-[0]   modelId: 1,
-[0]   description: '',
-[0]   initialValues: {
-[0]     'node-1747498392026': 1,
-[0]     'node-1747498393062': 0.5,
-[0]     'node-1747498394292': 0.5
-[0]   },
-[0]   results: {
-[0]     converged: true,
-[0]     finalState: {
-[0]       'node-1747498392026': [Object],
-[0]       'node-1747498393062': [Object],
-[0]       'node-1747498394292': [Object]
-[0]     },
-[0]     iterations: 20,
-[0]     timeSeries: {
-[0]       'node-1747498392026': [Array],
-[0]       'node-1747498393062': [Array],
-[0]       'node-1747498394292': [Array]
-[0]     },
-[0]     baselineConverged: true,
-[0]     baselineFinalState: {
-[0]       'node-1747498392026': [Object],
-[0]       'node-1747498393062': [Object],
-[0]       'node-1747498394292': [Object]
-[0]     },
-[0]     baselineIterations: 20,
-[0]     baselineTimeSeries: {
-[0]       'node-1747498392026': [Array],
-[0]       'node-1747498393062': [Array],
-[0]       'node-1747498394292': [Array]
-[0]     }
-[0]   },
-[0]   simulationParams: { threshold: 0.001, activation: 'sigmoid', maxIterations: 20 },
-[0]   clampedNodes: [],
-[0]   nodes: [
-[0]     { id: 'node-1747498392026', label: 'Bunnies', value: 1 },
-[0]     { id: 'node-1747498393062', label: 'Grass', value: 0.5 },
-[0]     { id: 'node-1747498394292', label: 'Foxes', value: 0.5 }
-[0]   ],
-[0]   createdAt: '2025-05-18T02:53:32.146Z',
-[0]   updatedAt: '2025-05-18T02:56:10.352Z'
-[0] }
-[0] Scenario after Zod validation: {
-[0]   id: 23,
-[0]   modelId: 1,
-[0]   name: 'bunbunbun',
-[0]   description: '',
-[0]   nodes: [
-[0]     { id: 'node-1747498392026', label: 'Bunnies', value: 1 },
-[0]     { id: 'node-1747498393062', label: 'Grass', value: 0.5 },
-[0]     { id: 'node-1747498394292', label: 'Foxes', value: 0.5 }
-[0]   ],
-[0]   initialValues: {
-[0]     'node-1747498392026': 1,
-[0]     'node-1747498393062': 0.5,
-[0]     'node-1747498394292': 0.5
-[0]   },
-[0]   createdAt: '2025-05-18T02:53:32.146Z',
-[0]   updatedAt: '2025-05-18T02:56:10.352Z'
-[0] }
-[0] 10:56:10 PM [express] PATCH /api/scenarios/23 200 in 79ms :: {"id":23,"modelId":1,"name":"bunbunbun",...
-[0] Received simulation request: {
-[0]   "schemaVersion": "1.0.0",
-[0]   "nodes": [
-[0]     {
-[0]       "id": "node-1747498392026",
-[0]       "value": 0.5,
-[0]       "label": "Bunnies",
-[0]       "type": "regular"
-[0]     },
-[0]     {
-[0]       "id": "node-1747498393062",
-[0]       "value": 0.5,
-[0]       "label": "Grass",
-[0]       "type": "regular"
-[0]     },
-[0]     {
-[0]       "id": "node-1747498394292",
-[0]       "value": 0.5,
-[0]       "label": "Foxes",
-[0]       "type": "regular"
-[0]     }
-[0]   ],
-[0]   "edges": [
-[0]     {
-[0]       "source": "node-1747498392026",
-[0]       "target": "node-1747498394292",
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842593",
 [0]       "weight": 0.5
 [0]     },
 [0]     {
-[0]       "source": "node-1747498394292",
-[0]       "target": "node-1747498392026",
-[0]       "weight": -0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498392026",
-[0]       "target": "node-1747498393062",
-[0]       "weight": -0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498393062",
-[0]       "target": "node-1747498392026",
-[0]       "weight": 0.5
-[0]     }
-[0]   ],
-[0]   "activation": "relu",
-[0]   "threshold": 0.001,
-[0]   "maxIterations": 20,
-[0]   "compareToBaseline": true,
-[0]   "modelInitialValues": {
-[0]     "node-1747498392026": 0.5,
-[0]     "node-1747498393062": 0.5,
-[0]     "node-1747498394292": 0.5
-[0]   },
-[0]   "scenarioInitialValues": {
-[0]     "node-1747498392026": 1,
-[0]     "node-1747498393062": 0.5,
-[0]     "node-1747498394292": 0.5
-[0]   },
-[0]   "clampedNodes": []
-[0] }
-[0] Forwarding to Python backend: {
-[0]   "schemaVersion": "1.0.0",
-[0]   "nodes": [
-[0]     {
-[0]       "id": "node-1747498392026",
-[0]       "value": 0.5,
-[0]       "label": "Bunnies",
-[0]       "type": "regular"
-[0]     },
-[0]     {
-[0]       "id": "node-1747498393062",
-[0]       "value": 0.5,
-[0]       "label": "Grass",
-[0]       "type": "regular"
-[0]     },
-[0]     {
-[0]       "id": "node-1747498394292",
-[0]       "value": 0.5,
-[0]       "label": "Foxes",
-[0]       "type": "regular"
-[0]     }
-[0]   ],
-[0]   "edges": [
-[0]     {
-[0]       "source": "node-1747498392026",
-[0]       "target": "node-1747498394292",
-[0]       "weight": 0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498394292",
-[0]       "target": "node-1747498392026",
-[0]       "weight": -0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498392026",
-[0]       "target": "node-1747498393062",
-[0]       "weight": -0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498393062",
-[0]       "target": "node-1747498392026",
-[0]       "weight": 0.5
-[0]     }
-[0]   ],
-[0]   "activation": "relu",
-[0]   "threshold": 0.001,
-[0]   "maxIterations": 20,
-[0]   "compareToBaseline": true,
-[0]   "modelInitialValues": {
-[0]     "node-1747498392026": 0.5,
-[0]     "node-1747498393062": 0.5,
-[0]     "node-1747498394292": 0.5
-[0]   },
-[0]   "scenarioInitialValues": {
-[0]     "node-1747498392026": 1,
-[0]     "node-1747498393062": 0.5,
-[0]     "node-1747498394292": 0.5
-[0]   },
-[0]   "clampedNodes": []
-[0] }
-[0] Python simulation response: {
-[0]   "baselineFinalState": {
-[0]     "node-1747498392026": {
-[0]       "id": "node-1747498392026",
-[0]       "label": "Bunnies",
-[0]       "value": 0
-[0]     },
-[0]     "node-1747498393062": {
-[0]       "id": "node-1747498393062",
-[0]       "label": "Grass",
-[0]       "value": 0
-[0]     },
-[0]     "node-1747498394292": {
-[0]       "id": "node-1747498394292",
-[0]       "label": "Foxes",
-[0]       "value": 0
-[0]     }
-[0]   },
-[0]   "baselineTimeSeries": {
-[0]     "node-1747498392026": [
-[0]       0.5,
-[0]       0,
-[0]       0,
-[0]       0
-[0]     ],
-[0]     "node-1747498393062": [
-[0]       0.5,
-[0]       0,
-[0]       0,
-[0]       0
-[0]     ],
-[0]     "node-1747498394292": [
-[0]       0.5,
-[0]       0.25,
-[0]       0,
-[0]       0
-[0]     ]
-[0]   },
-[0]   "clampedNodes": [],
-[0]   "comparisonFinalState": {
-[0]     "node-1747498392026": {
-[0]       "id": "node-1747498392026",
-[0]       "label": "Bunnies",
-[0]       "value": 0
-[0]     },
-[0]     "node-1747498393062": {
-[0]       "id": "node-1747498393062",
-[0]       "label": "Grass",
-[0]       "value": 0
-[0]     },
-[0]     "node-1747498394292": {
-[0]       "id": "node-1747498394292",
-[0]       "label": "Foxes",
-[0]       "value": 0
-[0]     }
-[0]   },
-[0]   "comparisonTimeSeries": {
-[0]     "node-1747498392026": [
-[0]       1,
-[0]       0,
-[0]       0,
-[0]       0
-[0]     ],
-[0]     "node-1747498393062": [
-[0]       0.5,
-[0]       0,
-[0]       0,
-[0]       0
-[0]     ],
-[0]     "node-1747498394292": [
-[0]       0.5,
-[0]       0.5,
-[0]       0,
-[0]       0
-[0]     ]
-[0]   },
-[0]   "converged": true,
-[0]   "deltaFinalState": {
-[0]     "node-1747498392026": {
-[0]       "id": "node-1747498392026",
-[0]       "label": "Bunnies",
-[0]       "value": 0
-[0]     },
-[0]     "node-1747498393062": {
-[0]       "id": "node-1747498393062",
-[0]       "label": "Grass",
-[0]       "value": 0
-[0]     },
-[0]     "node-1747498394292": {
-[0]       "id": "node-1747498394292",
-[0]       "label": "Foxes",
-[0]       "value": 0
-[0]     }
-[0]   },
-[0]   "impactMetrics": {
-[0]     "node-1747498392026": {
-[0]       "auc": 0.25,
-[0]       "baseline": 0,
-[0]       "delta": 0,
-[0]       "direction": "Temporary High Increase",
-[0]       "id": "node-1747498392026",
-[0]       "label": "Bunnies",
-[0]       "maxDifference": 0.5,
-[0]       "normalizedChangePercent": 0,
-[0]       "scenario": 0
-[0]     },
-[0]     "node-1747498393062": {
-[0]       "auc": 0,
-[0]       "baseline": 0,
-[0]       "delta": 0,
-[0]       "direction": "No Change",
-[0]       "id": "node-1747498393062",
-[0]       "label": "Grass",
-[0]       "maxDifference": 0,
-[0]       "normalizedChangePercent": 0,
-[0]       "scenario": 0
-[0]     },
-[0]     "node-1747498394292": {
-[0]       "auc": 0.25,
-[0]       "baseline": 0,
-[0]       "delta": 0,
-[0]       "direction": "Temporary Medium Increase",
-[0]       "id": "node-1747498394292",
-[0]       "label": "Foxes",
-[0]       "maxDifference": 0.25,
-[0]       "normalizedChangePercent": 0,
-[0]       "scenario": 0
-[0]     }
-[0]   },
-[0]   "iterations": 3
-[0] }
-[0] 10:56:18 PM [express] POST /api/simulate 200 in 67ms :: {"baselineFinalState":{"node-1747498392026":{...
-[0] Scenario from DB: {
-[0]   id: 23,
-[0]   name: 'bunbunbun',
-[0]   modelId: 1,
-[0]   description: '',
-[0]   initialValues: {
-[0]     'node-1747498392026': 1,
-[0]     'node-1747498393062': 0.5,
-[0]     'node-1747498394292': 0.5
-[0]   },
-[0]   results: {
-[0]     converged: true,
-[0]     finalState: {
-[0]       'node-1747498392026': [Object],
-[0]       'node-1747498393062': [Object],
-[0]       'node-1747498394292': [Object]
-[0]     },
-[0]     iterations: 3,
-[0]     timeSeries: {
-[0]       'node-1747498392026': [Array],
-[0]       'node-1747498393062': [Array],
-[0]       'node-1747498394292': [Array]
-[0]     },
-[0]     baselineConverged: true,
-[0]     baselineFinalState: {
-[0]       'node-1747498392026': [Object],
-[0]       'node-1747498393062': [Object],
-[0]       'node-1747498394292': [Object]
-[0]     },
-[0]     baselineIterations: 3,
-[0]     baselineTimeSeries: {
-[0]       'node-1747498392026': [Array],
-[0]       'node-1747498393062': [Array],
-[0]       'node-1747498394292': [Array]
-[0]     }
-[0]   },
-[0]   simulationParams: { threshold: 0.001, activation: 'sigmoid', maxIterations: 20 },
-[0]   clampedNodes: [],
-[0]   nodes: [
-[0]     { id: 'node-1747498392026', label: 'Bunnies', value: 1 },
-[0]     { id: 'node-1747498393062', label: 'Grass', value: 0.5 },
-[0]     { id: 'node-1747498394292', label: 'Foxes', value: 0.5 }
-[0]   ],
-[0]   createdAt: '2025-05-18T02:53:32.146Z',
-[0]   updatedAt: '2025-05-18T02:56:18.115Z'
-[0] }
-[0] Scenario after Zod validation: {
-[0]   id: 23,
-[0]   modelId: 1,
-[0]   name: 'bunbunbun',
-[0]   description: '',
-[0]   nodes: [
-[0]     { id: 'node-1747498392026', label: 'Bunnies', value: 1 },
-[0]     { id: 'node-1747498393062', label: 'Grass', value: 0.5 },
-[0]     { id: 'node-1747498394292', label: 'Foxes', value: 0.5 }
-[0]   ],
-[0]   initialValues: {
-[0]     'node-1747498392026': 1,
-[0]     'node-1747498393062': 0.5,
-[0]     'node-1747498394292': 0.5
-[0]   },
-[0]   createdAt: '2025-05-18T02:53:32.146Z',
-[0]   updatedAt: '2025-05-18T02:56:18.115Z'
-[0] }
-[0] 10:56:18 PM [express] PATCH /api/scenarios/23 200 in 93ms :: {"id":23,"modelId":1,"name":"bunbunbun",...
-[0] Received simulation request: {
-[0]   "schemaVersion": "1.0.0",
-[0]   "nodes": [
-[0]     {
-[0]       "id": "node-1747498392026",
-[0]       "value": 0.5,
-[0]       "label": "Bunnies",
-[0]       "type": "regular"
-[0]     },
-[0]     {
-[0]       "id": "node-1747498393062",
-[0]       "value": 0.5,
-[0]       "label": "Grass",
-[0]       "type": "regular"
-[0]     },
-[0]     {
-[0]       "id": "node-1747498394292",
-[0]       "value": 0.5,
-[0]       "label": "Foxes",
-[0]       "type": "regular"
-[0]     }
-[0]   ],
-[0]   "edges": [
-[0]     {
-[0]       "source": "node-1747498392026",
-[0]       "target": "node-1747498394292",
-[0]       "weight": 0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498394292",
-[0]       "target": "node-1747498392026",
-[0]       "weight": -0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498392026",
-[0]       "target": "node-1747498393062",
-[0]       "weight": -0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498393062",
-[0]       "target": "node-1747498392026",
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842243",
 [0]       "weight": 0.5
 [0]     }
 [0]   ],
 [0]   "activation": "sigmoid",
 [0]   "threshold": 0.001,
 [0]   "maxIterations": 20,
-[0]   "compareToBaseline": true,
-[0]   "modelInitialValues": {
-[0]     "node-1747498392026": 0.5,
-[0]     "node-1747498393062": 0.5,
-[0]     "node-1747498394292": 0.5
-[0]   },
-[0]   "scenarioInitialValues": {
-[0]     "node-1747498392026": 1,
-[0]     "node-1747498393062": 0.5,
-[0]     "node-1747498394292": 0.5
-[0]   },
+[0]   "compareToBaseline": false,
 [0]   "clampedNodes": []
 [0] }
 [0] Forwarding to Python backend: {
 [0]   "schemaVersion": "1.0.0",
 [0]   "nodes": [
 [0]     {
-[0]       "id": "node-1747498392026",
+[0]       "id": "node-1763144842243",
 [0]       "value": 0.5,
-[0]       "label": "Bunnies",
+[0]       "label": "new node 1",
 [0]       "type": "regular"
 [0]     },
 [0]     {
-[0]       "id": "node-1747498393062",
+[0]       "id": "node-1763144842593",
 [0]       "value": 0.5,
-[0]       "label": "Grass",
+[0]       "label": "New 2",
 [0]       "type": "regular"
 [0]     },
 [0]     {
-[0]       "id": "node-1747498394292",
+[0]       "id": "node-1763144842876",
 [0]       "value": 0.5,
-[0]       "label": "Foxes",
+[0]       "label": "New 4",
 [0]       "type": "regular"
 [0]     }
 [0]   ],
 [0]   "edges": [
 [0]     {
-[0]       "source": "node-1747498392026",
-[0]       "target": "node-1747498394292",
+[0]       "source": "node-1763144842243",
+[0]       "target": "node-1763144842593",
 [0]       "weight": 0.5
 [0]     },
 [0]     {
-[0]       "source": "node-1747498394292",
-[0]       "target": "node-1747498392026",
-[0]       "weight": -0.5
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842593",
+[0]       "weight": 0.5
 [0]     },
 [0]     {
-[0]       "source": "node-1747498392026",
-[0]       "target": "node-1747498393062",
-[0]       "weight": -0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498393062",
-[0]       "target": "node-1747498392026",
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842243",
 [0]       "weight": 0.5
 [0]     }
 [0]   ],
 [0]   "activation": "sigmoid",
 [0]   "threshold": 0.001,
 [0]   "maxIterations": 20,
-[0]   "compareToBaseline": true,
-[0]   "modelInitialValues": {
-[0]     "node-1747498392026": 0.5,
-[0]     "node-1747498393062": 0.5,
-[0]     "node-1747498394292": 0.5
-[0]   },
-[0]   "scenarioInitialValues": {
-[0]     "node-1747498392026": 1,
-[0]     "node-1747498393062": 0.5,
-[0]     "node-1747498394292": 0.5
-[0]   },
+[0]   "compareToBaseline": false,
 [0]   "clampedNodes": []
-[0] }
-[0] Python simulation response: {
-[0]   "baselineFinalState": {
-[0]     "node-1747498392026": {
-[0]       "id": "node-1747498392026",
-[0]       "label": "Bunnies",
-[0]       "value": 0.4849387496365568
-[0]     },
-[0]     "node-1747498393062": {
-[0]       "id": "node-1747498393062",
-[0]       "label": "Grass",
-[0]       "value": 0.43973676721679505
-[0]     },
-[0]     "node-1747498394292": {
-[0]       "id": "node-1747498394292",
-[0]       "label": "Foxes",
-[0]       "value": 0.5602632327832049
-[0]     }
-[0]   },
-[0]   "baselineTimeSeries": {
-[0]     "node-1747498392026": [
-[0]       0.5,
-[0]       0.5,
-[0]       0.48446088053521047,
-[0]       0.48446088053521047,
-[0]       0.4849387496365568
-[0]     ],
-[0]     "node-1747498393062": [
-[0]       0.5,
-[0]       0.43782349911420193,
-[0]       0.43782349911420193,
-[0]       0.43973676721679505,
-[0]       0.43973676721679505
-[0]     ],
-[0]     "node-1747498394292": [
-[0]       0.5,
-[0]       0.5621765008857981,
-[0]       0.5621765008857981,
-[0]       0.5602632327832049,
-[0]       0.5602632327832049
-[0]     ]
-[0]   },
-[0]   "clampedNodes": [],
-[0]   "comparisonFinalState": {
-[0]     "node-1747498392026": {
-[0]       "id": "node-1747498392026",
-[0]       "label": "Bunnies",
-[0]       "value": 0.4849387496365568
-[0]     },
-[0]     "node-1747498393062": {
-[0]       "id": "node-1747498393062",
-[0]       "label": "Grass",
-[0]       "value": 0.43962088313504544
-[0]     },
-[0]     "node-1747498394292": {
-[0]       "id": "node-1747498394292",
-[0]       "label": "Foxes",
-[0]       "value": 0.5603791168649546
-[0]     }
-[0]   },
-[0]   "comparisonTimeSeries": {
-[0]     "node-1747498392026": [
-[0]       1,
-[0]       0.5,
-[0]       0.469423368982364,
-[0]       0.48446088053521047,
-[0]       0.48540164563125265,
-[0]       0.4849387496365568
-[0]     ],
-[0]     "node-1747498393062": [
-[0]       0.5,
-[0]       0.3775406687981454,
-[0]       0.43782349911420193,
-[0]       0.44158998158654744,
-[0]       0.43973676721679505,
-[0]       0.43962088313504544
-[0]     ],
-[0]     "node-1747498394292": [
-[0]       0.5,
-[0]       0.6224593312018546,
-[0]       0.5621765008857981,
-[0]       0.5584100184134525,
-[0]       0.5602632327832049,
-[0]       0.5603791168649546
-[0]     ]
-[0]   },
-[0]   "converged": true,
-[0]   "deltaFinalState": {
-[0]     "node-1747498392026": {
-[0]       "id": "node-1747498392026",
-[0]       "label": "Bunnies",
-[0]       "value": 0
-[0]     },
-[0]     "node-1747498393062": {
-[0]       "id": "node-1747498393062",
-[0]       "label": "Grass",
-[0]       "value": -0.00011588408174961762
-[0]     },
-[0]     "node-1747498394292": {
-[0]       "id": "node-1747498394292",
-[0]       "label": "Foxes",
-[0]       "value": 0.00011588408174967313
-[0]     }
-[0]   },
-[0]   "impactMetrics": {
-[0]     "node-1747498392026": {
-[0]       "auc": 0.23519393644450143,
-[0]       "baseline": 0.4849387496365568,
-[0]       "delta": 0,
-[0]       "direction": "Oscillating (High)",
-[0]       "id": "node-1747498392026",
-[0]       "label": "Bunnies",
-[0]       "maxDifference": 0.5,
-[0]       "normalizedChangePercent": 0,
-[0]       "scenario": 0.4849387496365568
-[0]     },
-[0]     "node-1747498393062": {
-[0]       "auc": -0.058429615946304136,
-[0]       "baseline": 0.43973676721679505,
-[0]       "delta": -0.00011588408174961762,
-[0]       "direction": "Temporary Low Decrease",
-[0]       "id": "node-1747498393062",
-[0]       "label": "Grass",
-[0]       "maxDifference": -0.060282830316056524,
-[0]       "normalizedChangePercent": -0.02635305718989049,
-[0]       "scenario": 0.43962088313504544
-[0]     },
-[0]     "node-1747498394292": {
-[0]       "auc": 0.058429615946304136,
-[0]       "baseline": 0.5602632327832049,
-[0]       "delta": 0.00011588408174967313,
-[0]       "direction": "Temporary Low Increase",
-[0]       "id": "node-1747498394292",
-[0]       "label": "Foxes",
-[0]       "maxDifference": 0.060282830316056524,
-[0]       "normalizedChangePercent": 0.020679586062733304,
-[0]       "scenario": 0.5603791168649546
-[0]     }
-[0]   },
-[0]   "iterations": 5
-[0] }
-[0] 10:56:25 PM [express] POST /api/simulate 200 in 67ms :: {"baselineFinalState":{"node-1747498392026":{...
-[0] Scenario from DB: {
-[0]   id: 23,
-[0]   name: 'bunbunbun',
-[0]   modelId: 1,
-[0]   description: '',
-[0]   initialValues: {
-[0]     'node-1747498392026': 1,
-[0]     'node-1747498393062': 0.5,
-[0]     'node-1747498394292': 0.5
-[0]   },
-[0]   results: {
-[0]     converged: true,
-[0]     finalState: {
-[0]       'node-1747498392026': [Object],
-[0]       'node-1747498393062': [Object],
-[0]       'node-1747498394292': [Object]
-[0]     },
-[0]     iterations: 5,
-[0]     timeSeries: {
-[0]       'node-1747498392026': [Array],
-[0]       'node-1747498393062': [Array],
-[0]       'node-1747498394292': [Array]
-[0]     },
-[0]     baselineConverged: true,
-[0]     baselineFinalState: {
-[0]       'node-1747498392026': [Object],
-[0]       'node-1747498393062': [Object],
-[0]       'node-1747498394292': [Object]
-[0]     },
-[0]     baselineIterations: 5,
-[0]     baselineTimeSeries: {
-[0]       'node-1747498392026': [Array],
-[0]       'node-1747498393062': [Array],
-[0]       'node-1747498394292': [Array]
-[0]     }
-[0]   },
-[0]   simulationParams: { threshold: 0.001, activation: 'sigmoid', maxIterations: 20 },
-[0]   clampedNodes: [],
-[0]   nodes: [
-[0]     { id: 'node-1747498392026', label: 'Bunnies', value: 1 },
-[0]     { id: 'node-1747498393062', label: 'Grass', value: 0.5 },
-[0]     { id: 'node-1747498394292', label: 'Foxes', value: 0.5 }
-[0]   ],
-[0]   createdAt: '2025-05-18T02:53:32.146Z',
-[0]   updatedAt: '2025-05-18T02:56:25.279Z'
-[0] }
-[0] Scenario after Zod validation: {
-[0]   id: 23,
-[0]   modelId: 1,
-[0]   name: 'bunbunbun',
-[0]   description: '',
-[0]   nodes: [
-[0]     { id: 'node-1747498392026', label: 'Bunnies', value: 1 },
-[0]     { id: 'node-1747498393062', label: 'Grass', value: 0.5 },
-[0]     { id: 'node-1747498394292', label: 'Foxes', value: 0.5 }
-[0]   ],
-[0]   initialValues: {
-[0]     'node-1747498392026': 1,
-[0]     'node-1747498393062': 0.5,
-[0]     'node-1747498394292': 0.5
-[0]   },
-[0]   createdAt: '2025-05-18T02:53:32.146Z',
-[0]   updatedAt: '2025-05-18T02:56:25.279Z'
-[0] }
-[0] 10:56:25 PM [express] PATCH /api/scenarios/23 200 in 106ms :: {"id":23,"modelId":1,"name":"bunbunbun"...
-[0] 11:10:47 PM [express] GET /api/user 304 in 735ms :: {"id":3,"username":"testaccount","displayName":"T...
-[0] 11:10:49 PM [express] GET /api/projects 304 in 101ms :: [{"id":1,"name":"Ecology","description":null,...
-[0] 11:10:49 PM [express] GET /api/models 304 in 295ms :: [{"id":2,"name":"Coffee","description":null,"pr...
-[0] 11:10:49 PM [express] GET /api/models/1 304 in 715ms :: {"id":1,"name":"Predator Prey Model","descrip...
-[0] 11:10:49 PM [express] GET /api/models 304 in 78ms :: [{"id":2,"name":"Coffee","description":null,"pro...
-[0] 11:10:49 PM [express] GET /api/projects 304 in 80ms :: [{"id":1,"name":"Ecology","description":null,"...
-[0] 1:54:38 PM [express] GET /api/user 304 in 612ms :: {"id":3,"username":"testaccount","displayName":"T...
-[0] 1:54:38 PM [express] GET /api/models/1 304 in 93ms :: {"id":1,"name":"Predator Prey Model","descript...
-[0] 1:54:38 PM [express] GET /api/models 304 in 319ms :: [{"id":2,"name":"Coffee","description":null,"pr...
-[0] 1:54:39 PM [express] GET /api/projects 304 in 624ms :: [{"id":1,"name":"Ecology","description":null,...
-[0] Error: read ECONNRESET
-[0]     at TLSWrap.onStreamRead (node:internal/stream_base_commons:216:20)
-[0] 1:49:29 PM [express] GET /api/user 200 in 979ms :: {"id":3,"username":"testaccount","displayName":"T...
-[0] 1:49:31 PM [express] GET /api/projects 304 in 674ms :: [{"id":1,"name":"Ecology","description":null,...
-[0] 1:49:32 PM [express] GET /api/models/1 304 in 1337ms :: {"id":1,"name":"Predator Prey Model","descri...
-[0] 1:49:32 PM [express] GET /api/projects 304 in 521ms :: [{"id":1,"name":"Ecology","description":null,...
-[0] 1:49:33 PM [express] GET /api/models 304 in 1942ms :: [{"id":2,"name":"Coffee","description":null,"p...
-[0] 4:52:34 PM [express] GET /api/user 304 in 920ms :: {"id":3,"username":"testaccount","displayName":"T...
-[0] 4:52:35 PM [express] GET /api/projects 304 in 183ms :: [{"id":1,"name":"Ecology","description":null,...
-[0] 4:52:36 PM [express] GET /api/models 304 in 483ms :: [{"id":2,"name":"Coffee","description":null,"pr...
-[0] 4:52:36 PM [express] GET /api/models/1 304 in 937ms :: {"id":1,"name":"Predator Prey Model","descrip...
-[0] 4:52:36 PM [express] GET /api/projects 304 in 173ms :: [{"id":1,"name":"Ecology","description":null,...
-[0] 4:52:36 PM [express] GET /api/models 304 in 176ms :: [{"id":2,"name":"Coffee","description":null,"pr...
-[0] 5:20:56 PM [express] GET /api/user 304 in 902ms :: {"id":3,"username":"testaccount","displayName":"T...
-[0] 5:20:57 PM [express] GET /api/projects 304 in 186ms :: [{"id":1,"name":"Ecology","description":null,...
-[0] 5:20:58 PM [express] GET /api/models 304 in 496ms :: [{"id":2,"name":"Coffee","description":null,"pr...
-[0] 5:20:58 PM [express] GET /api/models/1 304 in 1044ms :: {"id":1,"name":"Predator Prey Model","descri...
-[0] 5:20:58 PM [express] GET /api/models 304 in 182ms :: [{"id":2,"name":"Coffee","description":null,"pr...
-[0] 5:20:58 PM [express] GET /api/projects 304 in 183ms :: [{"id":1,"name":"Ecology","description":null,...
-[0] 5:39:00 PM [express] GET /api/user 304 in 836ms :: {"id":3,"username":"testaccount","displayName":"T...
-[0] 5:39:01 PM [express] GET /api/models 304 in 152ms :: [{"id":2,"name":"Coffee","description":null,"pr...
-[0] 5:39:02 PM [express] GET /api/models/1 304 in 474ms :: {"id":1,"name":"Predator Prey Model","descrip...
-[0] 5:39:02 PM [express] GET /api/models 304 in 160ms :: [{"id":2,"name":"Coffee","description":null,"pr...
-[0] 5:39:02 PM [express] GET /api/projects 304 in 867ms :: [{"id":1,"name":"Ecology","description":null,...
-[0] 4:31:09 PM [express] GET /api/user 304 in 582ms :: {"id":3,"username":"testaccount","displayName":"T...
-[0] 4:31:09 PM [express] GET /api/projects 304 in 74ms :: [{"id":1,"name":"Ecology","description":null,"...
-[0] 4:31:09 PM [express] GET /api/models 304 in 294ms :: [{"id":2,"name":"Coffee","description":null,"pr...
-[0] 4:31:10 PM [express] GET /api/models/1 304 in 697ms :: {"id":1,"name":"Predator Prey Model","descrip...
-[0] 4:31:10 PM [express] GET /api/projects 304 in 78ms :: [{"id":1,"name":"Ecology","description":null,"...
-[0] 4:31:10 PM [express] GET /api/models 304 in 351ms :: [{"id":2,"name":"Coffee","description":null,"pr...
-[0] 8:58:59 PM [express] GET /api/user 304 in 616ms :: {"id":3,"username":"testaccount","displayName":"T...
-[0] 8:59:00 PM [express] GET /api/projects 304 in 147ms :: [{"id":1,"name":"Ecology","description":null,...
-[0] 8:59:00 PM [express] GET /api/models/1 304 in 404ms :: {"id":1,"name":"Predator Prey Model","descrip...
-[0] 8:59:00 PM [express] GET /api/projects 304 in 59ms :: [{"id":1,"name":"Ecology","description":null,"...
-[0] 8:59:01 PM [express] GET /api/models 304 in 748ms :: [{"id":2,"name":"Coffee","description":null,"pr...
-[0] 8:54:15 AM [express] GET /api/user 401 in 3ms :: {"error":"Not authenticated"}
-[0] 11:48:48 PM [express] GET /api/user 401 in 2ms :: {"error":"Not authenticated"}
-[1] 4:20:52 PM [vite] hmr update /src/components/scenario/ScenarioComparison.tsx, /src/index.css
-[1] 4:20:53 PM [vite] hmr update /src/components/scenario/ScenarioManager.tsx, /src/index.css
-[0] 2:54:07 PM [express] GET /api/user 401 in 15ms :: {"error":"Not authenticated"}
-[0] 2:54:17 PM [express] POST /api/login 200 in 1062ms :: {"id":3,"username":"testaccount","displayName"...
-[0] 2:54:17 PM [express] GET /api/projects 304 in 113ms :: [{"id":1,"name":"Ecology","description":null,...
-[0] 2:54:18 PM [express] GET /api/models 304 in 325ms :: [{"id":2,"name":"Coffee","description":null,"pr...
-[0] 2:54:20 PM [express] GET /api/models 304 in 163ms :: [{"id":2,"name":"Coffee","description":null,"pr...
-[0] 2:54:21 PM [express] GET /api/projects 304 in 748ms :: [{"id":1,"name":"Ecology","description":null,...
-[0] 2:54:22 PM [express] GET /api/projects 304 in 186ms :: [{"id":1,"name":"Ecology","description":null,...
-[0] 2:54:22 PM [express] GET /api/models 304 in 191ms :: [{"id":2,"name":"Coffee","description":null,"pr...
-[0] 2:54:22 PM [express] GET /api/models/1 304 in 414ms :: {"id":1,"name":"Predator Prey Model","descrip...
-[0] 2:54:22 PM [express] GET /api/projects 304 in 81ms :: [{"id":1,"name":"Ecology","description":null,"...
-[0] 2:54:22 PM [express] GET /api/models 304 in 94ms :: [{"id":2,"name":"Coffee","description":null,"pro...
-[0] 2:54:23 PM [express] PUT /api/models/1 200 in 102ms :: {"id":1,"name":"Predator Prey Model","descrip...
-[0] 2:54:23 PM [express] PUT /api/models/1 200 in 195ms :: {"id":1,"name":"Predator Prey Model","descrip...
-[0] 2:54:23 PM [express] GET /api/models 200 in 94ms :: [{"id":2,"name":"Coffee","description":null,"pro...
-[0] 2:54:23 PM [express] GET /api/models/1 200 in 110ms :: {"id":1,"name":"Predator Prey Model","descrip...
-[0] 2:54:40 PM [express] GET /api/models/1/scenarios 200 in 338ms :: [{"id":23,"name":"bunbunbun","model...
-[0] 2:54:40 PM [express] PUT /api/models/1 200 in 737ms :: {"id":1,"name":"Predator Prey Model","descrip...
-[0] 2:54:40 PM [express] PUT /api/models/1 200 in 87ms :: {"id":1,"name":"Predator Prey Model","descript...
-[0] 2:54:41 PM [express] GET /api/models 200 in 93ms :: [{"id":2,"name":"Coffee","description":null,"pro...
-[0] 2:54:41 PM [express] GET /api/models/1 200 in 104ms :: {"id":1,"name":"Predator Prey Model","descrip...
-[0] Received simulation request: {
-[0]   "schemaVersion": "1.0.0",
-[0]   "nodes": [
-[0]     {
-[0]       "id": "node-1747498392026",
-[0]       "value": 0.5,
-[0]       "label": "Bunnies",
-[0]       "type": "regular"
-[0]     },
-[0]     {
-[0]       "id": "node-1747498393062",
-[0]       "value": 0.5,
-[0]       "label": "Grass",
-[0]       "type": "regular"
-[0]     },
-[0]     {
-[0]       "id": "node-1747498394292",
-[0]       "value": 0.5,
-[0]       "label": "Foxes",
-[0]       "type": "regular"
-[0]     }
-[0]   ],
-[0]   "edges": [
-[0]     {
-[0]       "source": "node-1747498392026",
-[0]       "target": "node-1747498394292",
-[0]       "weight": 0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498394292",
-[0]       "target": "node-1747498392026",
-[0]       "weight": -0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498392026",
-[0]       "target": "node-1747498393062",
-[0]       "weight": -0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498393062",
-[0]       "target": "node-1747498392026",
-[0]       "weight": 0.5
-[0]     }
-[0]   ],
-[0]   "activation": "sigmoid",
-[0]   "threshold": 0.001,
-[0]   "maxIterations": 20,
-[0]   "compareToBaseline": true,
-[0]   "modelInitialValues": {
-[0]     "node-1747498392026": 0.5,
-[0]     "node-1747498393062": 0.5,
-[0]     "node-1747498394292": 0.5
-[0]   },
-[0]   "scenarioInitialValues": {
-[0]     "node-1747498392026": 1,
-[0]     "node-1747498393062": 0.5,
-[0]     "node-1747498394292": 0.5
-[0]   },
-[0]   "clampedNodes": []
-[0] }
-[0] Forwarding to Python backend: {
-[0]   "schemaVersion": "1.0.0",
-[0]   "nodes": [
-[0]     {
-[0]       "id": "node-1747498392026",
-[0]       "value": 0.5,
-[0]       "label": "Bunnies",
-[0]       "type": "regular"
-[0]     },
-[0]     {
-[0]       "id": "node-1747498393062",
-[0]       "value": 0.5,
-[0]       "label": "Grass",
-[0]       "type": "regular"
-[0]     },
-[0]     {
-[0]       "id": "node-1747498394292",
-[0]       "value": 0.5,
-[0]       "label": "Foxes",
-[0]       "type": "regular"
-[0]     }
-[0]   ],
-[0]   "edges": [
-[0]     {
-[0]       "source": "node-1747498392026",
-[0]       "target": "node-1747498394292",
-[0]       "weight": 0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498394292",
-[0]       "target": "node-1747498392026",
-[0]       "weight": -0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498392026",
-[0]       "target": "node-1747498393062",
-[0]       "weight": -0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498393062",
-[0]       "target": "node-1747498392026",
-[0]       "weight": 0.5
-[0]     }
-[0]   ],
-[0]   "activation": "sigmoid",
-[0]   "threshold": 0.001,
-[0]   "maxIterations": 20,
-[0]   "compareToBaseline": true,
-[0]   "modelInitialValues": {
-[0]     "node-1747498392026": 0.5,
-[0]     "node-1747498393062": 0.5,
-[0]     "node-1747498394292": 0.5
-[0]   },
-[0]   "scenarioInitialValues": {
-[0]     "node-1747498392026": 1,
-[0]     "node-1747498393062": 0.5,
-[0]     "node-1747498394292": 0.5
-[0]   },
-[0]   "clampedNodes": []
-[0] }
-[0] Python simulation response: {
-[0]   "baselineFinalState": {
-[0]     "node-1747498392026": {
-[0]       "id": "node-1747498392026",
-[0]       "label": "Bunnies",
-[0]       "value": 0.4849387496365568
-[0]     },
-[0]     "node-1747498393062": {
-[0]       "id": "node-1747498393062",
-[0]       "label": "Grass",
-[0]       "value": 0.43973676721679505
-[0]     },
-[0]     "node-1747498394292": {
-[0]       "id": "node-1747498394292",
-[0]       "label": "Foxes",
-[0]       "value": 0.5602632327832049
-[0]     }
-[0]   },
-[0]   "baselineTimeSeries": {
-[0]     "node-1747498392026": [
-[0]       0.5,
-[0]       0.5,
-[0]       0.48446088053521047,
-[0]       0.48446088053521047,
-[0]       0.4849387496365568
-[0]     ],
-[0]     "node-1747498393062": [
-[0]       0.5,
-[0]       0.43782349911420193,
-[0]       0.43782349911420193,
-[0]       0.43973676721679505,
-[0]       0.43973676721679505
-[0]     ],
-[0]     "node-1747498394292": [
-[0]       0.5,
-[0]       0.5621765008857981,
-[0]       0.5621765008857981,
-[0]       0.5602632327832049,
-[0]       0.5602632327832049
-[0]     ]
-[0]   },
-[0]   "clampedNodes": [],
-[0]   "comparisonFinalState": {
-[0]     "node-1747498392026": {
-[0]       "id": "node-1747498392026",
-[0]       "label": "Bunnies",
-[0]       "value": 0.4849387496365568
-[0]     },
-[0]     "node-1747498393062": {
-[0]       "id": "node-1747498393062",
-[0]       "label": "Grass",
-[0]       "value": 0.43962088313504544
-[0]     },
-[0]     "node-1747498394292": {
-[0]       "id": "node-1747498394292",
-[0]       "label": "Foxes",
-[0]       "value": 0.5603791168649546
-[0]     }
-[0]   },
-[0]   "comparisonTimeSeries": {
-[0]     "node-1747498392026": [
-[0]       1,
-[0]       0.5,
-[0]       0.469423368982364,
-[0]       0.48446088053521047,
-[0]       0.48540164563125265,
-[0]       0.4849387496365568
-[0]     ],
-[0]     "node-1747498393062": [
-[0]       0.5,
-[0]       0.3775406687981454,
-[0]       0.43782349911420193,
-[0]       0.44158998158654744,
-[0]       0.43973676721679505,
-[0]       0.43962088313504544
-[0]     ],
-[0]     "node-1747498394292": [
-[0]       0.5,
-[0]       0.6224593312018546,
-[0]       0.5621765008857981,
-[0]       0.5584100184134525,
-[0]       0.5602632327832049,
-[0]       0.5603791168649546
-[0]     ]
-[0]   },
-[0]   "converged": true,
-[0]   "deltaFinalState": {
-[0]     "node-1747498392026": {
-[0]       "id": "node-1747498392026",
-[0]       "label": "Bunnies",
-[0]       "value": 0
-[0]     },
-[0]     "node-1747498393062": {
-[0]       "id": "node-1747498393062",
-[0]       "label": "Grass",
-[0]       "value": -0.00011588408174961762
-[0]     },
-[0]     "node-1747498394292": {
-[0]       "id": "node-1747498394292",
-[0]       "label": "Foxes",
-[0]       "value": 0.00011588408174967313
-[0]     }
-[0]   },
-[0]   "impactMetrics": {
-[0]     "node-1747498392026": {
-[0]       "auc": 0.23519393644450143,
-[0]       "baseline": 0.4849387496365568,
-[0]       "delta": 0,
-[0]       "direction": "Oscillating (High)",
-[0]       "id": "node-1747498392026",
-[0]       "label": "Bunnies",
-[0]       "maxDifference": 0.5,
-[0]       "normalizedChangePercent": 0,
-[0]       "scenario": 0.4849387496365568
-[0]     },
-[0]     "node-1747498393062": {
-[0]       "auc": -0.058429615946304136,
-[0]       "baseline": 0.43973676721679505,
-[0]       "delta": -0.00011588408174961762,
-[0]       "direction": "Temporary Low Decrease",
-[0]       "id": "node-1747498393062",
-[0]       "label": "Grass",
-[0]       "maxDifference": -0.060282830316056524,
-[0]       "normalizedChangePercent": -0.02635305718989049,
-[0]       "scenario": 0.43962088313504544
-[0]     },
-[0]     "node-1747498394292": {
-[0]       "auc": 0.058429615946304136,
-[0]       "baseline": 0.5602632327832049,
-[0]       "delta": 0.00011588408174967313,
-[0]       "direction": "Temporary Low Increase",
-[0]       "id": "node-1747498394292",
-[0]       "label": "Foxes",
-[0]       "maxDifference": 0.060282830316056524,
-[0]       "normalizedChangePercent": 0.020679586062733304,
-[0]       "scenario": 0.5603791168649546
-[0]     }
-[0]   },
-[0]   "iterations": 5
-[0] }
-[0] 2:54:41 PM [express] POST /api/simulate 200 in 133ms :: {"baselineFinalState":{"node-1747498392026":...
-[0] Scenario from DB: {
-[0]   id: 23,
-[0]   name: 'bunbunbun',
-[0]   modelId: 1,
-[0]   description: '',
-[0]   initialValues: {
-[0]     'node-1747498392026': 1,
-[0]     'node-1747498393062': 0.5,
-[0]     'node-1747498394292': 0.5
-[0]   },
-[0]   results: {
-[0]     converged: true,
-[0]     finalState: {
-[0]       'node-1747498392026': [Object],
-[0]       'node-1747498393062': [Object],
-[0]       'node-1747498394292': [Object]
-[0]     },
-[0]     iterations: 5,
-[0]     timeSeries: {
-[0]       'node-1747498392026': [Array],
-[0]       'node-1747498393062': [Array],
-[0]       'node-1747498394292': [Array]
-[0]     },
-[0]     baselineConverged: true,
-[0]     baselineFinalState: {
-[0]       'node-1747498392026': [Object],
-[0]       'node-1747498393062': [Object],
-[0]       'node-1747498394292': [Object]
-[0]     },
-[0]     baselineIterations: 5,
-[0]     baselineTimeSeries: {
-[0]       'node-1747498392026': [Array],
-[0]       'node-1747498393062': [Array],
-[0]       'node-1747498394292': [Array]
-[0]     }
-[0]   },
-[0]   simulationParams: { threshold: 0.001, activation: 'sigmoid', maxIterations: 20 },
-[0]   clampedNodes: [],
-[0]   nodes: [
-[0]     { id: 'node-1747498392026', label: 'Bunnies', value: 1 },
-[0]     { id: 'node-1747498393062', label: 'Grass', value: 0.5 },
-[0]     { id: 'node-1747498394292', label: 'Foxes', value: 0.5 }
-[0]   ],
-[0]   createdAt: '2025-05-18T02:53:32.146Z',
-[0]   updatedAt: '2025-06-02T18:54:41.863Z'
-[0] }
-[0] Scenario after Zod validation: {
-[0]   id: 23,
-[0]   modelId: 1,
-[0]   name: 'bunbunbun',
-[0]   description: '',
-[0]   nodes: [
-[0]     { id: 'node-1747498392026', label: 'Bunnies', value: 1 },
-[0]     { id: 'node-1747498393062', label: 'Grass', value: 0.5 },
-[0]     { id: 'node-1747498394292', label: 'Foxes', value: 0.5 }
-[0]   ],
-[0]   initialValues: {
-[0]     'node-1747498392026': 1,
-[0]     'node-1747498393062': 0.5,
-[0]     'node-1747498394292': 0.5
-[0]   },
-[0]   createdAt: '2025-05-18T02:53:32.146Z',
-[0]   updatedAt: '2025-06-02T18:54:41.863Z'
-[0] }
-[0] 2:54:41 PM [express] PATCH /api/scenarios/23 200 in 104ms :: {"id":23,"modelId":1,"name":"bunbunbun"...
-[0] Received simulation request: {
-[0]   "schemaVersion": "1.0.0",
-[0]   "nodes": [
-[0]     {
-[0]       "id": "node-1747498392026",
-[0]       "value": 0.5,
-[0]       "label": "Bunnies",
-[0]       "type": "regular"
-[0]     },
-[0]     {
-[0]       "id": "node-1747498393062",
-[0]       "value": 0.5,
-[0]       "label": "Grass",
-[0]       "type": "regular"
-[0]     },
-[0]     {
-[0]       "id": "node-1747498394292",
-[0]       "value": 0.5,
-[0]       "label": "Foxes",
-[0]       "type": "regular"
-[0]     }
-[0]   ],
-[0]   "edges": [
-[0]     {
-[0]       "source": "node-1747498392026",
-[0]       "target": "node-1747498394292",
-[0]       "weight": 0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498394292",
-[0]       "target": "node-1747498392026",
-[0]       "weight": -0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498392026",
-[0]       "target": "node-1747498393062",
-[0]       "weight": -0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498393062",
-[0]       "target": "node-1747498392026",
-[0]       "weight": 0.5
-[0]     }
-[0]   ],
-[0]   "activation": "tanh",
-[0]   "threshold": 0.001,
-[0]   "maxIterations": 20,
-[0]   "compareToBaseline": true,
-[0]   "modelInitialValues": {
-[0]     "node-1747498392026": 0.5,
-[0]     "node-1747498393062": 0.5,
-[0]     "node-1747498394292": 0.5
-[0]   },
-[0]   "scenarioInitialValues": {
-[0]     "node-1747498392026": 1,
-[0]     "node-1747498393062": 0.5,
-[0]     "node-1747498394292": 0.5
-[0]   },
-[0]   "clampedNodes": []
-[0] }
-[0] Forwarding to Python backend: {
-[0]   "schemaVersion": "1.0.0",
-[0]   "nodes": [
-[0]     {
-[0]       "id": "node-1747498392026",
-[0]       "value": 0.5,
-[0]       "label": "Bunnies",
-[0]       "type": "regular"
-[0]     },
-[0]     {
-[0]       "id": "node-1747498393062",
-[0]       "value": 0.5,
-[0]       "label": "Grass",
-[0]       "type": "regular"
-[0]     },
-[0]     {
-[0]       "id": "node-1747498394292",
-[0]       "value": 0.5,
-[0]       "label": "Foxes",
-[0]       "type": "regular"
-[0]     }
-[0]   ],
-[0]   "edges": [
-[0]     {
-[0]       "source": "node-1747498392026",
-[0]       "target": "node-1747498394292",
-[0]       "weight": 0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498394292",
-[0]       "target": "node-1747498392026",
-[0]       "weight": -0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498392026",
-[0]       "target": "node-1747498393062",
-[0]       "weight": -0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498393062",
-[0]       "target": "node-1747498392026",
-[0]       "weight": 0.5
-[0]     }
-[0]   ],
-[0]   "activation": "tanh",
-[0]   "threshold": 0.001,
-[0]   "maxIterations": 20,
-[0]   "compareToBaseline": true,
-[0]   "modelInitialValues": {
-[0]     "node-1747498392026": 0.5,
-[0]     "node-1747498393062": 0.5,
-[0]     "node-1747498394292": 0.5
-[0]   },
-[0]   "scenarioInitialValues": {
-[0]     "node-1747498392026": 1,
-[0]     "node-1747498393062": 0.5,
-[0]     "node-1747498394292": 0.5
-[0]   },
-[0]   "clampedNodes": []
-[0] }
-[0] Python simulation response: {
-[0]   "baselineFinalState": {
-[0]     "node-1747498392026": {
-[0]       "id": "node-1747498392026",
-[0]       "label": "Bunnies",
-[0]       "value": -0.000926224824102848
-[0]     },
-[0]     "node-1747498393062": {
-[0]       "id": "node-1747498393062",
-[0]       "label": "Grass",
-[0]       "value": 0
-[0]     },
-[0]     "node-1747498394292": {
-[0]       "id": "node-1747498394292",
-[0]       "label": "Foxes",
-[0]       "value": 0
-[0]     }
-[0]   },
-[0]   "baselineTimeSeries": {
-[0]     "node-1747498392026": [
-[0]       0.5,
-[0]       0,
-[0]       -0.24013621895243303,
-[0]       0,
-[0]       0.11892891531062055,
-[0]       0,
-[0]       -0.05932472384696148,
-[0]       0,
-[0]       0.02964497662391194,
-[0]       0,
-[0]       -0.014820317679838267,
-[0]       0,
-[0]       0.007409887589866538,
-[0]       0,
-[0]       -0.0037049098911433975,
-[0]       0,
-[0]       0.0018524507076750428,
-[0]       0,
-[0]       -0.000926224824102848
-[0]     ],
-[0]     "node-1747498393062": [
-[0]       0.5,
-[0]       -0.24491866240370913,
-[0]       0,
-[0]       0.11949443602713215,
-[0]       0,
-[0]       -0.05939446744371068,
-[0]       0,
-[0]       0.029653665451239174,
-[0]       0,
-[0]       -0.014821402876684903,
-[0]       0,
-[0]       0.007410023211169322,
-[0]       0,
-[0]       -0.003704926842921988,
-[0]       0,
-[0]       0.001852452826619735,
-[0]       0,
-[0]       -0.0009262250889700711,
-[0]       0
-[0]     ],
-[0]     "node-1747498394292": [
-[0]       0.5,
-[0]       0.24491866240370913,
-[0]       0,
-[0]       -0.11949443602713215,
-[0]       0,
-[0]       0.05939446744371068,
-[0]       0,
-[0]       -0.029653665451239174,
-[0]       0,
-[0]       0.014821402876684903,
-[0]       0,
-[0]       -0.007410023211169322,
-[0]       0,
-[0]       0.003704926842921988,
-[0]       0,
-[0]       -0.001852452826619735,
-[0]       0,
-[0]       0.0009262250889700711,
-[0]       0
-[0]     ]
-[0]   },
-[0]   "clampedNodes": [],
-[0]   "comparisonFinalState": {
-[0]     "node-1747498392026": {
-[0]       "id": "node-1747498392026",
-[0]       "label": "Bunnies",
-[0]       "value": 0.0008103494023443638
-[0]     },
-[0]     "node-1747498393062": {
-[0]       "id": "node-1747498393062",
-[0]       "label": "Grass",
-[0]       "value": 0
-[0]     },
-[0]     "node-1747498394292": {
-[0]       "id": "node-1747498394292",
-[0]       "label": "Foxes",
-[0]       "value": 0
-[0]     }
-[0]   },
-[0]   "comparisonTimeSeries": {
-[0]     "node-1747498392026": [
-[0]       1,
-[0]       0,
-[0]       -0.4318081805950961,
-[0]       0,
-[0]       0.20946403880551528,
-[0]       0,
-[0]       -0.10397364519795164,
-[0]       0,
-[0]       0.051893382423026,
-[0]       0,
-[0]       -0.02593505285548358,
-[0]       0,
-[0]       0.01296607292971933,
-[0]       0,
-[0]       -0.006482854818078502,
-[0]       0,
-[0]       0.0032414047044560064,
-[0]       0,
-[0]       -0.0016206995141946074,
-[0]       0,
-[0]       0.0008103494023443638
-[0]     ],
-[0]     "node-1747498393062": [
-[0]       0.5,
-[0]       -0.46211715726000974,
-[0]       0,
-[0]       0.21261072500231093,
-[0]       0,
-[0]       -0.10435076403243451,
-[0]       0,
-[0]       0.051940039462653256,
-[0]       0,
-[0]       -0.025940870075332554,
-[0]       0,
-[0]       0.012966799617631823,
-[0]       0,
-[0]       -0.0064829456395604805,
-[0]       0,
-[0]       0.0032414160566879907,
-[0]       0,
-[0]       -0.0016207009332094417,
-[0]       0,
-[0]       0.0008103495797207755,
-[0]       0
-[0]     ],
-[0]     "node-1747498394292": [
-[0]       0.5,
-[0]       0.46211715726000974,
-[0]       0,
-[0]       -0.21261072500231093,
-[0]       0,
-[0]       0.10435076403243451,
-[0]       0,
-[0]       -0.051940039462653256,
-[0]       0,
-[0]       0.025940870075332554,
-[0]       0,
-[0]       -0.012966799617631823,
-[0]       0,
-[0]       0.0064829456395604805,
-[0]       0,
-[0]       -0.0032414160566879907,
-[0]       0,
-[0]       0.0016207009332094417,
-[0]       0,
-[0]       -0.0008103495797207755,
-[0]       0
-[0]     ]
-[0]   },
-[0]   "converged": true,
-[0]   "deltaFinalState": {
-[0]     "node-1747498392026": {
-[0]       "id": "node-1747498392026",
-[0]       "label": "Bunnies",
-[0]       "value": 0.001736574226447212
-[0]     },
-[0]     "node-1747498393062": {
-[0]       "id": "node-1747498393062",
-[0]       "label": "Grass",
-[0]       "value": 0
-[0]     },
-[0]     "node-1747498394292": {
-[0]       "id": "node-1747498394292",
-[0]       "label": "Foxes",
-[0]       "value": 0
-[0]     }
-[0]   },
-[0]   "impactMetrics": {
-[0]     "node-1747498392026": {
-[0]       "auc": 0.11916786818936298,
-[0]       "baseline": -0.000926224824102848,
-[0]       "delta": 0.001736574226447212,
-[0]       "direction": "Oscillating (High)",
-[0]       "id": "node-1747498392026",
-[0]       "label": "Bunnies",
-[0]       "maxDifference": 0.5,
-[0]       "normalizedChangePercent": 187.48949296724774,
-[0]       "scenario": 0.0008103494023443638
-[0]     },
-[0]     "node-1747498393062": {
-[0]       "auc": -0.15439835066142632,
-[0]       "baseline": 0,
-[0]       "delta": 0,
-[0]       "direction": "Oscillating (Medium)",
-[0]       "id": "node-1747498393062",
-[0]       "label": "Grass",
-[0]       "maxDifference": -0.2171984948563006,
-[0]       "normalizedChangePercent": 0,
-[0]       "scenario": 0
-[0]     },
-[0]     "node-1747498394292": {
-[0]       "auc": 0.15439835066142632,
-[0]       "baseline": 0,
-[0]       "delta": 0,
-[0]       "direction": "Oscillating (Medium)",
-[0]       "id": "node-1747498394292",
-[0]       "label": "Foxes",
-[0]       "maxDifference": 0.2171984948563006,
-[0]       "normalizedChangePercent": 0,
-[0]       "scenario": 0
-[0]     }
-[0]   },
-[0]   "iterations": 20
-[0] }
-[0] 2:54:56 PM [express] POST /api/simulate 200 in 344ms :: {"baselineFinalState":{"node-1747498392026":...
-[0] Scenario from DB: {
-[0]   id: 23,
-[0]   name: 'bunbunbun',
-[0]   modelId: 1,
-[0]   description: '',
-[0]   initialValues: {
-[0]     'node-1747498392026': 1,
-[0]     'node-1747498393062': 0.5,
-[0]     'node-1747498394292': 0.5
-[0]   },
-[0]   results: {
-[0]     converged: true,
-[0]     finalState: {
-[0]       'node-1747498392026': [Object],
-[0]       'node-1747498393062': [Object],
-[0]       'node-1747498394292': [Object]
-[0]     },
-[0]     iterations: 20,
-[0]     timeSeries: {
-[0]       'node-1747498392026': [Array],
-[0]       'node-1747498393062': [Array],
-[0]       'node-1747498394292': [Array]
-[0]     },
-[0]     baselineConverged: true,
-[0]     baselineFinalState: {
-[0]       'node-1747498392026': [Object],
-[0]       'node-1747498393062': [Object],
-[0]       'node-1747498394292': [Object]
-[0]     },
-[0]     baselineIterations: 20,
-[0]     baselineTimeSeries: {
-[0]       'node-1747498392026': [Array],
-[0]       'node-1747498393062': [Array],
-[0]       'node-1747498394292': [Array]
-[0]     }
-[0]   },
-[0]   simulationParams: { threshold: 0.001, activation: 'sigmoid', maxIterations: 20 },
-[0]   clampedNodes: [],
-[0]   nodes: [
-[0]     { id: 'node-1747498392026', label: 'Bunnies', value: 1 },
-[0]     { id: 'node-1747498393062', label: 'Grass', value: 0.5 },
-[0]     { id: 'node-1747498394292', label: 'Foxes', value: 0.5 }
-[0]   ],
-[0]   createdAt: '2025-05-18T02:53:32.146Z',
-[0]   updatedAt: '2025-06-02T18:54:56.567Z'
-[0] }
-[0] Scenario after Zod validation: {
-[0]   id: 23,
-[0]   modelId: 1,
-[0]   name: 'bunbunbun',
-[0]   description: '',
-[0]   nodes: [
-[0]     { id: 'node-1747498392026', label: 'Bunnies', value: 1 },
-[0]     { id: 'node-1747498393062', label: 'Grass', value: 0.5 },
-[0]     { id: 'node-1747498394292', label: 'Foxes', value: 0.5 }
-[0]   ],
-[0]   initialValues: {
-[0]     'node-1747498392026': 1,
-[0]     'node-1747498393062': 0.5,
-[0]     'node-1747498394292': 0.5
-[0]   },
-[0]   createdAt: '2025-05-18T02:53:32.146Z',
-[0]   updatedAt: '2025-06-02T18:54:56.567Z'
-[0] }
-[0] 2:54:56 PM [express] PATCH /api/scenarios/23 200 in 101ms :: {"id":23,"modelId":1,"name":"bunbunbun"...
-[0] 2:54:59 PM [express] POST /api/analyze 200 in 111ms :: {"nodeCount":3,"edgeCount":4,"density":0.6666...
-[0] Received simulation request: {
-[0]   "schemaVersion": "1.0.0",
-[0]   "nodes": [
-[0]     {
-[0]       "id": "node-1747498392026",
-[0]       "value": 0.5,
-[0]       "label": "Bunnies",
-[0]       "type": "regular"
-[0]     },
-[0]     {
-[0]       "id": "node-1747498393062",
-[0]       "value": 0.5,
-[0]       "label": "Grass",
-[0]       "type": "regular"
-[0]     },
-[0]     {
-[0]       "id": "node-1747498394292",
-[0]       "value": 0.5,
-[0]       "label": "Foxes",
-[0]       "type": "regular"
-[0]     }
-[0]   ],
-[0]   "edges": [
-[0]     {
-[0]       "source": "node-1747498392026",
-[0]       "target": "node-1747498394292",
-[0]       "weight": 0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498394292",
-[0]       "target": "node-1747498392026",
-[0]       "weight": -0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498392026",
-[0]       "target": "node-1747498393062",
-[0]       "weight": -0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498393062",
-[0]       "target": "node-1747498392026",
-[0]       "weight": 0.5
-[0]     }
-[0]   ],
-[0]   "activation": "sigmoid",
-[0]   "threshold": 0.001,
-[0]   "maxIterations": 20,
-[0]   "compareToBaseline": false
-[0] }
-[0] Forwarding to Python backend: {
-[0]   "schemaVersion": "1.0.0",
-[0]   "nodes": [
-[0]     {
-[0]       "id": "node-1747498392026",
-[0]       "value": 0.5,
-[0]       "label": "Bunnies",
-[0]       "type": "regular"
-[0]     },
-[0]     {
-[0]       "id": "node-1747498393062",
-[0]       "value": 0.5,
-[0]       "label": "Grass",
-[0]       "type": "regular"
-[0]     },
-[0]     {
-[0]       "id": "node-1747498394292",
-[0]       "value": 0.5,
-[0]       "label": "Foxes",
-[0]       "type": "regular"
-[0]     }
-[0]   ],
-[0]   "edges": [
-[0]     {
-[0]       "source": "node-1747498392026",
-[0]       "target": "node-1747498394292",
-[0]       "weight": 0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498394292",
-[0]       "target": "node-1747498392026",
-[0]       "weight": -0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498392026",
-[0]       "target": "node-1747498393062",
-[0]       "weight": -0.5
-[0]     },
-[0]     {
-[0]       "source": "node-1747498393062",
-[0]       "target": "node-1747498392026",
-[0]       "weight": 0.5
-[0]     }
-[0]   ],
-[0]   "activation": "sigmoid",
-[0]   "threshold": 0.001,
-[0]   "maxIterations": 20,
-[0]   "compareToBaseline": false
 [0] }
 [0] Python simulation response: {
 [0]   "clampedNodes": [],
 [0]   "converged": true,
 [0]   "finalState": {
-[0]     "node-1747498392026": {
-[0]       "id": "node-1747498392026",
-[0]       "label": "Bunnies",
-[0]       "value": 0.4849387496365568
+[0]     "node-1763144842243": {
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "value": {
+[0]         "id": "node-1763144842243",
+[0]         "label": "new node 1",
+[0]         "value": 0.5621765008857981
+[0]       }
 [0]     },
-[0]     "node-1747498393062": {
-[0]       "id": "node-1747498393062",
-[0]       "label": "Grass",
-[0]       "value": 0.43973676721679505
+[0]     "node-1763144842593": {
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "value": {
+[0]         "id": "node-1763144842593",
+[0]         "label": "New 2",
+[0]         "value": 0.6297368933204371
+[0]       }
 [0]     },
-[0]     "node-1747498394292": {
-[0]       "id": "node-1747498394292",
-[0]       "label": "Foxes",
-[0]       "value": 0.5602632327832049
+[0]     "node-1763144842876": {
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "value": {
+[0]         "id": "node-1763144842876",
+[0]         "label": "New 4",
+[0]         "value": 0.5
+[0]       }
 [0]     }
 [0]   },
 [0]   "initialValues": {
-[0]     "node-1747498392026": 0.5,
-[0]     "node-1747498393062": 0.5,
-[0]     "node-1747498394292": 0.5
+[0]     "node-1763144842243": 0.5,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
 [0]   },
-[0]   "iterations": 4,
+[0]   "iterations": 3,
 [0]   "timeSeries": {
-[0]     "node-1747498392026": [
-[0]       0.5,
-[0]       0.5,
-[0]       0.48446088053521047,
-[0]       0.48446088053521047,
-[0]       0.4849387496365568
-[0]     ],
-[0]     "node-1747498393062": [
-[0]       0.5,
-[0]       0.43782349911420193,
-[0]       0.43782349911420193,
-[0]       0.43973676721679505,
-[0]       0.43973676721679505
-[0]     ],
-[0]     "node-1747498394292": [
+[0]     "node-1763144842243": [
 [0]       0.5,
 [0]       0.5621765008857981,
 [0]       0.5621765008857981,
-[0]       0.5602632327832049,
-[0]       0.5602632327832049
+[0]       0.5621765008857981
+[0]     ],
+[0]     "node-1763144842593": [
+[0]       0.5,
+[0]       0.6224593312018546,
+[0]       0.6297368933204371,
+[0]       0.6297368933204371
+[0]     ],
+[0]     "node-1763144842876": [
+[0]       0.5,
+[0]       0.5,
+[0]       0.5,
+[0]       0.5
 [0]     ]
 [0]   }
 [0] }
-[0] 2:54:59 PM [express] POST /api/simulate 200 in 320ms :: {"clampedNodes":[],"converged":true,"finalSt...
-[0] 2:55:09 PM [express] GET /api/models/1/scenarios 200 in 99ms :: [{"id":23,"name":"bunbunbun","modelI...
+[0] 7:38:32 PM [express] POST /api/simulate 200 in 402ms :: {"clampedNodes":[],"converged":true,"finalSt...
+[0] REQ.BODY: {
+[0]   "name": "low water",
+[0]   "modelId": 3,
+[0]   "description": "",
+[0]   "nodes": [
+[0]     {
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "value": 1
+[0]     },
+[0]     {
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "value": 0.5
+[0]     },
+[0]     {
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "value": 0.5
+[0]     }
+[0]   ],
+[0]   "initialValues": {
+[0]     "node-1763144842243": 1,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
+[0]   },
+[0]   "clampedNodes": [],
+[0]   "results": {
+[0]     "finalState": {
+[0]       "node-1763144842243": {
+[0]         "id": "node-1763144842243",
+[0]         "label": "new node 1",
+[0]         "value": 0.5621765008857981
+[0]       },
+[0]       "node-1763144842593": {
+[0]         "id": "node-1763144842593",
+[0]         "label": "New 2",
+[0]         "value": 0.6297368933204371
+[0]       },
+[0]       "node-1763144842876": {
+[0]         "id": "node-1763144842876",
+[0]         "label": "New 4",
+[0]         "value": 0.5
+[0]       }
+[0]     },
+[0]     "timeSeries": {
+[0]       "node-1763144842243": [
+[0]         0.5,
+[0]         0.5621765008857981,
+[0]         0.5621765008857981,
+[0]         0.5621765008857981
+[0]       ],
+[0]       "node-1763144842593": [
+[0]         0.5,
+[0]         0.6224593312018546,
+[0]         0.6297368933204371,
+[0]         0.6297368933204371
+[0]       ],
+[0]       "node-1763144842876": [
+[0]         0.5,
+[0]         0.5,
+[0]         0.5,
+[0]         0.5
+[0]       ]
+[0]     },
+[0]     "iterations": 3,
+[0]     "converged": true,
+[0]     "initialValues": {
+[0]       "node-1763144842243": 1,
+[0]       "node-1763144842593": 0.5,
+[0]       "node-1763144842876": 0.5
+[0]     }
+[0]   },
+[0]   "simulationParams": {
+[0]     "activation": "sigmoid",
+[0]     "threshold": 0.001,
+[0]     "maxIterations": 20
+[0]   }
+[0] }
+[0] Zod validation result: {
+[0]   "success": true,
+[0]   "data": {
+[0]     "name": "low water",
+[0]     "description": "",
+[0]     "modelId": 3,
+[0]     "nodes": [
+[0]       {
+[0]         "id": "node-1763144842243",
+[0]         "label": "new node 1",
+[0]         "value": 1
+[0]       },
+[0]       {
+[0]         "id": "node-1763144842593",
+[0]         "label": "New 2",
+[0]         "value": 0.5
+[0]       },
+[0]       {
+[0]         "id": "node-1763144842876",
+[0]         "label": "New 4",
+[0]         "value": 0.5
+[0]       }
+[0]     ],
+[0]     "initialValues": {
+[0]       "node-1763144842243": 1,
+[0]       "node-1763144842593": 0.5,
+[0]       "node-1763144842876": 0.5
+[0]     },
+[0]     "clampedNodes": [],
+[0]     "simulationParams": {
+[0]       "activation": "sigmoid",
+[0]       "threshold": 0.001,
+[0]       "maxIterations": 20
+[0]     },
+[0]     "results": {
+[0]       "finalState": {
+[0]         "node-1763144842243": {
+[0]           "id": "node-1763144842243",
+[0]           "label": "new node 1",
+[0]           "value": 0.5621765008857981
+[0]         },
+[0]         "node-1763144842593": {
+[0]           "id": "node-1763144842593",
+[0]           "label": "New 2",
+[0]           "value": 0.6297368933204371
+[0]         },
+[0]         "node-1763144842876": {
+[0]           "id": "node-1763144842876",
+[0]           "label": "New 4",
+[0]           "value": 0.5
+[0]         }
+[0]       },
+[0]       "timeSeries": {
+[0]         "node-1763144842243": [
+[0]           0.5,
+[0]           0.5621765008857981,
+[0]           0.5621765008857981,
+[0]           0.5621765008857981
+[0]         ],
+[0]         "node-1763144842593": [
+[0]           0.5,
+[0]           0.6224593312018546,
+[0]           0.6297368933204371,
+[0]           0.6297368933204371
+[0]         ],
+[0]         "node-1763144842876": [
+[0]           0.5,
+[0]           0.5,
+[0]           0.5,
+[0]           0.5
+[0]         ]
+[0]       },
+[0]       "iterations": 3,
+[0]       "converged": true,
+[0]       "initialValues": {
+[0]         "node-1763144842243": 1,
+[0]         "node-1763144842593": 0.5,
+[0]         "node-1763144842876": 0.5
+[0]       }
+[0]     }
+[0]   }
+[0] }
+[0] Scenario data to be inserted: {
+[0]   "name": "low water",
+[0]   "modelId": 3,
+[0]   "description": null,
+[0]   "nodes": [
+[0]     {
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "value": 1
+[0]     },
+[0]     {
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "value": 0.5
+[0]     },
+[0]     {
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "value": 0.5
+[0]     }
+[0]   ],
+[0]   "initialValues": {
+[0]     "node-1763144842243": 1,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
+[0]   },
+[0]   "clampedNodes": [],
+[0]   "simulationParams": {
+[0]     "activation": "sigmoid",
+[0]     "threshold": 0.001,
+[0]     "maxIterations": 20
+[0]   },
+[0]   "results": {
+[0]     "finalState": {
+[0]       "node-1763144842243": {
+[0]         "id": "node-1763144842243",
+[0]         "label": "new node 1",
+[0]         "value": 0.5621765008857981
+[0]       },
+[0]       "node-1763144842593": {
+[0]         "id": "node-1763144842593",
+[0]         "label": "New 2",
+[0]         "value": 0.6297368933204371
+[0]       },
+[0]       "node-1763144842876": {
+[0]         "id": "node-1763144842876",
+[0]         "label": "New 4",
+[0]         "value": 0.5
+[0]       }
+[0]     },
+[0]     "timeSeries": {
+[0]       "node-1763144842243": [
+[0]         0.5,
+[0]         0.5621765008857981,
+[0]         0.5621765008857981,
+[0]         0.5621765008857981
+[0]       ],
+[0]       "node-1763144842593": [
+[0]         0.5,
+[0]         0.6224593312018546,
+[0]         0.6297368933204371,
+[0]         0.6297368933204371
+[0]       ],
+[0]       "node-1763144842876": [
+[0]         0.5,
+[0]         0.5,
+[0]         0.5,
+[0]         0.5
+[0]       ]
+[0]     },
+[0]     "iterations": 3,
+[0]     "converged": true,
+[0]     "initialValues": {
+[0]       "node-1763144842243": 1,
+[0]       "node-1763144842593": 0.5,
+[0]       "node-1763144842876": 0.5
+[0]     }
+[0]   }
+[0] }
+[0] createScenario received clampedNodes: []
+[0] Scenario from DB: {
+[0]   id: 5,
+[0]   name: 'low water',
+[0]   modelId: 3,
+[0]   description: null,
+[0]   initialValues: {
+[0]     'node-1763144842243': 1,
+[0]     'node-1763144842593': 0.5,
+[0]     'node-1763144842876': 0.5
+[0]   },
+[0]   results: {
+[0]     converged: true,
+[0]     finalState: {
+[0]       'node-1763144842243': [Object],
+[0]       'node-1763144842593': [Object],
+[0]       'node-1763144842876': [Object]
+[0]     },
+[0]     iterations: 3,
+[0]     timeSeries: {
+[0]       'node-1763144842243': [Array],
+[0]       'node-1763144842593': [Array],
+[0]       'node-1763144842876': [Array]
+[0]     },
+[0]     initialValues: {
+[0]       'node-1763144842243': 1,
+[0]       'node-1763144842593': 0.5,
+[0]       'node-1763144842876': 0.5
+[0]     }
+[0]   },
+[0]   simulationParams: { threshold: 0.001, activation: 'sigmoid', maxIterations: 20 },
+[0]   clampedNodes: [],
+[0]   nodes: [
+[0]     { id: 'node-1763144842243', label: 'new node 1', value: 1 },
+[0]     { id: 'node-1763144842593', label: 'New 2', value: 0.5 },
+[0]     { id: 'node-1763144842876', label: 'New 4', value: 0.5 }
+[0]   ],
+[0]   createdAt: '2025-11-15T00:38:32.969Z',
+[0]   updatedAt: '2025-11-15T00:38:32.969Z'
+[0] }
+[0] Scenario after Zod validation: {
+[0]   id: 5,
+[0]   name: 'low water',
+[0]   description: null,
+[0]   modelId: 3,
+[0]   nodes: [
+[0]     { id: 'node-1763144842243', label: 'new node 1', value: 1 },
+[0]     { id: 'node-1763144842593', label: 'New 2', value: 0.5 },
+[0]     { id: 'node-1763144842876', label: 'New 4', value: 0.5 }
+[0]   ],
+[0]   initialValues: {
+[0]     'node-1763144842243': 1,
+[0]     'node-1763144842593': 0.5,
+[0]     'node-1763144842876': 0.5
+[0]   },
+[0]   clampedNodes: [],
+[0]   simulationParams: { activation: 'sigmoid', threshold: 0.001, maxIterations: 20 },
+[0]   results: {
+[0]     finalState: {
+[0]       'node-1763144842243': [Object],
+[0]       'node-1763144842593': [Object],
+[0]       'node-1763144842876': [Object]
+[0]     },
+[0]     timeSeries: {
+[0]       'node-1763144842243': [Array],
+[0]       'node-1763144842593': [Array],
+[0]       'node-1763144842876': [Array]
+[0]     },
+[0]     iterations: 3,
+[0]     converged: true,
+[0]     initialValues: {
+[0]       'node-1763144842243': 1,
+[0]       'node-1763144842593': 0.5,
+[0]       'node-1763144842876': 0.5
+[0]     }
+[0]   },
+[0]   createdAt: '2025-11-15T00:38:32.969Z',
+[0]   updatedAt: '2025-11-15T00:38:32.969Z'
+[0] }
+[0] 7:38:33 PM [express] POST /api/scenarios 201 in 556ms :: {"id":5,"name":"low water","description":nu...
+[0] Received simulation request: {
+[0]   "schemaVersion": "1.0.0",
+[0]   "nodes": [
+[0]     {
+[0]       "id": "node-1763144842243",
+[0]       "value": 0.5,
+[0]       "label": "new node 1",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763144842593",
+[0]       "value": 0.5,
+[0]       "label": "New 2",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763144842876",
+[0]       "value": 0.5,
+[0]       "label": "New 4",
+[0]       "type": "regular"
+[0]     }
+[0]   ],
+[0]   "edges": [
+[0]     {
+[0]       "source": "node-1763144842243",
+[0]       "target": "node-1763144842593",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842593",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842243",
+[0]       "weight": 0.5
+[0]     }
+[0]   ],
+[0]   "activation": "sigmoid",
+[0]   "threshold": 0.001,
+[0]   "maxIterations": 20,
+[0]   "compareToBaseline": true,
+[0]   "modelInitialValues": {
+[0]     "node-1763144842243": 0.5,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
+[0]   },
+[0]   "scenarioInitialValues": {
+[0]     "node-1763144842243": 1,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
+[0]   },
+[0]   "clampedNodes": []
+[0] }
+[0] Forwarding to Python backend: {
+[0]   "schemaVersion": "1.0.0",
+[0]   "nodes": [
+[0]     {
+[0]       "id": "node-1763144842243",
+[0]       "value": 0.5,
+[0]       "label": "new node 1",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763144842593",
+[0]       "value": 0.5,
+[0]       "label": "New 2",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763144842876",
+[0]       "value": 0.5,
+[0]       "label": "New 4",
+[0]       "type": "regular"
+[0]     }
+[0]   ],
+[0]   "edges": [
+[0]     {
+[0]       "source": "node-1763144842243",
+[0]       "target": "node-1763144842593",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842593",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842243",
+[0]       "weight": 0.5
+[0]     }
+[0]   ],
+[0]   "activation": "sigmoid",
+[0]   "threshold": 0.001,
+[0]   "maxIterations": 20,
+[0]   "compareToBaseline": true,
+[0]   "modelInitialValues": {
+[0]     "node-1763144842243": 0.5,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
+[0]   },
+[0]   "scenarioInitialValues": {
+[0]     "node-1763144842243": 1,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
+[0]   },
+[0]   "clampedNodes": []
+[0] }
+[0] Python simulation response: {
+[0]   "baselineFinalState": {
+[0]     "node-1763144842243": {
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "value": 0.5621765008857981
+[0]     },
+[0]     "node-1763144842593": {
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "value": 0.6297368933204371
+[0]     },
+[0]     "node-1763144842876": {
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "value": 0.5
+[0]     }
+[0]   },
+[0]   "baselineTimeSeries": {
+[0]     "node-1763144842243": [
+[0]       0.5,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981
+[0]     ],
+[0]     "node-1763144842593": [
+[0]       0.5,
+[0]       0.6224593312018546,
+[0]       0.6297368933204371,
+[0]       0.6297368933204371
+[0]     ],
+[0]     "node-1763144842876": [
+[0]       0.5,
+[0]       0.5,
+[0]       0.5,
+[0]       0.5
+[0]     ]
+[0]   },
+[0]   "clampedNodes": [],
+[0]   "comparisonFinalState": {
+[0]     "node-1763144842243": {
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "value": 0.5621765008857981
+[0]     },
+[0]     "node-1763144842593": {
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "value": 0.6297368933204371
+[0]     },
+[0]     "node-1763144842876": {
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "value": 0.5
+[0]     }
+[0]   },
+[0]   "comparisonTimeSeries": {
+[0]     "node-1763144842243": [
+[0]       1,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981
+[0]     ],
+[0]     "node-1763144842593": [
+[0]       0.5,
+[0]       0.679178699175393,
+[0]       0.6297368933204371,
+[0]       0.6297368933204371
+[0]     ],
+[0]     "node-1763144842876": [
+[0]       0.5,
+[0]       0.5,
+[0]       0.5,
+[0]       0.5
+[0]     ]
+[0]   },
+[0]   "converged": true,
+[0]   "deltaFinalState": {
+[0]     "node-1763144842243": {
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "value": 0
+[0]     },
+[0]     "node-1763144842593": {
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "value": 0
+[0]     },
+[0]     "node-1763144842876": {
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "value": 0
+[0]     }
+[0]   },
+[0]   "impactMetrics": {
+[0]     "node-1763144842243": {
+[0]       "auc": 0.25,
+[0]       "baseline": 0.5621765008857981,
+[0]       "delta": 0,
+[0]       "direction": "Temporary High Increase",
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "maxDifference": 0.5,
+[0]       "normalizedChangePercent": 0,
+[0]       "scenario": 0.5621765008857981
+[0]     },
+[0]     "node-1763144842593": {
+[0]       "auc": 0.05671936797353838,
+[0]       "baseline": 0.6297368933204371,
+[0]       "delta": 0,
+[0]       "direction": "Temporary High Increase",
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "maxDifference": 0.05671936797353838,
+[0]       "normalizedChangePercent": 0,
+[0]       "scenario": 0.6297368933204371
+[0]     },
+[0]     "node-1763144842876": {
+[0]       "auc": 0,
+[0]       "baseline": 0.5,
+[0]       "delta": 0,
+[0]       "direction": "No Change",
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "maxDifference": 0,
+[0]       "normalizedChangePercent": 0,
+[0]       "scenario": 0.5
+[0]     }
+[0]   },
+[0]   "iterations": 3
+[0] }
+[0] 7:38:35 PM [express] POST /api/simulate 200 in 366ms :: {"baselineFinalState":{"node-1763144842243":...
+[0] Scenario from DB: {
+[0]   id: 5,
+[0]   name: 'low water',
+[0]   modelId: 3,
+[0]   description: null,
+[0]   initialValues: {
+[0]     'node-1763144842243': 1,
+[0]     'node-1763144842593': 0.5,
+[0]     'node-1763144842876': 0.5
+[0]   },
+[0]   results: {
+[0]     converged: true,
+[0]     finalState: {
+[0]       'node-1763144842243': [Object],
+[0]       'node-1763144842593': [Object],
+[0]       'node-1763144842876': [Object]
+[0]     },
+[0]     iterations: 3,
+[0]     timeSeries: {
+[0]       'node-1763144842243': [Array],
+[0]       'node-1763144842593': [Array],
+[0]       'node-1763144842876': [Array]
+[0]     },
+[0]     baselineConverged: true,
+[0]     baselineFinalState: {
+[0]       'node-1763144842243': [Object],
+[0]       'node-1763144842593': [Object],
+[0]       'node-1763144842876': [Object]
+[0]     },
+[0]     baselineIterations: 3,
+[0]     baselineTimeSeries: {
+[0]       'node-1763144842243': [Array],
+[0]       'node-1763144842593': [Array],
+[0]       'node-1763144842876': [Array]
+[0]     }
+[0]   },
+[0]   simulationParams: { threshold: 0.001, activation: 'sigmoid', maxIterations: 20 },
+[0]   clampedNodes: [],
+[0]   nodes: [
+[0]     { id: 'node-1763144842243', label: 'new node 1', value: 1 },
+[0]     { id: 'node-1763144842593', label: 'New 2', value: 0.5 },
+[0]     { id: 'node-1763144842876', label: 'New 4', value: 0.5 }
+[0]   ],
+[0]   createdAt: '2025-11-15T00:38:32.969Z',
+[0]   updatedAt: '2025-11-15T00:38:35.929Z'
+[0] }
+[0] 7:38:36 PM [express] PATCH /api/scenarios/5 500 in 548ms :: {"message":"Failed to update scenario","...
+[0] Received simulation request: {
+[0]   "schemaVersion": "1.0.0",
+[0]   "nodes": [
+[0]     {
+[0]       "id": "node-1763144842243",
+[0]       "value": 0.5,
+[0]       "label": "new node 1",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763144842593",
+[0]       "value": 0.5,
+[0]       "label": "New 2",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763144842876",
+[0]       "value": 0.5,
+[0]       "label": "New 4",
+[0]       "type": "regular"
+[0]     }
+[0]   ],
+[0]   "edges": [
+[0]     {
+[0]       "source": "node-1763144842243",
+[0]       "target": "node-1763144842593",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842593",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842243",
+[0]       "weight": 0.5
+[0]     }
+[0]   ],
+[0]   "activation": "sigmoid",
+[0]   "threshold": 0.001,
+[0]   "maxIterations": 20,
+[0]   "compareToBaseline": true,
+[0]   "modelInitialValues": {
+[0]     "node-1763144842243": 0.5,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
+[0]   },
+[0]   "scenarioInitialValues": {
+[0]     "node-1763144842243": 1,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
+[0]   },
+[0]   "clampedNodes": []
+[0] }
+[0] Forwarding to Python backend: {
+[0]   "schemaVersion": "1.0.0",
+[0]   "nodes": [
+[0]     {
+[0]       "id": "node-1763144842243",
+[0]       "value": 0.5,
+[0]       "label": "new node 1",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763144842593",
+[0]       "value": 0.5,
+[0]       "label": "New 2",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763144842876",
+[0]       "value": 0.5,
+[0]       "label": "New 4",
+[0]       "type": "regular"
+[0]     }
+[0]   ],
+[0]   "edges": [
+[0]     {
+[0]       "source": "node-1763144842243",
+[0]       "target": "node-1763144842593",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842593",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842243",
+[0]       "weight": 0.5
+[0]     }
+[0]   ],
+[0]   "activation": "sigmoid",
+[0]   "threshold": 0.001,
+[0]   "maxIterations": 20,
+[0]   "compareToBaseline": true,
+[0]   "modelInitialValues": {
+[0]     "node-1763144842243": 0.5,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
+[0]   },
+[0]   "scenarioInitialValues": {
+[0]     "node-1763144842243": 1,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
+[0]   },
+[0]   "clampedNodes": []
+[0] }
+[0] Python simulation response: {
+[0]   "baselineFinalState": {
+[0]     "node-1763144842243": {
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "value": 0.5621765008857981
+[0]     },
+[0]     "node-1763144842593": {
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "value": 0.6297368933204371
+[0]     },
+[0]     "node-1763144842876": {
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "value": 0.5
+[0]     }
+[0]   },
+[0]   "baselineTimeSeries": {
+[0]     "node-1763144842243": [
+[0]       0.5,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981
+[0]     ],
+[0]     "node-1763144842593": [
+[0]       0.5,
+[0]       0.6224593312018546,
+[0]       0.6297368933204371,
+[0]       0.6297368933204371
+[0]     ],
+[0]     "node-1763144842876": [
+[0]       0.5,
+[0]       0.5,
+[0]       0.5,
+[0]       0.5
+[0]     ]
+[0]   },
+[0]   "clampedNodes": [],
+[0]   "comparisonFinalState": {
+[0]     "node-1763144842243": {
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "value": 0.5621765008857981
+[0]     },
+[0]     "node-1763144842593": {
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "value": 0.6297368933204371
+[0]     },
+[0]     "node-1763144842876": {
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "value": 0.5
+[0]     }
+[0]   },
+[0]   "comparisonTimeSeries": {
+[0]     "node-1763144842243": [
+[0]       1,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981
+[0]     ],
+[0]     "node-1763144842593": [
+[0]       0.5,
+[0]       0.679178699175393,
+[0]       0.6297368933204371,
+[0]       0.6297368933204371
+[0]     ],
+[0]     "node-1763144842876": [
+[0]       0.5,
+[0]       0.5,
+[0]       0.5,
+[0]       0.5
+[0]     ]
+[0]   },
+[0]   "converged": true,
+[0]   "deltaFinalState": {
+[0]     "node-1763144842243": {
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "value": 0
+[0]     },
+[0]     "node-1763144842593": {
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "value": 0
+[0]     },
+[0]     "node-1763144842876": {
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "value": 0
+[0]     }
+[0]   },
+[0]   "impactMetrics": {
+[0]     "node-1763144842243": {
+[0]       "auc": 0.25,
+[0]       "baseline": 0.5621765008857981,
+[0]       "delta": 0,
+[0]       "direction": "Temporary High Increase",
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "maxDifference": 0.5,
+[0]       "normalizedChangePercent": 0,
+[0]       "scenario": 0.5621765008857981
+[0]     },
+[0]     "node-1763144842593": {
+[0]       "auc": 0.05671936797353838,
+[0]       "baseline": 0.6297368933204371,
+[0]       "delta": 0,
+[0]       "direction": "Temporary High Increase",
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "maxDifference": 0.05671936797353838,
+[0]       "normalizedChangePercent": 0,
+[0]       "scenario": 0.6297368933204371
+[0]     },
+[0]     "node-1763144842876": {
+[0]       "auc": 0,
+[0]       "baseline": 0.5,
+[0]       "delta": 0,
+[0]       "direction": "No Change",
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "maxDifference": 0,
+[0]       "normalizedChangePercent": 0,
+[0]       "scenario": 0.5
+[0]     }
+[0]   },
+[0]   "iterations": 3
+[0] }
+[0] 7:38:59 PM [express] POST /api/simulate 200 in 993ms :: {"baselineFinalState":{"node-1763144842243":...
+[0] Scenario from DB: {
+[0]   id: 5,
+[0]   name: 'low water',
+[0]   modelId: 3,
+[0]   description: null,
+[0]   initialValues: {
+[0]     'node-1763144842243': 1,
+[0]     'node-1763144842593': 0.5,
+[0]     'node-1763144842876': 0.5
+[0]   },
+[0]   results: {
+[0]     converged: true,
+[0]     finalState: {
+[0]       'node-1763144842243': [Object],
+[0]       'node-1763144842593': [Object],
+[0]       'node-1763144842876': [Object]
+[0]     },
+[0]     iterations: 3,
+[0]     timeSeries: {
+[0]       'node-1763144842243': [Array],
+[0]       'node-1763144842593': [Array],
+[0]       'node-1763144842876': [Array]
+[0]     },
+[0]     baselineConverged: true,
+[0]     baselineFinalState: {
+[0]       'node-1763144842243': [Object],
+[0]       'node-1763144842593': [Object],
+[0]       'node-1763144842876': [Object]
+[0]     },
+[0]     baselineIterations: 3,
+[0]     baselineTimeSeries: {
+[0]       'node-1763144842243': [Array],
+[0]       'node-1763144842593': [Array],
+[0]       'node-1763144842876': [Array]
+[0]     }
+[0]   },
+[0]   simulationParams: { threshold: 0.001, activation: 'sigmoid', maxIterations: 20 },
+[0]   clampedNodes: [],
+[0]   nodes: [
+[0]     { id: 'node-1763144842243', label: 'new node 1', value: 1 },
+[0]     { id: 'node-1763144842593', label: 'New 2', value: 0.5 },
+[0]     { id: 'node-1763144842876', label: 'New 4', value: 0.5 }
+[0]   ],
+[0]   createdAt: '2025-11-15T00:38:32.969Z',
+[0]   updatedAt: '2025-11-15T00:39:00.071Z'
+[0] }
+[0] 7:39:00 PM [express] PATCH /api/scenarios/5 500 in 549ms :: {"message":"Failed to update scenario","...
+[1] 7:39:35 PM [vite] hmr update /src/components/scenario/ScenarioComparison.tsx, /src/index.css
+[0] Received simulation request: {
+[0]   "schemaVersion": "1.0.0",
+[0]   "nodes": [
+[0]     {
+[0]       "id": "node-1763144842243",
+[0]       "value": 0.5,
+[0]       "label": "new node 1",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763144842593",
+[0]       "value": 0.5,
+[0]       "label": "New 2",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763144842876",
+[0]       "value": 0.5,
+[0]       "label": "New 4",
+[0]       "type": "regular"
+[0]     }
+[0]   ],
+[0]   "edges": [
+[0]     {
+[0]       "source": "node-1763144842243",
+[0]       "target": "node-1763144842593",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842593",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842243",
+[0]       "weight": 0.5
+[0]     }
+[0]   ],
+[0]   "activation": "sigmoid",
+[0]   "threshold": 0.001,
+[0]   "maxIterations": 20,
+[0]   "compareToBaseline": true,
+[0]   "modelInitialValues": {
+[0]     "node-1763144842243": 0.5,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
+[0]   },
+[0]   "scenarioInitialValues": {
+[0]     "node-1763144842243": 1,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
+[0]   },
+[0]   "clampedNodes": []
+[0] }
+[0] Forwarding to Python backend: {
+[0]   "schemaVersion": "1.0.0",
+[0]   "nodes": [
+[0]     {
+[0]       "id": "node-1763144842243",
+[0]       "value": 0.5,
+[0]       "label": "new node 1",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763144842593",
+[0]       "value": 0.5,
+[0]       "label": "New 2",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763144842876",
+[0]       "value": 0.5,
+[0]       "label": "New 4",
+[0]       "type": "regular"
+[0]     }
+[0]   ],
+[0]   "edges": [
+[0]     {
+[0]       "source": "node-1763144842243",
+[0]       "target": "node-1763144842593",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842593",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842243",
+[0]       "weight": 0.5
+[0]     }
+[0]   ],
+[0]   "activation": "sigmoid",
+[0]   "threshold": 0.001,
+[0]   "maxIterations": 20,
+[0]   "compareToBaseline": true,
+[0]   "modelInitialValues": {
+[0]     "node-1763144842243": 0.5,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
+[0]   },
+[0]   "scenarioInitialValues": {
+[0]     "node-1763144842243": 1,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
+[0]   },
+[0]   "clampedNodes": []
+[0] }
+[0] Python simulation response: {
+[0]   "baselineFinalState": {
+[0]     "node-1763144842243": {
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "value": 0.5621765008857981
+[0]     },
+[0]     "node-1763144842593": {
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "value": 0.6297368933204371
+[0]     },
+[0]     "node-1763144842876": {
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "value": 0.5
+[0]     }
+[0]   },
+[0]   "baselineTimeSeries": {
+[0]     "node-1763144842243": [
+[0]       0.5,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981
+[0]     ],
+[0]     "node-1763144842593": [
+[0]       0.5,
+[0]       0.6224593312018546,
+[0]       0.6297368933204371,
+[0]       0.6297368933204371
+[0]     ],
+[0]     "node-1763144842876": [
+[0]       0.5,
+[0]       0.5,
+[0]       0.5,
+[0]       0.5
+[0]     ]
+[0]   },
+[0]   "clampedNodes": [],
+[0]   "comparisonFinalState": {
+[0]     "node-1763144842243": {
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "value": 0.5621765008857981
+[0]     },
+[0]     "node-1763144842593": {
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "value": 0.6297368933204371
+[0]     },
+[0]     "node-1763144842876": {
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "value": 0.5
+[0]     }
+[0]   },
+[0]   "comparisonTimeSeries": {
+[0]     "node-1763144842243": [
+[0]       1,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981
+[0]     ],
+[0]     "node-1763144842593": [
+[0]       0.5,
+[0]       0.679178699175393,
+[0]       0.6297368933204371,
+[0]       0.6297368933204371
+[0]     ],
+[0]     "node-1763144842876": [
+[0]       0.5,
+[0]       0.5,
+[0]       0.5,
+[0]       0.5
+[0]     ]
+[0]   },
+[0]   "converged": true,
+[0]   "deltaFinalState": {
+[0]     "node-1763144842243": {
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "value": 0
+[0]     },
+[0]     "node-1763144842593": {
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "value": 0
+[0]     },
+[0]     "node-1763144842876": {
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "value": 0
+[0]     }
+[0]   },
+[0]   "impactMetrics": {
+[0]     "node-1763144842243": {
+[0]       "auc": 0.25,
+[0]       "baseline": 0.5621765008857981,
+[0]       "delta": 0,
+[0]       "direction": "Temporary High Increase",
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "maxDifference": 0.5,
+[0]       "normalizedChangePercent": 0,
+[0]       "scenario": 0.5621765008857981
+[0]     },
+[0]     "node-1763144842593": {
+[0]       "auc": 0.05671936797353838,
+[0]       "baseline": 0.6297368933204371,
+[0]       "delta": 0,
+[0]       "direction": "Temporary High Increase",
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "maxDifference": 0.05671936797353838,
+[0]       "normalizedChangePercent": 0,
+[0]       "scenario": 0.6297368933204371
+[0]     },
+[0]     "node-1763144842876": {
+[0]       "auc": 0,
+[0]       "baseline": 0.5,
+[0]       "delta": 0,
+[0]       "direction": "No Change",
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "maxDifference": 0,
+[0]       "normalizedChangePercent": 0,
+[0]       "scenario": 0.5
+[0]     }
+[0]   },
+[0]   "iterations": 3
+[0] }
+[0] 7:39:36 PM [express] POST /api/simulate 200 in 974ms :: {"baselineFinalState":{"node-1763144842243":...
+[0] Scenario from DB: {
+[0]   id: 5,
+[0]   name: 'low water',
+[0]   modelId: 3,
+[0]   description: null,
+[0]   initialValues: {
+[0]     'node-1763144842243': 1,
+[0]     'node-1763144842593': 0.5,
+[0]     'node-1763144842876': 0.5
+[0]   },
+[0]   results: {
+[0]     converged: true,
+[0]     finalState: {
+[0]       'node-1763144842243': [Object],
+[0]       'node-1763144842593': [Object],
+[0]       'node-1763144842876': [Object]
+[0]     },
+[0]     iterations: 3,
+[0]     timeSeries: {
+[0]       'node-1763144842243': [Array],
+[0]       'node-1763144842593': [Array],
+[0]       'node-1763144842876': [Array]
+[0]     },
+[0]     initialValues: {
+[0]       'node-1763144842243': 1,
+[0]       'node-1763144842593': 0.5,
+[0]       'node-1763144842876': 0.5
+[0]     },
+[0]     baselineConverged: true,
+[0]     baselineFinalState: {
+[0]       'node-1763144842243': [Object],
+[0]       'node-1763144842593': [Object],
+[0]       'node-1763144842876': [Object]
+[0]     },
+[0]     baselineIterations: 3,
+[0]     baselineTimeSeries: {
+[0]       'node-1763144842243': [Array],
+[0]       'node-1763144842593': [Array],
+[0]       'node-1763144842876': [Array]
+[0]     }
+[0]   },
+[0]   simulationParams: { threshold: 0.001, activation: 'sigmoid', maxIterations: 20 },
+[0]   clampedNodes: [],
+[0]   nodes: [
+[0]     { id: 'node-1763144842243', label: 'new node 1', value: 1 },
+[0]     { id: 'node-1763144842593', label: 'New 2', value: 0.5 },
+[0]     { id: 'node-1763144842876', label: 'New 4', value: 0.5 }
+[0]   ],
+[0]   createdAt: '2025-11-15T00:38:32.969Z',
+[0]   updatedAt: '2025-11-15T00:39:36.791Z'
+[0] }
+[0] Scenario after Zod validation: {
+[0]   id: 5,
+[0]   name: 'low water',
+[0]   description: null,
+[0]   modelId: 3,
+[0]   nodes: [
+[0]     { id: 'node-1763144842243', label: 'new node 1', value: 1 },
+[0]     { id: 'node-1763144842593', label: 'New 2', value: 0.5 },
+[0]     { id: 'node-1763144842876', label: 'New 4', value: 0.5 }
+[0]   ],
+[0]   initialValues: {
+[0]     'node-1763144842243': 1,
+[0]     'node-1763144842593': 0.5,
+[0]     'node-1763144842876': 0.5
+[0]   },
+[0]   clampedNodes: [],
+[0]   simulationParams: { activation: 'sigmoid', threshold: 0.001, maxIterations: 20 },
+[0]   results: {
+[0]     finalState: {
+[0]       'node-1763144842243': [Object],
+[0]       'node-1763144842593': [Object],
+[0]       'node-1763144842876': [Object]
+[0]     },
+[0]     timeSeries: {
+[0]       'node-1763144842243': [Array],
+[0]       'node-1763144842593': [Array],
+[0]       'node-1763144842876': [Array]
+[0]     },
+[0]     iterations: 3,
+[0]     converged: true,
+[0]     initialValues: {
+[0]       'node-1763144842243': 1,
+[0]       'node-1763144842593': 0.5,
+[0]       'node-1763144842876': 0.5
+[0]     },
+[0]     baselineFinalState: {
+[0]       'node-1763144842243': [Object],
+[0]       'node-1763144842593': [Object],
+[0]       'node-1763144842876': [Object]
+[0]     },
+[0]     baselineTimeSeries: {
+[0]       'node-1763144842243': [Array],
+[0]       'node-1763144842593': [Array],
+[0]       'node-1763144842876': [Array]
+[0]     },
+[0]     baselineIterations: 3,
+[0]     baselineConverged: true
+[0]   },
+[0]   createdAt: '2025-11-15T00:38:32.969Z',
+[0]   updatedAt: '2025-11-15T00:39:36.791Z'
+[0] }
+[0] 7:39:37 PM [express] PATCH /api/scenarios/5 200 in 546ms :: {"id":5,"name":"low water","description"...
+[1] 7:39:39 PM [vite] hmr update /src/components/scenario/ScenarioComparison.tsx, /src/index.css
+[0] Received simulation request: {
+[0]   "schemaVersion": "1.0.0",
+[0]   "nodes": [
+[0]     {
+[0]       "id": "node-1763144842243",
+[0]       "value": 0.5,
+[0]       "label": "new node 1",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763144842593",
+[0]       "value": 0.5,
+[0]       "label": "New 2",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763144842876",
+[0]       "value": 0.5,
+[0]       "label": "New 4",
+[0]       "type": "regular"
+[0]     }
+[0]   ],
+[0]   "edges": [
+[0]     {
+[0]       "source": "node-1763144842243",
+[0]       "target": "node-1763144842593",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842593",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842243",
+[0]       "weight": 0.5
+[0]     }
+[0]   ],
+[0]   "activation": "sigmoid",
+[0]   "threshold": 0.001,
+[0]   "maxIterations": 20,
+[0]   "compareToBaseline": true,
+[0]   "modelInitialValues": {
+[0]     "node-1763144842243": 0.5,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
+[0]   },
+[0]   "scenarioInitialValues": {
+[0]     "node-1763144842243": 1,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
+[0]   },
+[0]   "clampedNodes": []
+[0] }
+[0] Forwarding to Python backend: {
+[0]   "schemaVersion": "1.0.0",
+[0]   "nodes": [
+[0]     {
+[0]       "id": "node-1763144842243",
+[0]       "value": 0.5,
+[0]       "label": "new node 1",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763144842593",
+[0]       "value": 0.5,
+[0]       "label": "New 2",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763144842876",
+[0]       "value": 0.5,
+[0]       "label": "New 4",
+[0]       "type": "regular"
+[0]     }
+[0]   ],
+[0]   "edges": [
+[0]     {
+[0]       "source": "node-1763144842243",
+[0]       "target": "node-1763144842593",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842593",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842243",
+[0]       "weight": 0.5
+[0]     }
+[0]   ],
+[0]   "activation": "sigmoid",
+[0]   "threshold": 0.001,
+[0]   "maxIterations": 20,
+[0]   "compareToBaseline": true,
+[0]   "modelInitialValues": {
+[0]     "node-1763144842243": 0.5,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
+[0]   },
+[0]   "scenarioInitialValues": {
+[0]     "node-1763144842243": 1,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
+[0]   },
+[0]   "clampedNodes": []
+[0] }
+[0] Python simulation response: {
+[0]   "baselineFinalState": {
+[0]     "node-1763144842243": {
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "value": 0.5621765008857981
+[0]     },
+[0]     "node-1763144842593": {
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "value": 0.6297368933204371
+[0]     },
+[0]     "node-1763144842876": {
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "value": 0.5
+[0]     }
+[0]   },
+[0]   "baselineTimeSeries": {
+[0]     "node-1763144842243": [
+[0]       0.5,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981
+[0]     ],
+[0]     "node-1763144842593": [
+[0]       0.5,
+[0]       0.6224593312018546,
+[0]       0.6297368933204371,
+[0]       0.6297368933204371
+[0]     ],
+[0]     "node-1763144842876": [
+[0]       0.5,
+[0]       0.5,
+[0]       0.5,
+[0]       0.5
+[0]     ]
+[0]   },
+[0]   "clampedNodes": [],
+[0]   "comparisonFinalState": {
+[0]     "node-1763144842243": {
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "value": 0.5621765008857981
+[0]     },
+[0]     "node-1763144842593": {
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "value": 0.6297368933204371
+[0]     },
+[0]     "node-1763144842876": {
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "value": 0.5
+[0]     }
+[0]   },
+[0]   "comparisonTimeSeries": {
+[0]     "node-1763144842243": [
+[0]       1,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981
+[0]     ],
+[0]     "node-1763144842593": [
+[0]       0.5,
+[0]       0.679178699175393,
+[0]       0.6297368933204371,
+[0]       0.6297368933204371
+[0]     ],
+[0]     "node-1763144842876": [
+[0]       0.5,
+[0]       0.5,
+[0]       0.5,
+[0]       0.5
+[0]     ]
+[0]   },
+[0]   "converged": true,
+[0]   "deltaFinalState": {
+[0]     "node-1763144842243": {
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "value": 0
+[0]     },
+[0]     "node-1763144842593": {
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "value": 0
+[0]     },
+[0]     "node-1763144842876": {
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "value": 0
+[0]     }
+[0]   },
+[0]   "impactMetrics": {
+[0]     "node-1763144842243": {
+[0]       "auc": 0.25,
+[0]       "baseline": 0.5621765008857981,
+[0]       "delta": 0,
+[0]       "direction": "Temporary High Increase",
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "maxDifference": 0.5,
+[0]       "normalizedChangePercent": 0,
+[0]       "scenario": 0.5621765008857981
+[0]     },
+[0]     "node-1763144842593": {
+[0]       "auc": 0.05671936797353838,
+[0]       "baseline": 0.6297368933204371,
+[0]       "delta": 0,
+[0]       "direction": "Temporary High Increase",
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "maxDifference": 0.05671936797353838,
+[0]       "normalizedChangePercent": 0,
+[0]       "scenario": 0.6297368933204371
+[0]     },
+[0]     "node-1763144842876": {
+[0]       "auc": 0,
+[0]       "baseline": 0.5,
+[0]       "delta": 0,
+[0]       "direction": "No Change",
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "maxDifference": 0,
+[0]       "normalizedChangePercent": 0,
+[0]       "scenario": 0.5
+[0]     }
+[0]   },
+[0]   "iterations": 3
+[0] }
+[0] 7:39:40 PM [express] POST /api/simulate 200 in 403ms :: {"baselineFinalState":{"node-1763144842243":...
+[0] Scenario from DB: {
+[0]   id: 5,
+[0]   name: 'low water',
+[0]   modelId: 3,
+[0]   description: null,
+[0]   initialValues: {
+[0]     'node-1763144842243': 1,
+[0]     'node-1763144842593': 0.5,
+[0]     'node-1763144842876': 0.5
+[0]   },
+[0]   results: {
+[0]     converged: true,
+[0]     finalState: {
+[0]       'node-1763144842243': [Object],
+[0]       'node-1763144842593': [Object],
+[0]       'node-1763144842876': [Object]
+[0]     },
+[0]     iterations: 3,
+[0]     timeSeries: {
+[0]       'node-1763144842243': [Array],
+[0]       'node-1763144842593': [Array],
+[0]       'node-1763144842876': [Array]
+[0]     },
+[0]     initialValues: {
+[0]       'node-1763144842243': 1,
+[0]       'node-1763144842593': 0.5,
+[0]       'node-1763144842876': 0.5
+[0]     },
+[0]     baselineConverged: true,
+[0]     baselineFinalState: {
+[0]       'node-1763144842243': [Object],
+[0]       'node-1763144842593': [Object],
+[0]       'node-1763144842876': [Object]
+[0]     },
+[0]     baselineIterations: 3,
+[0]     baselineTimeSeries: {
+[0]       'node-1763144842243': [Array],
+[0]       'node-1763144842593': [Array],
+[0]       'node-1763144842876': [Array]
+[0]     }
+[0]   },
+[0]   simulationParams: { threshold: 0.001, activation: 'sigmoid', maxIterations: 20 },
+[0]   clampedNodes: [],
+[0]   nodes: [
+[0]     { id: 'node-1763144842243', label: 'new node 1', value: 1 },
+[0]     { id: 'node-1763144842593', label: 'New 2', value: 0.5 },
+[0]     { id: 'node-1763144842876', label: 'New 4', value: 0.5 }
+[0]   ],
+[0]   createdAt: '2025-11-15T00:38:32.969Z',
+[0]   updatedAt: '2025-11-15T00:39:40.738Z'
+[0] }
+[0] Scenario after Zod validation: {
+[0]   id: 5,
+[0]   name: 'low water',
+[0]   description: null,
+[0]   modelId: 3,
+[0]   nodes: [
+[0]     { id: 'node-1763144842243', label: 'new node 1', value: 1 },
+[0]     { id: 'node-1763144842593', label: 'New 2', value: 0.5 },
+[0]     { id: 'node-1763144842876', label: 'New 4', value: 0.5 }
+[0]   ],
+[0]   initialValues: {
+[0]     'node-1763144842243': 1,
+[0]     'node-1763144842593': 0.5,
+[0]     'node-1763144842876': 0.5
+[0]   },
+[0]   clampedNodes: [],
+[0]   simulationParams: { activation: 'sigmoid', threshold: 0.001, maxIterations: 20 },
+[0]   results: {
+[0]     finalState: {
+[0]       'node-1763144842243': [Object],
+[0]       'node-1763144842593': [Object],
+[0]       'node-1763144842876': [Object]
+[0]     },
+[0]     timeSeries: {
+[0]       'node-1763144842243': [Array],
+[0]       'node-1763144842593': [Array],
+[0]       'node-1763144842876': [Array]
+[0]     },
+[0]     iterations: 3,
+[0]     converged: true,
+[0]     initialValues: {
+[0]       'node-1763144842243': 1,
+[0]       'node-1763144842593': 0.5,
+[0]       'node-1763144842876': 0.5
+[0]     },
+[0]     baselineFinalState: {
+[0]       'node-1763144842243': [Object],
+[0]       'node-1763144842593': [Object],
+[0]       'node-1763144842876': [Object]
+[0]     },
+[0]     baselineTimeSeries: {
+[0]       'node-1763144842243': [Array],
+[0]       'node-1763144842593': [Array],
+[0]       'node-1763144842876': [Array]
+[0]     },
+[0]     baselineIterations: 3,
+[0]     baselineConverged: true
+[0]   },
+[0]   createdAt: '2025-11-15T00:38:32.969Z',
+[0]   updatedAt: '2025-11-15T00:39:40.738Z'
+[0] }
+[0] 7:39:41 PM [express] PATCH /api/scenarios/5 200 in 550ms :: {"id":5,"name":"low water","description"...
+[0] 7:39:59 PM [express] GET /api/user 304 in 928ms :: {"id":2,"username":"new_user2","displayName":null...
+[0] 7:40:00 PM [express] GET /api/projects 304 in 497ms :: [{"id":2,"name":"New Project","description":n...
+[0] 7:40:01 PM [express] GET /api/models 304 in 1030ms :: [{"id":3,"name":"New Model","description":null...
+[0] 7:40:01 PM [express] GET /api/models/3 304 in 1136ms :: {"id":3,"name":"New Model","description":nul...
+[0] 7:40:01 PM [express] GET /api/models 304 in 441ms :: [{"id":3,"name":"New Model","description":null,...
+[0] 7:40:01 PM [express] GET /api/projects 304 in 453ms :: [{"id":2,"name":"New Project","description":n...
+[0] 7:40:02 PM [express] PUT /api/models/3 200 in 551ms :: {"id":3,"name":"New Model","description":null...
+[0] 7:40:03 PM [express] PUT /api/models/3 200 in 518ms :: {"id":3,"name":"New Model","description":null...
+[0] 7:40:03 PM [express] GET /api/models/3/scenarios 200 in 537ms :: [{"id":5,"name":"low water","modelI...
+[0] 7:40:03 PM [express] GET /api/models 200 in 460ms :: [{"id":3,"name":"New Model","description":null,...
+[0] 7:40:03 PM [express] GET /api/models/3 200 in 513ms :: {"id":3,"name":"New Model","description":null...
+[0] Received simulation request: {
+[0]   "schemaVersion": "1.0.0",
+[0]   "nodes": [
+[0]     {
+[0]       "id": "node-1763144842243",
+[0]       "value": 0.5,
+[0]       "label": "new node 1",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763144842593",
+[0]       "value": 0.5,
+[0]       "label": "New 2",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763144842876",
+[0]       "value": 0.5,
+[0]       "label": "New 4",
+[0]       "type": "regular"
+[0]     }
+[0]   ],
+[0]   "edges": [
+[0]     {
+[0]       "source": "node-1763144842243",
+[0]       "target": "node-1763144842593",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842593",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842243",
+[0]       "weight": 0.5
+[0]     }
+[0]   ],
+[0]   "activation": "sigmoid",
+[0]   "threshold": 0.001,
+[0]   "maxIterations": 20,
+[0]   "compareToBaseline": true,
+[0]   "modelInitialValues": {
+[0]     "node-1763144842243": 0.5,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
+[0]   },
+[0]   "scenarioInitialValues": {
+[0]     "node-1763144842243": 1,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
+[0]   },
+[0]   "clampedNodes": []
+[0] }
+[0] Forwarding to Python backend: {
+[0]   "schemaVersion": "1.0.0",
+[0]   "nodes": [
+[0]     {
+[0]       "id": "node-1763144842243",
+[0]       "value": 0.5,
+[0]       "label": "new node 1",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763144842593",
+[0]       "value": 0.5,
+[0]       "label": "New 2",
+[0]       "type": "regular"
+[0]     },
+[0]     {
+[0]       "id": "node-1763144842876",
+[0]       "value": 0.5,
+[0]       "label": "New 4",
+[0]       "type": "regular"
+[0]     }
+[0]   ],
+[0]   "edges": [
+[0]     {
+[0]       "source": "node-1763144842243",
+[0]       "target": "node-1763144842593",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842593",
+[0]       "weight": 0.5
+[0]     },
+[0]     {
+[0]       "source": "node-1763144842876",
+[0]       "target": "node-1763144842243",
+[0]       "weight": 0.5
+[0]     }
+[0]   ],
+[0]   "activation": "sigmoid",
+[0]   "threshold": 0.001,
+[0]   "maxIterations": 20,
+[0]   "compareToBaseline": true,
+[0]   "modelInitialValues": {
+[0]     "node-1763144842243": 0.5,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
+[0]   },
+[0]   "scenarioInitialValues": {
+[0]     "node-1763144842243": 1,
+[0]     "node-1763144842593": 0.5,
+[0]     "node-1763144842876": 0.5
+[0]   },
+[0]   "clampedNodes": []
+[0] }
+[0] Python simulation response: {
+[0]   "baselineFinalState": {
+[0]     "node-1763144842243": {
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "value": 0.5621765008857981
+[0]     },
+[0]     "node-1763144842593": {
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "value": 0.6297368933204371
+[0]     },
+[0]     "node-1763144842876": {
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "value": 0.5
+[0]     }
+[0]   },
+[0]   "baselineTimeSeries": {
+[0]     "node-1763144842243": [
+[0]       0.5,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981
+[0]     ],
+[0]     "node-1763144842593": [
+[0]       0.5,
+[0]       0.6224593312018546,
+[0]       0.6297368933204371,
+[0]       0.6297368933204371
+[0]     ],
+[0]     "node-1763144842876": [
+[0]       0.5,
+[0]       0.5,
+[0]       0.5,
+[0]       0.5
+[0]     ]
+[0]   },
+[0]   "clampedNodes": [],
+[0]   "comparisonFinalState": {
+[0]     "node-1763144842243": {
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "value": 0.5621765008857981
+[0]     },
+[0]     "node-1763144842593": {
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "value": 0.6297368933204371
+[0]     },
+[0]     "node-1763144842876": {
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "value": 0.5
+[0]     }
+[0]   },
+[0]   "comparisonTimeSeries": {
+[0]     "node-1763144842243": [
+[0]       1,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981,
+[0]       0.5621765008857981
+[0]     ],
+[0]     "node-1763144842593": [
+[0]       0.5,
+[0]       0.679178699175393,
+[0]       0.6297368933204371,
+[0]       0.6297368933204371
+[0]     ],
+[0]     "node-1763144842876": [
+[0]       0.5,
+[0]       0.5,
+[0]       0.5,
+[0]       0.5
+[0]     ]
+[0]   },
+[0]   "converged": true,
+[0]   "deltaFinalState": {
+[0]     "node-1763144842243": {
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "value": 0
+[0]     },
+[0]     "node-1763144842593": {
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "value": 0
+[0]     },
+[0]     "node-1763144842876": {
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "value": 0
+[0]     }
+[0]   },
+[0]   "impactMetrics": {
+[0]     "node-1763144842243": {
+[0]       "auc": 0.25,
+[0]       "baseline": 0.5621765008857981,
+[0]       "delta": 0,
+[0]       "direction": "Temporary High Increase",
+[0]       "id": "node-1763144842243",
+[0]       "label": "new node 1",
+[0]       "maxDifference": 0.5,
+[0]       "normalizedChangePercent": 0,
+[0]       "scenario": 0.5621765008857981
+[0]     },
+[0]     "node-1763144842593": {
+[0]       "auc": 0.05671936797353838,
+[0]       "baseline": 0.6297368933204371,
+[0]       "delta": 0,
+[0]       "direction": "Temporary High Increase",
+[0]       "id": "node-1763144842593",
+[0]       "label": "New 2",
+[0]       "maxDifference": 0.05671936797353838,
+[0]       "normalizedChangePercent": 0,
+[0]       "scenario": 0.6297368933204371
+[0]     },
+[0]     "node-1763144842876": {
+[0]       "auc": 0,
+[0]       "baseline": 0.5,
+[0]       "delta": 0,
+[0]       "direction": "No Change",
+[0]       "id": "node-1763144842876",
+[0]       "label": "New 4",
+[0]       "maxDifference": 0,
+[0]       "normalizedChangePercent": 0,
+[0]       "scenario": 0.5
+[0]     }
+[0]   },
+[0]   "iterations": 3
+[0] }
+[0] 7:40:05 PM [express] POST /api/simulate 200 in 401ms :: {"baselineFinalState":{"node-1763144842243":...
+[0] Scenario from DB: {
+[0]   id: 5,
+[0]   name: 'low water',
+[0]   modelId: 3,
+[0]   description: null,
+[0]   initialValues: {
+[0]     'node-1763144842243': 1,
+[0]     'node-1763144842593': 0.5,
+[0]     'node-1763144842876': 0.5
+[0]   },
+[0]   results: {
+[0]     converged: true,
+[0]     finalState: {
+[0]       'node-1763144842243': [Object],
+[0]       'node-1763144842593': [Object],
+[0]       'node-1763144842876': [Object]
+[0]     },
+[0]     iterations: 3,
+[0]     timeSeries: {
+[0]       'node-1763144842243': [Array],
+[0]       'node-1763144842593': [Array],
+[0]       'node-1763144842876': [Array]
+[0]     },
+[0]     initialValues: {
+[0]       'node-1763144842243': 1,
+[0]       'node-1763144842593': 0.5,
+[0]       'node-1763144842876': 0.5
+[0]     },
+[0]     baselineConverged: true,
+[0]     baselineFinalState: {
+[0]       'node-1763144842243': [Object],
+[0]       'node-1763144842593': [Object],
+[0]       'node-1763144842876': [Object]
+[0]     },
+[0]     baselineIterations: 3,
+[0]     baselineTimeSeries: {
+[0]       'node-1763144842243': [Array],
+[0]       'node-1763144842593': [Array],
+[0]       'node-1763144842876': [Array]
+[0]     }
+[0]   },
+[0]   simulationParams: { threshold: 0.001, activation: 'sigmoid', maxIterations: 20 },
+[0]   clampedNodes: [],
+[0]   nodes: [
+[0]     { id: 'node-1763144842243', label: 'new node 1', value: 1 },
+[0]     { id: 'node-1763144842593', label: 'New 2', value: 0.5 },
+[0]     { id: 'node-1763144842876', label: 'New 4', value: 0.5 }
+[0]   ],
+[0]   createdAt: '2025-11-15T00:38:32.969Z',
+[0]   updatedAt: '2025-11-15T00:40:05.978Z'
+[0] }
+[0] Scenario after Zod validation: {
+[0]   id: 5,
+[0]   name: 'low water',
+[0]   description: null,
+[0]   modelId: 3,
+[0]   nodes: [
+[0]     { id: 'node-1763144842243', label: 'new node 1', value: 1 },
+[0]     { id: 'node-1763144842593', label: 'New 2', value: 0.5 },
+[0]     { id: 'node-1763144842876', label: 'New 4', value: 0.5 }
+[0]   ],
+[0]   initialValues: {
+[0]     'node-1763144842243': 1,
+[0]     'node-1763144842593': 0.5,
+[0]     'node-1763144842876': 0.5
+[0]   },
+[0]   clampedNodes: [],
+[0]   simulationParams: { activation: 'sigmoid', threshold: 0.001, maxIterations: 20 },
+[0]   results: {
+[0]     finalState: {
+[0]       'node-1763144842243': [Object],
+[0]       'node-1763144842593': [Object],
+[0]       'node-1763144842876': [Object]
+[0]     },
+[0]     timeSeries: {
+[0]       'node-1763144842243': [Array],
+[0]       'node-1763144842593': [Array],
+[0]       'node-1763144842876': [Array]
+[0]     },
+[0]     iterations: 3,
+[0]     converged: true,
+[0]     initialValues: {
+[0]       'node-1763144842243': 1,
+[0]       'node-1763144842593': 0.5,
+[0]       'node-1763144842876': 0.5
+[0]     },
+[0]     baselineFinalState: {
+[0]       'node-1763144842243': [Object],
+[0]       'node-1763144842593': [Object],
+[0]       'node-1763144842876': [Object]
+[0]     },
+[0]     baselineTimeSeries: {
+[0]       'node-1763144842243': [Array],
+[0]       'node-1763144842593': [Array],
+[0]       'node-1763144842876': [Array]
+[0]     },
+[0]     baselineIterations: 3,
+[0]     baselineConverged: true
+[0]   },
+[0]   createdAt: '2025-11-15T00:38:32.969Z',
+[0]   updatedAt: '2025-11-15T00:40:05.978Z'
+[0] }
+[0] 7:40:06 PM [express] PATCH /api/scenarios/5 200 in 530ms :: {"id":5,"name":"low water","description"...

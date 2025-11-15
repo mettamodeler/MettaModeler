@@ -7,10 +7,16 @@ export interface Scenario {
   initialValues: Record<string, number>;
   createdAt: string;
   description?: string;
+  clampedNodes?: string[];
+  results?: SimulationResponse;
+  simulationParams?: {
+    activation: 'sigmoid' | 'tanh' | 'relu';
+    threshold: number;
+    maxIterations: number;
+  };
 }
 
 export interface ExtendedScenario extends Scenario {
-  results?: SimulationResponse;
   simulationRequested?: boolean;
   runRealBaseline?: () => Promise<SimulationResponse>;
 } 

@@ -487,8 +487,18 @@ def _calculate_impact_metrics(
         if node_id not in baseline_results['timeSeries'] or node_id not in scenario_results['timeSeries']:
             raise ValueError(f"Node ID {node_id} missing from timeSeries.")
         
-        baseline_value = baseline_results['finalState'][node_id]['value']
-        scenario_value = scenario_results['finalState'][node_id]['value']
+        # Extract values, handling both direct values and nested dictionaries
+        baseline_node = baseline_results['finalState'][node_id]
+        scenario_node = scenario_results['finalState'][node_id]
+        
+        # Handle nested value dictionaries
+        baseline_value = baseline_node['value']
+        if isinstance(baseline_value, dict):
+            baseline_value = baseline_value['value']
+            
+        scenario_value = scenario_node['value']
+        if isinstance(scenario_value, dict):
+            scenario_value = scenario_value['value']
         
         # Normalized percent change
         epsilon = 1e-8
@@ -592,84 +602,92 @@ def run_baseline_scenario_comparison(
         logging.info(f"Baseline node values: {[(n['id'], n['value']) for n in baseline_nodes]}")
         logging.info(f"Scenario node values: {[(n['id'], n['value']) for n in scenario_nodes]}")
         
-        # Prepare clamped values for scenario
-        clamped_values = {
-            node['id']: node['value'] 
-            for node in scenario_nodes 
-            if clamped_nodes and node['id'] in clamped_nodes
-        }
-        
-        # Run simulations
-        baseline_results = run_simulation(
+        # Run baseline simulation
+        baseline_simulator = FCMSimulator(
             nodes=baseline_nodes,
             edges=edges,
             activation_function=activation_function,
             threshold=threshold,
             max_iterations=max_iterations
         )
+        baseline_results = baseline_simulator.run_simulation()
         
-        scenario_results = run_simulation(
+        # Run scenario simulation with clamped nodes
+        scenario_simulator = FCMSimulator(
             nodes=scenario_nodes,
             edges=edges,
             activation_function=activation_function,
             threshold=threshold,
-            max_iterations=max_iterations,
+            max_iterations=max_iterations
+        )
+        
+        # Prepare clamped values for scenario
+        clamped_values = None
+        if clamped_nodes:
+            clamped_values = {
+                node_id: scenario_initial_values.get(node_id, next((n['value'] for n in scenario_nodes if n['id'] == node_id), 0.5))
+                for node_id in clamped_nodes
+            }
+            logging.info(f"Clamped values for scenario: {clamped_values}")
+        
+        scenario_results = scenario_simulator.run_simulation(
             clamped_nodes=clamped_nodes,
             clamped_values=clamped_values
         )
         
-        # Log time series data for debugging
-        logging.debug("Time Series Data:")
-        logging.debug("Baseline Time Series:")
-        for node_id, values in baseline_results['timeSeries'].items():
-            logging.debug(f"  {node_id}: {values}")
-        
-        logging.debug("Scenario Time Series:")
-        for node_id, values in scenario_results['timeSeries'].items():
-            logging.debug(f"  {node_id}: {values}")
-        
-        # Calculate global max change for fuzzy direction
-        all_diff_series = []
-        for node_id in baseline_results['finalState']:
-            if clamped_nodes and node_id in clamped_nodes:
-                continue  # skip clamped nodes for global max
-            baseline_series = baseline_results['timeSeries'][node_id]
-            scenario_series = scenario_results['timeSeries'][node_id]
-            min_len = min(len(baseline_series), len(scenario_series))
-            baseline_series = baseline_series[:min_len]
-            scenario_series = scenario_series[:min_len]
-            diff_series = [s - b for s, b in zip(scenario_series, baseline_series)]
-            all_diff_series.append(np.max(np.abs(diff_series)))
-        
-        global_max_change = max(all_diff_series) if all_diff_series else 1.0
-        
-        # Calculate impact metrics for each node
+        # Calculate impact metrics
         impact_metrics = {}
-        delta_final_state = {}
+        # Calculate global max change for impact metrics
+        def get_node_value(final_state, node_id):
+            """Extract numeric value from finalState, handling both dict and direct value formats."""
+            node_data = final_state.get(node_id, {})
+            if isinstance(node_data, dict):
+                return node_data.get('value', 0)
+            return node_data if isinstance(node_data, (int, float)) else 0
         
-        for node_id in baseline_results['finalState']:
-            # Calculate impact metrics
-            metrics = _calculate_impact_metrics(
+        global_max_change = max(
+            abs(get_node_value(baseline_results['finalState'], n['id']) - 
+                get_node_value(scenario_results['finalState'], n['id']))
+            for n in nodes
+        )
+        
+        for node in nodes:
+            node_id = node['id']
+            impact_metrics[node_id] = _calculate_impact_metrics(
                 node_id,
                 baseline_results,
                 scenario_results,
                 global_max_change
             )
-            impact_metrics[node_id] = metrics
-            
-            # Calculate delta final state
-            delta_final_state[node_id] = {
-                'id': node_id,
-                'label': baseline_results['finalState'][node_id]['label'],
-                'value': scenario_results['finalState'][node_id]['value'] - baseline_results['finalState'][node_id]['value']
-            }
         
+        # Return comparison results
         return {
-            'baselineFinalState': baseline_results['finalState'],
-            'comparisonFinalState': scenario_results['finalState'],
+            'baselineFinalState': {
+                node_id: {
+                    'id': node_id,
+                    'label': node_data.get('label', next((n['label'] for n in nodes if n['id'] == node_id), '')),
+                    'value': get_node_value(baseline_results['finalState'], node_id)
+                }
+                for node_id, node_data in baseline_results['finalState'].items()
+            },
+            'comparisonFinalState': {
+                node_id: {
+                    'id': node_id,
+                    'label': node_data.get('label', next((n['label'] for n in nodes if n['id'] == node_id), '')),
+                    'value': get_node_value(scenario_results['finalState'], node_id)
+                }
+                for node_id, node_data in scenario_results['finalState'].items()
+            },
             'baselineTimeSeries': baseline_results['timeSeries'],
             'comparisonTimeSeries': scenario_results['timeSeries'],
-            'deltaFinalState': delta_final_state,
+            'deltaFinalState': {
+                node['id']: {
+                    'id': node['id'],
+                    'label': node.get('label', ''),
+                    'value': get_node_value(scenario_results['finalState'], node['id']) - get_node_value(baseline_results['finalState'], node['id'])
+                }
+                for node in nodes
+            },
             'impactMetrics': impact_metrics,
             'converged': baseline_results['converged'] and scenario_results['converged'],
             'iterations': max(baseline_results['iterations'], scenario_results['iterations']),
@@ -680,4 +698,4 @@ def run_baseline_scenario_comparison(
         logging.error(f"Error in baseline-scenario comparison: {str(e)}")
         logging.error(f"Error type: {type(e).__name__}")
         logging.error(f"Traceback: {traceback.format_exc()}")
-        raise ValueError(f"Baseline-scenario comparison failed: {str(e)}")
+        raise ValueError(f"Comparison failed: {str(e)}")

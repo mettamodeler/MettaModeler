@@ -67,14 +67,23 @@ For more details on the launcher system, see [LAUNCHER.md](LAUNCHER.md).
 ## Schema-First & Codegen Workflow
 
 MettaModeler uses a schema-first, codegen-driven workflow:
-- All core data models are defined in `/schemas` as versioned JSON-Schema files.
-- To update all types after a schema change, run:
+- **Single Source of Truth:** All core data models are defined in `/schemas` as versioned JSON-Schema files (e.g., `User.v1.json`, `Project.v1.json`, `Model.v1.json`, `Scenario.v1.json`).
+- **Generated Types:** TypeScript types, Zod schemas, and Python Pydantic models are automatically generated from JSON Schema.
+- **To update all types after a schema change:**
   ```sh
-  npm run codegen:ts
-  npm run codegen:zod
-  npm run codegen:py
+  npm run codegen:all
   ```
-- Commit any changes in generated files. CI will fail if you forget to update generated files.
+  Or individually:
+  ```sh
+  npm run codegen:ts   # TypeScript types
+  npm run codegen:zod  # Zod validation schemas
+  npm run codegen:py   # Python Pydantic models
+  ```
+- **Generated files are in:**
+  - `server/types/generated/*.v1.ts` - TypeScript types
+  - `server/types/generated/*.v1.zod.ts` - Zod schemas
+  - `python_sim/schemas/*_v1.py` - Python Pydantic models
+- **Important:** Always commit generated files. CI will fail if you forget to update generated files after schema changes.
 - See [docs/architecture.md](docs/architecture.md) for full details.
 
 ## License
