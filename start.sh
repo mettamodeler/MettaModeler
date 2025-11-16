@@ -47,7 +47,7 @@ start_python_service() {
     RETRY_COUNT=0
     while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
         sleep 1
-        if curl -f http://localhost:$PYTHON_PORT/api/health > /dev/null 2>&1; then
+        if curl -f http://127.0.0.1:$PYTHON_PORT/api/health > /dev/null 2>&1; then
             echo "[$(date)] ✅ Python service is ready"
             return 0
         fi

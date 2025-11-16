@@ -10,7 +10,7 @@ import path from 'path';
 
 // No need for separate import as we installed @types/archiver
 
-const PYTHON_SIM_URL = process.env.PYTHON_SIM_URL || 'http://localhost:5050';
+const PYTHON_SIM_URL = process.env.PYTHON_SIM_URL || 'http://127.0.0.1:5050';
 
 // Type guards for ReactFlow vs Schema formats
 interface ReactFlowNode {

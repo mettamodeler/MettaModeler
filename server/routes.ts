@@ -24,7 +24,7 @@ import { ScenarioSchema, ScenarioStorageSchema, type ScenarioStorage, CreateScen
 import { CreateModelData, CreateScenarioData } from './storage';
 
 // Python simulation service URL
-const PYTHON_SIM_URL = process.env.PYTHON_SIM_URL || 'http://localhost:5050';
+const PYTHON_SIM_URL = process.env.PYTHON_SIM_URL || 'http://127.0.0.1:5050';
 
 interface SimulationResponse {
   finalState: Record<string, number>;

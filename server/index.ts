@@ -9,11 +9,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Set the Python service URL for API communication
-// Use environment variable if set, otherwise default to localhost:5050
-// In production (Railway), both services run in the same container, so localhost works
+// Use environment variable if set, otherwise default to 127.0.0.1:5050
+// Use 127.0.0.1 (IPv4) instead of localhost to avoid IPv6 resolution issues
+// In production (Railway), both services run in the same container, so 127.0.0.1 works
 const pythonPort = process.env.PYTHON_PORT || process.env.PYTHON_SIM_PORT || 5050;
 if (!process.env.PYTHON_SIM_URL) {
-  process.env.PYTHON_SIM_URL = `http://localhost:${pythonPort}`;
+  process.env.PYTHON_SIM_URL = `http://127.0.0.1:${pythonPort}`;
 }
 process.env.PYTHON_SIM_PORT = pythonPort.toString();
 
