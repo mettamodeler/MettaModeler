@@ -15,6 +15,9 @@ app.use(express.urlencoded({ extended: false }));
 const pythonPort = process.env.PYTHON_PORT || process.env.PYTHON_SIM_PORT || 5050;
 if (!process.env.PYTHON_SIM_URL) {
   process.env.PYTHON_SIM_URL = `http://127.0.0.1:${pythonPort}`;
+} else {
+  // Normalize localhost to 127.0.0.1 to force IPv4 (even if env var is set)
+  process.env.PYTHON_SIM_URL = process.env.PYTHON_SIM_URL.replace(/localhost/g, '127.0.0.1');
 }
 process.env.PYTHON_SIM_PORT = pythonPort.toString();
 

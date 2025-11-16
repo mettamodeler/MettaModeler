@@ -24,7 +24,8 @@ import { ScenarioSchema, ScenarioStorageSchema, type ScenarioStorage, CreateScen
 import { CreateModelData, CreateScenarioData } from './storage';
 
 // Python simulation service URL
-const PYTHON_SIM_URL = process.env.PYTHON_SIM_URL || 'http://127.0.0.1:5050';
+// Normalize localhost to 127.0.0.1 to force IPv4 (avoid IPv6 resolution issues)
+const PYTHON_SIM_URL = (process.env.PYTHON_SIM_URL || 'http://127.0.0.1:5050').replace(/localhost/g, '127.0.0.1');
 
 interface SimulationResponse {
   finalState: Record<string, number>;
