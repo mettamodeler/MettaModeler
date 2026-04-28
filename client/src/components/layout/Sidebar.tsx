@@ -25,7 +25,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { ChevronDownIcon, ChevronRightIcon } from '@radix-ui/react-icons';
-import { FolderPlus, FilePlus, X } from 'lucide-react';
+import { FolderPlus, FilePlus, GitMerge, Users, X } from 'lucide-react';
 
 interface SidebarProps {
   currentProjectId: string | null;
@@ -44,6 +44,9 @@ export default function Sidebar({ currentProjectId }: SidebarProps) {
   const [newModelProjectId, setNewModelProjectId] = useState('');
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{type: 'project' | 'model', id: number} | null>(null);
+  const [membersDialogOpen, setMembersDialogOpen] = useState(false);
+  const [membersProjectId, setMembersProjectId] = useState<string>("");
+  const [inviteUsername, setInviteUsername] = useState("");
   
   // Extract current model ID from URL if on model page
   const modelIdMatch = location.match(/\/models\/([^/]+)/);
@@ -56,6 +59,10 @@ export default function Sidebar({ currentProjectId }: SidebarProps) {
   
   const { data: models = [], refetch: refetchModels } = useQuery<FCMModel[]>({
     queryKey: ['/api/models'],
+  });
+  const { data: projectMembersPayload, refetch: refetchMembers } = useQuery<any>({
+    queryKey: membersProjectId ? [`/api/projects/${membersProjectId}/members`] : ['__no_members__'],
+    enabled: membersDialogOpen && !!membersProjectId,
   });
   
   // Find the current model to determine project
@@ -288,6 +295,8 @@ export default function Sidebar({ currentProjectId }: SidebarProps) {
     return currentModelId === model.id;
   };
 
+  const membersProject = projects.find((project) => String(project.id) === membersProjectId);
+
   return (
     <div className="w-64 flex-shrink-0 flex flex-col border-r border-sidebar-border bg-sidebar-background z-10 light:border-[#E5E7EB] light:bg-[#F9FAFB]">
       {/* Projects Section */}
@@ -354,6 +363,31 @@ export default function Sidebar({ currentProjectId }: SidebarProps) {
                     tabIndex={-1}
                   >
                     <FilePlus className="w-5 h-5" />
+                  </button>
+                  <button
+                    className="opacity-0 group-hover:opacity-100 transition-opacity ml-1 text-sidebar-secondary hover:text-white p-1 rounded-md hover:bg-white/10"
+                    style={{ pointerEvents: 'auto' }}
+                    onClick={e => {
+                      e.stopPropagation();
+                      setLocation(`/project/${projectId}/meta-model`);
+                    }}
+                    title="Open Meta-Model Builder"
+                    tabIndex={-1}
+                  >
+                    <GitMerge className="w-4 h-4" />
+                  </button>
+                  <button
+                    className="opacity-0 group-hover:opacity-100 transition-opacity ml-1 text-sidebar-secondary hover:text-white p-1 rounded-md hover:bg-white/10"
+                    style={{ pointerEvents: 'auto' }}
+                    onClick={e => {
+                      e.stopPropagation();
+                      setMembersProjectId(projectId);
+                      setMembersDialogOpen(true);
+                    }}
+                    title="Manage Project Editors"
+                    tabIndex={-1}
+                  >
+                    <Users className="w-4 h-4" />
                   </button>
                   <button
                     className="opacity-0 group-hover:opacity-100 transition-opacity ml-1 text-red-400 hover:text-white p-1 rounded-md hover:bg-red-500/20 light:text-red-400 light:hover:text-[#22223B] light:hover:bg-[#FECACA]"
@@ -539,6 +573,80 @@ export default function Sidebar({ currentProjectId }: SidebarProps) {
               Delete
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={membersDialogOpen} onOpenChange={setMembersDialogOpen}>
+        <DialogContent className="dark-glass border border-white/10">
+          <DialogHeader>
+            <DialogTitle>Project Editors</DialogTitle>
+            <DialogDescription>
+              {membersProject ? `Add or remove editors for "${membersProject.name}".` : "Add or remove users who can edit models in this project."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Username"
+                value={inviteUsername}
+                onChange={(e) => setInviteUsername(e.target.value)}
+              />
+              <Button
+                onClick={async () => {
+                  if (!membersProjectId || !inviteUsername.trim()) return;
+                  try {
+                    await apiRequest("POST", `/api/projects/${membersProjectId}/members`, {
+                      username: inviteUsername.trim(),
+                    });
+                    setInviteUsername("");
+                    await refetchMembers();
+                    toast({ title: "Editor added" });
+                  } catch (error) {
+                    toast({
+                      variant: "destructive",
+                      title: "Failed to add editor",
+                      description: error instanceof Error ? error.message : "Unknown error",
+                    });
+                  }
+                }}
+              >
+                Add
+              </Button>
+            </div>
+            <div className="space-y-2 max-h-64 overflow-auto">
+              {projectMembersPayload?.owner && (
+                <div className="flex justify-between items-center border rounded px-2 py-1">
+                  <span>{projectMembersPayload.owner.username}</span>
+                  <span className="text-xs text-muted-foreground">owner</span>
+                </div>
+              )}
+              {(projectMembersPayload?.members || []).map((member: any) => (
+                <div key={member.userId} className="flex justify-between items-center border rounded px-2 py-1">
+                  <span>{member.username}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">{member.role}</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          await apiRequest("DELETE", `/api/projects/${membersProjectId}/members/${member.userId}`);
+                          await refetchMembers();
+                        } catch (error) {
+                          toast({ variant: "destructive", title: "Failed to remove editor" });
+                        }
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {!projectMembersPayload?.owner && (!projectMembersPayload?.members || projectMembersPayload.members.length === 0) && (
+                <div className="text-sm text-muted-foreground">No members found.</div>
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
