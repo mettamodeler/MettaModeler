@@ -6,7 +6,9 @@ import {
   users,
   projects,
   models,
-  scenarios
+  scenarios,
+  projectMembers,
+  projectNodeMappings
 } from "@shared/schema";
 import {
   FCMNode,
@@ -17,7 +19,7 @@ import {
 } from "@shared/generated";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { eq, and } from 'drizzle-orm';
+import { eq, and, or } from 'drizzle-orm';
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import createMemoryStore from "memorystore";
@@ -45,6 +47,26 @@ export interface CreateScenarioData {
   clampedNodes?: string[];
 }
 
+export interface ProjectMemberRecord {
+  id: number;
+  projectId: number;
+  userId: number;
+  role: string;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
+export interface ProjectNodeMappingRecord {
+  id: number;
+  projectId: number;
+  canonicalNodeKey: string;
+  canonicalNodeLabel: string;
+  sourceModelId: number;
+  sourceNodeId: string;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
 export interface IStorage {
   // Session storage
   sessionStore: any; // Using any to avoid complex typings with express-session
@@ -68,6 +90,14 @@ export interface IStorage {
   createProject(project: InsertProject): Promise<DrizzleProject>;
   updateProject(id: number, project: Partial<DrizzleProject>): Promise<DrizzleProject | undefined>;
   deleteProject(id: number): Promise<boolean>;
+  hasProjectAccess(projectId: number, userId: number): Promise<boolean>;
+  hasProjectRole(projectId: number, userId: number, roles: string[]): Promise<boolean>;
+  listProjectMembers(projectId: number): Promise<ProjectMemberRecord[]>;
+  addProjectMember(projectId: number, userId: number, role: string): Promise<ProjectMemberRecord>;
+  removeProjectMember(projectId: number, userId: number): Promise<boolean>;
+  upsertProjectNodeMapping(data: Omit<ProjectNodeMappingRecord, "id" | "createdAt" | "updatedAt">): Promise<ProjectNodeMappingRecord>;
+  listProjectNodeMappings(projectId: number): Promise<ProjectNodeMappingRecord[]>;
+  deleteProjectNodeMapping(id: number): Promise<boolean>;
   
   // Model operations
   // Note: Model type is now from generated types, but database returns DrizzleModel
@@ -155,7 +185,17 @@ export class PostgresStorage implements IStorage {
   }
 
   async getProjectsByUser(userId: number): Promise<DrizzleProject[]> {
-    return await this.db.select().from(projects).where(eq(projects.userId, userId));
+    const ownedProjects = await this.db.select().from(projects).where(eq(projects.userId, userId));
+    const memberProjectLinks = await this.db
+      .select({ project: projects })
+      .from(projectMembers)
+      .innerJoin(projects, eq(projectMembers.projectId, projects.id))
+      .where(eq(projectMembers.userId, userId));
+
+    const deduped = new Map<number, DrizzleProject>();
+    for (const project of ownedProjects) deduped.set(project.id, project);
+    for (const row of memberProjectLinks) deduped.set(row.project.id, row.project);
+    return Array.from(deduped.values());
   }
   
   async getProject(id: number): Promise<DrizzleProject | undefined> {
@@ -188,6 +228,8 @@ export class PostgresStorage implements IStorage {
       
       // Then delete all associated models
       await this.db.delete(models).where(eq(models.projectId, id));
+      await this.db.delete(projectMembers).where(eq(projectMembers.projectId, id));
+      await this.db.delete(projectNodeMappings).where(eq(projectNodeMappings.projectId, id));
       
       // Finally, delete the project itself
       const result = await this.db.delete(projects).where(eq(projects.id, id)).returning({ id: projects.id });
@@ -209,7 +251,8 @@ export class PostgresStorage implements IStorage {
       .select({ model: models })
       .from(models)
       .innerJoin(projects, eq(models.projectId, projects.id))
-      .where(eq(projects.userId, userId));
+      .leftJoin(projectMembers, eq(projectMembers.projectId, projects.id))
+      .where(or(eq(projects.userId, userId), eq(projectMembers.userId, userId)));
     return results.map(result => result.model);
   }
   
@@ -230,6 +273,8 @@ export class PostgresStorage implements IStorage {
       projectId: data.projectId,
       nodes: data.nodes,
       edges: data.edges,
+      isPublic: "false",
+      publicSlug: null,
       createdAt: new Date(),
       updatedAt: new Date()
     }).returning();
@@ -292,6 +337,7 @@ export class PostgresStorage implements IStorage {
       results: data.results,
       simulationParams: data.simulationParams,
       clampedNodes: Array.isArray(data.clampedNodes) ? data.clampedNodes : [],
+      includeInPublic: "false",
       createdAt: now,
       updatedAt: now
     }).returning({
@@ -304,6 +350,7 @@ export class PostgresStorage implements IStorage {
       results: scenarios.results,
       simulationParams: scenarios.simulationParams,
       clampedNodes: scenarios.clampedNodes,
+      includeInPublic: scenarios.includeInPublic,
       createdAt: scenarios.createdAt,
       updatedAt: scenarios.updatedAt,
     });
@@ -328,6 +375,7 @@ export class PostgresStorage implements IStorage {
         results: scenarios.results,
         simulationParams: scenarios.simulationParams,
         clampedNodes: scenarios.clampedNodes,
+        includeInPublic: scenarios.includeInPublic,
         createdAt: scenarios.createdAt,
         updatedAt: scenarios.updatedAt,
       });
@@ -339,6 +387,94 @@ export class PostgresStorage implements IStorage {
     const result = await this.db.delete(scenarios).where(eq(scenarios.id, id)).returning({ id: scenarios.id });
     return result.length > 0;
   }
+
+  async hasProjectAccess(projectId: number, userId: number): Promise<boolean> {
+    const project = await this.getProject(projectId);
+    if (!project) return false;
+    if (project.userId === userId) return true;
+    const member = await this.db
+      .select()
+      .from(projectMembers)
+      .where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, userId)));
+    return member.length > 0;
+  }
+
+  async hasProjectRole(projectId: number, userId: number, roles: string[]): Promise<boolean> {
+    const project = await this.getProject(projectId);
+    if (!project) return false;
+    if (project.userId === userId && roles.includes("owner")) return true;
+    const member = await this.db
+      .select()
+      .from(projectMembers)
+      .where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, userId)));
+    if (!member[0]) return false;
+    return roles.includes(member[0].role);
+  }
+
+  async listProjectMembers(projectId: number): Promise<ProjectMemberRecord[]> {
+    const members = await this.db.select().from(projectMembers).where(eq(projectMembers.projectId, projectId));
+    return members as ProjectMemberRecord[];
+  }
+
+  async addProjectMember(projectId: number, userId: number, role: string): Promise<ProjectMemberRecord> {
+    const existing = await this.db
+      .select()
+      .from(projectMembers)
+      .where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, userId)));
+    if (existing[0]) {
+      const [updated] = await this.db
+        .update(projectMembers)
+        .set({ role, updatedAt: new Date() })
+        .where(eq(projectMembers.id, existing[0].id))
+        .returning();
+      return updated as ProjectMemberRecord;
+    }
+    const [created] = await this.db
+      .insert(projectMembers)
+      .values({ projectId, userId, role, createdAt: new Date(), updatedAt: new Date() })
+      .returning();
+    return created as ProjectMemberRecord;
+  }
+
+  async removeProjectMember(projectId: number, userId: number): Promise<boolean> {
+    const deleted = await this.db
+      .delete(projectMembers)
+      .where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, userId)))
+      .returning({ id: projectMembers.id });
+    return deleted.length > 0;
+  }
+
+  async upsertProjectNodeMapping(data: Omit<ProjectNodeMappingRecord, "id" | "createdAt" | "updatedAt">): Promise<ProjectNodeMappingRecord> {
+    const existing = await this.db
+      .select()
+      .from(projectNodeMappings)
+      .where(
+        and(
+          eq(projectNodeMappings.projectId, data.projectId),
+          eq(projectNodeMappings.canonicalNodeKey, data.canonicalNodeKey),
+          eq(projectNodeMappings.sourceModelId, data.sourceModelId),
+          eq(projectNodeMappings.sourceNodeId, data.sourceNodeId),
+        )
+      );
+    if (existing[0]) {
+      return existing[0] as ProjectNodeMappingRecord;
+    }
+    const [created] = await this.db
+      .insert(projectNodeMappings)
+      .values({ ...data, createdAt: new Date(), updatedAt: new Date() })
+      .returning();
+    return created as ProjectNodeMappingRecord;
+  }
+
+  async listProjectNodeMappings(projectId: number): Promise<ProjectNodeMappingRecord[]> {
+    const rows = await this.db.select().from(projectNodeMappings).where(eq(projectNodeMappings.projectId, projectId));
+    return rows as ProjectNodeMappingRecord[];
+  }
+
+  async deleteProjectNodeMapping(id: number): Promise<boolean> {
+    const deleted = await this.db.delete(projectNodeMappings).where(eq(projectNodeMappings.id, id)).returning({ id: projectNodeMappings.id });
+    return deleted.length > 0;
+  }
 }
 
 export class MemStorage implements IStorage {
@@ -346,11 +482,15 @@ export class MemStorage implements IStorage {
   private projects: Map<number, DrizzleProject>;
   private models: Map<number, DrizzleModel>;
   private scenarios: Map<number, DrizzleScenario>;
+  private projectMembers: Map<number, ProjectMemberRecord>;
+  private projectNodeMappings: Map<number, ProjectNodeMappingRecord>;
   
   private userId: number;
   private projectId: number;
   private modelId: number;
   private scenarioId: number;
+  private projectMemberId: number;
+  private projectNodeMappingId: number;
   sessionStore: any;
 
   constructor(initializeDemoData: boolean = false) {
@@ -358,11 +498,15 @@ export class MemStorage implements IStorage {
     this.projects = new Map();
     this.models = new Map();
     this.scenarios = new Map();
+    this.projectMembers = new Map();
+    this.projectNodeMappings = new Map();
     
     this.userId = 1;
     this.projectId = 1;
     this.modelId = 1;
     this.scenarioId = 1;
+    this.projectMemberId = 1;
+    this.projectNodeMappingId = 1;
     
     // Create Memory session store
     const MemoryStore = createMemoryStore(session);
@@ -439,7 +583,16 @@ export class MemStorage implements IStorage {
   }
 
   async getProjectsByUser(userId: number): Promise<DrizzleProject[]> {
-    return Array.from(this.projects.values()).filter(project => project.userId === userId);
+    const owned = Array.from(this.projects.values()).filter(project => project.userId === userId);
+    const memberProjectIds = new Set(
+      Array.from(this.projectMembers.values())
+        .filter((member) => member.userId === userId)
+        .map((member) => member.projectId)
+    );
+    const memberProjects = Array.from(this.projects.values()).filter((project) => memberProjectIds.has(project.id));
+    const deduped = new Map<number, DrizzleProject>();
+    [...owned, ...memberProjects].forEach((project) => deduped.set(project.id, project));
+    return Array.from(deduped.values());
   }
   
   async getProject(id: number): Promise<DrizzleProject | undefined> {
@@ -496,6 +649,12 @@ export class MemStorage implements IStorage {
     }
     
     // Finally delete the project
+    Array.from(this.projectMembers.values())
+      .filter((member) => member.projectId === id)
+      .forEach((member) => this.projectMembers.delete(member.id));
+    Array.from(this.projectNodeMappings.values())
+      .filter((mapping) => mapping.projectId === id)
+      .forEach((mapping) => this.projectNodeMappings.delete(mapping.id));
     return this.projects.delete(id);
   }
   
@@ -510,6 +669,9 @@ export class MemStorage implements IStorage {
         .filter(project => project.userId === userId)
         .map(project => project.id)
     );
+    Array.from(this.projectMembers.values())
+      .filter((member) => member.userId === userId)
+      .forEach((member) => userProjectIds.add(member.projectId));
 
     return Array.from(this.models.values())
       .filter(model => model.projectId && userProjectIds.has(model.projectId));
@@ -540,6 +702,8 @@ export class MemStorage implements IStorage {
       projectId: data.projectId || null,
       nodes: typedNodes,
       edges: typedEdges,
+      isPublic: "false",
+      publicSlug: null,
       createdAt: now,
       updatedAt: now,
     };
@@ -636,6 +800,7 @@ export class MemStorage implements IStorage {
       results: data.results || null,
       simulationParams: data.simulationParams || null,
       clampedNodes: data.clampedNodes || null,
+      includeInPublic: "false",
       createdAt: now,
       updatedAt: now
     };
@@ -660,6 +825,86 @@ export class MemStorage implements IStorage {
   
   async deleteScenario(id: number): Promise<boolean> {
     return this.scenarios.delete(id);
+  }
+
+  async hasProjectAccess(projectId: number, userId: number): Promise<boolean> {
+    const project = this.projects.get(projectId);
+    if (!project) return false;
+    if (project.userId === userId) return true;
+    return Array.from(this.projectMembers.values()).some(
+      (member) => member.projectId === projectId && member.userId === userId
+    );
+  }
+
+  async hasProjectRole(projectId: number, userId: number, roles: string[]): Promise<boolean> {
+    const project = this.projects.get(projectId);
+    if (!project) return false;
+    if (project.userId === userId && roles.includes("owner")) return true;
+    const member = Array.from(this.projectMembers.values()).find(
+      (item) => item.projectId === projectId && item.userId === userId
+    );
+    if (!member) return false;
+    return roles.includes(member.role);
+  }
+
+  async listProjectMembers(projectId: number): Promise<ProjectMemberRecord[]> {
+    return Array.from(this.projectMembers.values()).filter((member) => member.projectId === projectId);
+  }
+
+  async addProjectMember(projectId: number, userId: number, role: string): Promise<ProjectMemberRecord> {
+    const existing = Array.from(this.projectMembers.values()).find(
+      (member) => member.projectId === projectId && member.userId === userId
+    );
+    if (existing) {
+      const updated = { ...existing, role, updatedAt: new Date() };
+      this.projectMembers.set(existing.id, updated);
+      return updated;
+    }
+    const created: ProjectMemberRecord = {
+      id: this.projectMemberId++,
+      projectId,
+      userId,
+      role,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.projectMembers.set(created.id, created);
+    return created;
+  }
+
+  async removeProjectMember(projectId: number, userId: number): Promise<boolean> {
+    const existing = Array.from(this.projectMembers.values()).find(
+      (member) => member.projectId === projectId && member.userId === userId
+    );
+    if (!existing) return false;
+    return this.projectMembers.delete(existing.id);
+  }
+
+  async upsertProjectNodeMapping(data: Omit<ProjectNodeMappingRecord, "id" | "createdAt" | "updatedAt">): Promise<ProjectNodeMappingRecord> {
+    const existing = Array.from(this.projectNodeMappings.values()).find(
+      (mapping) =>
+        mapping.projectId === data.projectId &&
+        mapping.canonicalNodeKey === data.canonicalNodeKey &&
+        mapping.sourceModelId === data.sourceModelId &&
+        mapping.sourceNodeId === data.sourceNodeId
+    );
+    if (existing) return existing;
+    const created: ProjectNodeMappingRecord = {
+      id: this.projectNodeMappingId++,
+      ...data,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.projectNodeMappings.set(created.id, created);
+    return created;
+  }
+
+  async listProjectNodeMappings(projectId: number): Promise<ProjectNodeMappingRecord[]> {
+    return Array.from(this.projectNodeMappings.values()).filter((mapping) => mapping.projectId === projectId);
+  }
+
+  async deleteProjectNodeMapping(id: number): Promise<boolean> {
+    return this.projectNodeMappings.delete(id);
   }
   
   // Demo data initialization
@@ -837,6 +1082,8 @@ export class MemStorage implements IStorage {
       const newModel: DrizzleModel = {
         ...model,
         id,
+        isPublic: "false",
+        publicSlug: null,
         createdAt: now,
         updatedAt: now,
       };

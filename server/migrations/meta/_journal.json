@@ -22,6 +22,13 @@
       "when": 1747501000000,
       "tag": "0002_add_security_fields_to_users",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1747502000000,
+      "tag": "0003_feature_drop_foundations",
+      "breakpoints": true
     }
   ]
 }
