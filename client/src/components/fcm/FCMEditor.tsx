@@ -17,6 +17,8 @@ import ReactFlow, {
   NodeTypes,
   EdgeTypes,
   ConnectionMode,
+  applyNodeChanges,
+  applyEdgeChanges,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { FCMModel, FCMNode, FCMEdge, NodeType } from '@/lib/types';
@@ -146,17 +148,29 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
   const { toast } = useToast();
   
   const { nodes: initialNodes, edges: initialEdges } = modelToReactFlow(model);
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [nodes, setNodes] = useNodesState(initialNodes);
+  const [edges, setEdges] = useEdgesState(initialEdges);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const latestNodesRef = useRef<Node[]>(initialNodes);
+  const latestEdgesRef = useRef<Edge[]>(initialEdges);
+
+  useEffect(() => {
+    latestNodesRef.current = nodes;
+  }, [nodes]);
+
+  useEffect(() => {
+    latestEdgesRef.current = edges;
+  }, [edges]);
   
   // Helper to save model changes with debounce
-  const saveModelChanges = useCallback(() => {
-    if (saveTimeout) clearTimeout(saveTimeout);
+  const saveModelChanges = useCallback((nextNodes?: Node[], nextEdges?: Edge[]) => {
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     
     const timeout = setTimeout(async () => {
       try {
-        const updatedModel = reactFlowToModel(model, nodes, edges);
+        const modelNodes = nextNodes ?? latestNodesRef.current;
+        const modelEdges = nextEdges ?? latestEdgesRef.current;
+        const updatedModel = reactFlowToModel(model, modelNodes, modelEdges);
         
         // Save to API
         await apiRequest('PUT', `/api/models/${model.id}`, updatedModel);
@@ -174,59 +188,33 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
       }
     }, 1000);
     
-    setSaveTimeout(timeout);
-  }, [model, nodes, edges, onModelUpdate, saveTimeout, toast]);
+    saveTimeoutRef.current = timeout;
+  }, [model, onModelUpdate, toast]);
   
   // Handle node changes
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
-      onNodesChange(changes);
-      saveModelChanges();
+      setNodes((currentNodes) => {
+        const nextNodes = applyNodeChanges(changes, currentNodes);
+        latestNodesRef.current = nextNodes;
+        saveModelChanges(nextNodes, latestEdgesRef.current);
+        return nextNodes;
+      });
     },
-    [onNodesChange, saveModelChanges]
+    [saveModelChanges, setNodes]
   );
   
-  // Handle node deletion with keyboard
-  const onKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLDivElement>) => {
-      // Prevent node/edge deletion if an input, textarea, or contenteditable is focused
-      const tag = document.activeElement?.tagName?.toLowerCase();
-      if (
-        tag === 'input' ||
-        tag === 'textarea' ||
-        (document.activeElement && (document.activeElement as HTMLElement).isContentEditable)
-      ) {
-        return;
-      }
-      if (event.key === 'Delete' || event.key === 'Backspace') {
-        const selectedNodes = nodes.filter(node => node.selected);
-        const selectedEdges = edges.filter(edge => edge.selected);
-        if (selectedNodes.length > 0) {
-          setNodes(nodes.filter(node => !node.selected));
-          // Remove connected edges
-          setEdges(edges.filter(edge =>
-            !selectedNodes.some(node =>
-              node.id === edge.source || node.id === edge.target
-            )
-          ));
-          saveModelChanges();
-        }
-        if (selectedEdges.length > 0) {
-          setEdges(edges.filter(edge => !edge.selected));
-          saveModelChanges();
-        }
-      }
-    },
-    [nodes, edges, setNodes, setEdges, saveModelChanges]
-  );
-
   // Handle edge changes
   const handleEdgesChange = useCallback(
     (changes: EdgeChange[]) => {
-      onEdgesChange(changes);
-      saveModelChanges();
+      setEdges((currentEdges) => {
+        const nextEdges = applyEdgeChanges(changes, currentEdges);
+        latestEdgesRef.current = nextEdges;
+        saveModelChanges(latestNodesRef.current, nextEdges);
+        return nextEdges;
+      });
     },
-    [onEdgesChange, saveModelChanges]
+    [saveModelChanges, setEdges]
   );
   
   // Handle new connections
@@ -286,10 +274,14 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
         );
       }
       
-      setEdges((eds) => addEdge(newEdge, eds));
-      saveModelChanges();
+      setEdges((eds) => {
+        const nextEdges = addEdge(newEdge, eds);
+        latestEdgesRef.current = nextEdges;
+        saveModelChanges(latestNodesRef.current, nextEdges);
+        return nextEdges;
+      });
     },
-    [edges, setEdges, saveModelChanges]
+    [edges, saveModelChanges, setEdges]
   );
   
   // Handle node label updates
@@ -309,9 +301,13 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
           return node;
         })
       );
-      saveModelChanges();
+      const nextNodes = latestNodesRef.current.map((node) =>
+        node.id === id ? { ...node, data: { ...node.data, label } } : node
+      );
+      latestNodesRef.current = nextNodes;
+      saveModelChanges(nextNodes, latestEdgesRef.current);
     },
-    [setNodes, saveModelChanges]
+    [saveModelChanges, setNodes]
   );
   
   // Handle node type updates
@@ -335,9 +331,22 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
           return node;
         })
       );
-      saveModelChanges();
+      const nextNodes = latestNodesRef.current.map((node) =>
+        node.id === id
+          ? {
+              ...node,
+              data: {
+                ...node.data,
+                type,
+                color: type === 'driver' ? '#00C4FF' : '#A855F7',
+              },
+            }
+          : node
+      );
+      latestNodesRef.current = nextNodes;
+      saveModelChanges(nextNodes, latestEdgesRef.current);
     },
-    [setNodes, saveModelChanges]
+    [saveModelChanges, setNodes]
   );
   
   // Handle edge weight updates
@@ -362,9 +371,13 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
           return edge;
         })
       );
-      saveModelChanges();
+      const nextEdges = latestEdgesRef.current.map((edge) =>
+        edge.id === id ? { ...edge, data: { ...edge.data, weight } } : edge
+      );
+      latestEdgesRef.current = nextEdges;
+      saveModelChanges(latestNodesRef.current, nextEdges);
     },
-    [setEdges, saveModelChanges]
+    [saveModelChanges, setEdges]
   );
   
   // Create a new node
@@ -399,8 +412,12 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
       },
     };
     
-    setNodes((nds) => [...nds, newNode]);
-    saveModelChanges();
+    setNodes((nds) => {
+      const nextNodes = [...nds, newNode];
+      latestNodesRef.current = nextNodes;
+      saveModelChanges(nextNodes, latestEdgesRef.current);
+      return nextNodes;
+    });
   }, [setNodes, onNodeLabelChange, onNodeTypeChange, saveModelChanges, nodes]);
   
   // State to track node being hovered over
@@ -480,7 +497,6 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
         // Close any open edge popups when clicking canvas
         setEdges(eds => eds.map(e => ({ ...e, data: { ...e.data, isVisible: false } })));
       }}
-      onKeyDown={onKeyDown}
       deleteKeyCode={['Backspace', 'Delete']}
       fitView={nodes.length > 1}
       defaultViewport={{ x: 0, y: 0, zoom: 1 }}
