@@ -177,6 +177,125 @@ describe("ownership access control", () => {
       initialValues: {},
       clampedNodes: [],
     });
-    expect(scenarioResponse.status).toBe(404);
+    expect(scenarioResponse.status).toBe(403);
+  });
+
+  it("does not mutate model graph when scenarios are created or updated", async () => {
+    const owner = request.agent(app);
+    await registerUser(owner, "graph-owner", "graph-owner@example.com");
+    await loginUser(owner, "graph-owner");
+
+    const project = await createProject(owner, "Graph Stability Project");
+    const modelResponse = await owner.post("/api/models").send({
+      name: "Stable Model",
+      description: "Model used for scenario regression",
+      projectId: project.id,
+      nodes: [
+        { id: "n1", label: "Node 1", type: "regular", value: 0.5, positionX: 0, positionY: 0, color: "#000000" },
+        { id: "n2", label: "Node 2", type: "regular", value: 0.4, positionX: 100, positionY: 100, color: "#000000" },
+      ],
+      edges: [{ id: "e1", source: "n1", target: "n2", weight: 0.8 }],
+    });
+    expect(modelResponse.status).toBe(201);
+    const modelId = modelResponse.body.id;
+
+    const initialModel = await owner.get(`/api/models/${modelId}`);
+    expect(initialModel.status).toBe(200);
+    expect(initialModel.body.nodes).toHaveLength(2);
+    expect(initialModel.body.edges).toHaveLength(1);
+
+    const scenario = await createScenario(owner, modelId, "Graph Scenario");
+    const patchResponse = await owner.patch(`/api/scenarios/${scenario.id}`).send({
+      description: "Updated scenario metadata",
+    });
+    expect(patchResponse.status).toBe(200);
+
+    const modelAfterScenario = await owner.get(`/api/models/${modelId}`);
+    expect(modelAfterScenario.status).toBe(200);
+    expect(modelAfterScenario.body.nodes).toHaveLength(2);
+    expect(modelAfterScenario.body.edges).toHaveLength(1);
+    expect(modelAfterScenario.body.nodes.map((node: any) => node.id)).toEqual(["n1", "n2"]);
+    expect(modelAfterScenario.body.edges.map((edge: any) => edge.id)).toEqual(["e1"]);
+  });
+
+  it("allows invited editors to edit project models and blocks outsiders", async () => {
+    const owner = request.agent(app);
+    const editor = request.agent(app);
+    const outsider = request.agent(app);
+
+    await registerUser(owner, "owner-edit", "owner-edit@example.com");
+    await registerUser(editor, "editor-edit", "editor-edit@example.com");
+    await registerUser(outsider, "outsider-edit", "outsider-edit@example.com");
+
+    await loginUser(owner, "owner-edit");
+    await loginUser(editor, "editor-edit");
+    await loginUser(outsider, "outsider-edit");
+
+    const project = await createProject(owner, "Collaborative Project");
+    const model = await createModel(owner, project.id, "Shared Model");
+
+    const inviteResponse = await owner.post(`/api/projects/${project.id}/members`).send({
+      username: "editor-edit",
+    });
+    expect(inviteResponse.status).toBe(201);
+
+    const editorCreateModel = await editor.post("/api/models").send({
+      name: "Editor Added Model",
+      description: "Created by editor",
+      projectId: project.id,
+      nodes: [],
+      edges: [],
+    });
+    expect(editorCreateModel.status).toBe(201);
+
+    const editorUpdate = await editor.put(`/api/models/${model.id}`).send({
+      name: "Editor Updated Name",
+    });
+    expect(editorUpdate.status).toBe(200);
+
+    const outsiderCreateModel = await outsider.post("/api/models").send({
+      name: "Should fail",
+      description: "No access",
+      projectId: project.id,
+      nodes: [],
+      edges: [],
+    });
+    expect(outsiderCreateModel.status).toBe(403);
+  });
+
+  it("imports model JSON into owned project", async () => {
+    const owner = request.agent(app);
+    await registerUser(owner, "import-owner", "import-owner@example.com");
+    await loginUser(owner, "import-owner");
+
+    const project = await createProject(owner, "Import Project");
+    const importResponse = await owner.post(`/api/projects/${project.id}/models/import`).send({
+      model: {
+        name: "Imported Climate Model",
+        description: "from json",
+        nodes: [{ id: "a", label: "A", type: "regular", value: 0.2, positionX: 10, positionY: 10, color: "#111111" }],
+        edges: [],
+      },
+    });
+    expect(importResponse.status).toBe(201);
+    expect(importResponse.body.name).toBe("Imported Climate Model");
+  });
+
+  it("serves public read-only model by slug when enabled", async () => {
+    const owner = request.agent(app);
+    await registerUser(owner, "public-owner", "public-owner@example.com");
+    await loginUser(owner, "public-owner");
+
+    const project = await createProject(owner, "Public Project");
+    const model = await createModel(owner, project.id, "Public Model");
+    const enablePublic = await owner.patch(`/api/models/${model.id}/public`).send({
+      isPublic: true,
+      publicSlug: "public-model-check",
+    });
+    expect(enablePublic.status).toBe(200);
+
+    const publicResponse = await request(app).get("/api/public/models/public-model-check");
+    expect(publicResponse.status).toBe(200);
+    expect(publicResponse.body.name).toBe("Public Model");
   });
 });
