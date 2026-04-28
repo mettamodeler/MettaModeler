@@ -563,7 +563,7 @@ function FCMEditorContent({ model, onModelUpdate }: FCMEditorProps) {
 export default function FCMEditor(props: FCMEditorProps) {
   return (
     <ReactFlowProvider>
-      <div style={{ width: '100%', height: '600px' }}>
+      <div style={{ width: '100%', height: '100%' }}>
         <FCMEditorContent {...props} />
       </div>
     </ReactFlowProvider>

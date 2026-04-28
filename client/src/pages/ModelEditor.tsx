@@ -4,12 +4,13 @@ import { useFCM } from '@/hooks/useFCM';
 import AppHeader from '@/components/layout/AppHeader';
 import Sidebar from '@/components/layout/Sidebar';
 import MainWorkspace from '@/components/layout/MainWorkspace';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import ScenarioManager from '@/components/scenario/ScenarioManager';
 import SimulationPanel from '@/components/simulation/SimulationPanel';
 import { FCMModel } from '@/lib/types';
+import MetaModelBuilderContent from '@/components/aggregator/MetaModelBuilderContent';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 
 export default function ModelEditor() {
   const { modelId } = useParams<{ modelId: string }>();
@@ -36,68 +37,80 @@ export default function ModelEditor() {
     { label: "Model Editor", value: "editor" },
     { label: "Scenarios", value: "scenarios" },
     { label: "Analysis", value: "analysis" },
+    { label: "Aggregator", value: "aggregator" },
   ];
   
   return (
     <div className="flex flex-col h-screen min-h-0">
       <AppHeader model={model} />
       
-      <div className="flex flex-1 h-full min-h-0 overflow-hidden">
-        <Sidebar currentProjectId={model?.projectId ? String(model.projectId) : null} />
-        
+      <div className="flex flex-1 min-h-0 overflow-hidden">
         {isLoading ? (
           <div className="flex-1 p-6">
             <Skeleton className="h-8 w-64 mb-4" />
             <Skeleton className="h-[calc(100vh-8rem)] w-full rounded-md" />
           </div>
         ) : model ? (
-          <div className="flex-1 h-full min-h-0 w-full">
-            {/* Single flat tab bar */}
-            <div className="flex bg-transparent px-4 pt-4 tab-bar">
-              {tabs.map(tab => (
-                <button
-                  key={tab.value}
-                  className={`tab px-6 py-2 text-lg font-medium transition
-                    ${activeTab === tab.value ? 'active' : ''}
-                  `}
-                  onClick={() => setActiveTab(tab.value)}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-            <div className="flex-1 flex overflow-hidden min-h-0 border-t-2 border-[hsl(var(--secondary))]">
-              {activeTab === "editor" && (
-                <MainWorkspace key={modelId} model={model} onModelUpdate={handleModelUpdate} />
-              )}
-              {activeTab === "scenarios" && (
-                <div className="flex-1 flex justify-center items-start p-8">
-                  <div className="w-full max-w-5xl mx-auto p-4 max-h-[80vh] overflow-auto">
-                    {/* H1: Main view title */}
-                    <h1 className="text-2xl font-bold mb-4">Scenario Comparison</h1>
-                    {/* H2: Section header */}
-                    <h2 className="text-xl font-semibold mb-3">Compare results between baseline and scenario</h2>
-                    {/* ScenarioManager content will use H3 for subsections, and all cards/tables will use the unified card style */}
-                    <ScenarioManager 
-                      model={model} 
-                      selectedScenarioIds={selectedScenarioIds}
-                      setSelectedScenarioIds={setSelectedScenarioIds}
-                      scenarioTab={scenarioTab}
-                      setScenarioTab={setScenarioTab}
-                    />
-                  </div>
+          <ResizablePanelGroup
+            direction="horizontal"
+            autoSaveId="model-editor-shell-v1"
+            className="h-full w-full"
+          >
+            <ResizablePanel defaultSize={20} minSize={16} maxSize={30}>
+              <Sidebar currentProjectId={model?.projectId ? String(model.projectId) : null} fluidWidth />
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={80}>
+              <div className="flex h-full min-h-0 flex-col overflow-hidden">
+                <div className="flex bg-transparent px-4 pt-4 tab-bar">
+                  {tabs.map(tab => (
+                    <button
+                      key={tab.value}
+                      className={`tab px-6 py-2 text-lg font-medium transition
+                        ${activeTab === tab.value ? 'active' : ''}
+                      `}
+                      onClick={() => setActiveTab(tab.value)}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
                 </div>
-              )}
-              {activeTab === "analysis" && (
-                <div className="flex-1 flex justify-center items-start p-8">
-                  <div className="w-full max-w-5xl mx-auto p-4 max-h-[80vh] overflow-auto">
-                    <h1 className="text-2xl font-bold mb-4">Analysis</h1>
-                    <SimulationPanel model={model} />
-                  </div>
+                <div className="flex-1 flex overflow-hidden min-h-0 border-t-2 border-[hsl(var(--secondary))]">
+                  {activeTab === "editor" && (
+                    <MainWorkspace key={modelId} model={model} onModelUpdate={handleModelUpdate} />
+                  )}
+                  {activeTab === "scenarios" && (
+                    <div className="flex-1 min-h-0 overflow-auto p-8">
+                      <div className="w-full max-w-5xl mx-auto p-4">
+                        <h1 className="text-2xl font-bold mb-4">Scenario Comparison</h1>
+                        <h2 className="text-xl font-semibold mb-3">Compare results between baseline and scenario</h2>
+                        <ScenarioManager 
+                          model={model} 
+                          selectedScenarioIds={selectedScenarioIds}
+                          setSelectedScenarioIds={setSelectedScenarioIds}
+                          scenarioTab={scenarioTab}
+                          setScenarioTab={setScenarioTab}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {activeTab === "analysis" && (
+                    <div className="flex-1 min-h-0 overflow-auto p-8">
+                      <div className="w-full max-w-5xl mx-auto p-4">
+                        <h1 className="text-2xl font-bold mb-4">Analysis</h1>
+                        <SimulationPanel model={model} />
+                      </div>
+                    </div>
+                  )}
+                  {activeTab === "aggregator" && model.projectId && (
+                    <div className="flex-1 min-h-0 overflow-hidden">
+                      <MetaModelBuilderContent projectId={String(model.projectId)} />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <div className="glass p-6 rounded-lg max-w-md">

@@ -29,9 +29,10 @@ import { FolderPlus, FilePlus, GitMerge, Users, X } from 'lucide-react';
 
 interface SidebarProps {
   currentProjectId: string | null;
+  fluidWidth?: boolean;
 }
 
-export default function Sidebar({ currentProjectId }: SidebarProps) {
+export default function Sidebar({ currentProjectId, fluidWidth = false }: SidebarProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   const [location, setLocation] = useLocation();
@@ -65,31 +66,11 @@ export default function Sidebar({ currentProjectId }: SidebarProps) {
     enabled: membersDialogOpen && !!membersProjectId,
   });
   
-  // Find the current model to determine project
-  const currentModel = models.find(model => {
-    if (currentModelId === null) return false;
-    return Number(model.id) === currentModelId;
-  });
-  
   // Get the current project ID from the URL if available
   const urlProjectId = location.startsWith('/project/') ? location.split('/')[2] : null;
   
   // Determine the effective project ID (URL takes precedence over prop)
   const effectiveProjectId = urlProjectId || currentProjectId;
-  console.log('Sidebar: Effective Project ID:', effectiveProjectId);
-  console.log('Sidebar: Current Model:', currentModel);
-
-  // Filter models based on selected project
-  const filteredModels = effectiveProjectId
-    ? models.filter(m => {
-        // Ensure both IDs are strings for comparison
-        const modelProjectId = m.projectId?.toString();
-        const targetProjectId = effectiveProjectId.toString();
-        return modelProjectId === targetProjectId;
-      })
-    : models;
-
-  console.log('Sidebar: Filtered Models:', filteredModels);
 
   // Handle project selection
   const handleProjectClick = (projectId: string) => {
@@ -104,19 +85,10 @@ export default function Sidebar({ currentProjectId }: SidebarProps) {
 
   // Force a re-render when location changes or when currentProjectId changes
   useEffect(() => {
-    console.log('Sidebar: Location changed to:', location);
-    console.log('Sidebar: Current Project ID:', currentProjectId);
     // Refetch data when location changes or project selection changes
     refetchModels();
     refetchProjects();
   }, [location, currentProjectId, refetchModels, refetchProjects]);
-
-  // Force a re-render when projects or models change
-  useEffect(() => {
-    console.log('Sidebar: Data updated');
-    console.log('Projects:', projects);
-    console.log('Models:', models);
-  }, [projects, models]);
 
   // Create a new project
   const handleCreateProject = async () => {
@@ -298,7 +270,12 @@ export default function Sidebar({ currentProjectId }: SidebarProps) {
   const membersProject = projects.find((project) => String(project.id) === membersProjectId);
 
   return (
-    <div className="w-64 flex-shrink-0 flex flex-col border-r border-sidebar-border bg-sidebar-background z-10 light:border-[#E5E7EB] light:bg-[#F9FAFB]">
+    <div
+      className={cn(
+        "flex-shrink-0 flex flex-col border-r border-sidebar-border bg-sidebar-background z-10 light:border-[#E5E7EB] light:bg-[#F9FAFB]",
+        fluidWidth ? "w-full h-full" : "w-64 h-full",
+      )}
+    >
       {/* Projects Section */}
       <div className="p-4">
         <div className="flex justify-between items-center mb-3">
@@ -338,7 +315,7 @@ export default function Sidebar({ currentProjectId }: SidebarProps) {
               <li key={projectId} className="group">
                 <div
                   className={cn(
-                    'flex items-center cursor-pointer px-2 py-1 rounded transition relative',
+                    'flex items-center cursor-pointer px-2 py-1 rounded transition relative gap-1',
                     isActiveProject(project)
                       ? 'text-sidebar-primary font-semibold bg-transparent light:text-[#3B82F6]'
                       : 'text-sidebar-foreground light:text-[#22223B]'
@@ -352,57 +329,43 @@ export default function Sidebar({ currentProjectId }: SidebarProps) {
                     <span className="w-4 h-4 inline-block" />
                   )}
                   <span className="ml-2 flex-1 whitespace-nowrap overflow-visible">{project.name}</span>
-                  <button
-                    className="opacity-0 group-hover:opacity-100 transition-opacity ml-2 text-sidebar-secondary hover:text-white p-1 rounded-md hover:bg-white/10 light:text-[#7E22CE] light:hover:text-[#22223B] light:hover:bg-[#F3E8FF]"
-                    style={{ pointerEvents: 'auto' }}
-                    onClick={e => {
-                      e.stopPropagation();
-                      setNewModelProjectId(projectId);
-                      setIsCreatingModel(true);
-                    }}
-                    title="Create Model in this Project"
-                    tabIndex={-1}
-                  >
-                    <FilePlus className="w-5 h-5" />
-                  </button>
-                  <button
-                    className="opacity-0 group-hover:opacity-100 transition-opacity ml-1 text-sidebar-secondary hover:text-white p-1 rounded-md hover:bg-white/10"
-                    style={{ pointerEvents: 'auto' }}
-                    onClick={e => {
-                      e.stopPropagation();
-                      setLocation(`/project/${projectId}/meta-model`);
-                    }}
-                    title="Open Meta-Model Builder"
-                    tabIndex={-1}
-                  >
-                    <GitMerge className="w-4 h-4" />
-                  </button>
-                  <button
-                    className="opacity-0 group-hover:opacity-100 transition-opacity ml-1 text-sidebar-secondary hover:text-white p-1 rounded-md hover:bg-white/10"
-                    style={{ pointerEvents: 'auto' }}
-                    onClick={e => {
-                      e.stopPropagation();
-                      setMembersProjectId(projectId);
-                      setMembersDialogOpen(true);
-                    }}
-                    title="Manage Project Editors"
-                    tabIndex={-1}
-                  >
-                    <Users className="w-4 h-4" />
-                  </button>
-                  <button
-                    className="opacity-0 group-hover:opacity-100 transition-opacity ml-1 text-red-400 hover:text-white p-1 rounded-md hover:bg-red-500/20 light:text-red-400 light:hover:text-[#22223B] light:hover:bg-[#FECACA]"
-                    style={{ pointerEvents: 'auto' }}
-                    onClick={e => {
-                      e.stopPropagation();
-                      setItemToDelete({ type: 'project', id: Number(project.id) });
-                      setDeleteConfirmOpen(true);
-                    }}
-                    title="Delete Project"
-                    tabIndex={-1}
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        className="ml-1 text-sidebar-secondary hover:text-white p-1 rounded-md hover:bg-white/10"
+                        onClick={(e) => e.stopPropagation()}
+                        title="Project actions"
+                      >
+                        <ChevronDownIcon className="w-4 h-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => {
+                        setNewModelProjectId(projectId);
+                        setIsCreatingModel(true);
+                      }}>
+                        <FilePlus className="mr-2 h-4 w-4" /> Create model
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setLocation(`/project/${projectId}/meta-model`)}>
+                        <GitMerge className="mr-2 h-4 w-4" /> Open aggregator
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        setMembersProjectId(projectId);
+                        setMembersDialogOpen(true);
+                      }}>
+                        <Users className="mr-2 h-4 w-4" /> Manage editors
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-red-500 focus:text-red-500"
+                        onClick={() => {
+                          setItemToDelete({ type: 'project', id: Number(project.id) });
+                          setDeleteConfirmOpen(true);
+                        }}
+                      >
+                        <X className="mr-2 h-4 w-4" /> Delete project
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
                 {/* Models nested under project */}
                 {expandedProjects[projectId] && isExpandable &&

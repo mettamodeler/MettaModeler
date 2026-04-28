@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 interface PublicScenario {
   id: number;
@@ -53,6 +54,12 @@ export default function PublicModelPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-5xl mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-between rounded border border-border/60 bg-card p-3">
+          <div className="text-sm text-muted-foreground">Public link: /public/models/{data.publicSlug}</div>
+          <a href={`/public/models/${data.publicSlug}`} target="_blank" rel="noreferrer">
+            <Button variant="outline" size="sm">Open In New Tab</Button>
+          </a>
+        </div>
         <Card>
           <CardHeader>
             <CardTitle>{data.name}</CardTitle>
@@ -84,12 +91,12 @@ export default function PublicModelPage() {
               <div className="text-sm text-muted-foreground">No scenario outcomes are publicly selected yet.</div>
             ) : (
               topScenarioRows.map((scenario) => (
-                <div key={scenario.id} className="border rounded p-3">
+                <div key={scenario.id} className="border rounded p-3 hover:border-primary/60 transition-colors">
                   <div className="font-medium">{scenario.name}</div>
                   <div className="text-xs text-muted-foreground">{scenario.description || "No description"}</div>
                   <div className="text-xs mt-1">{formatScenarioSummary(scenario)}</div>
                   <details className="mt-2">
-                    <summary className="text-xs cursor-pointer text-muted-foreground">View raw result details</summary>
+                    <summary className="text-xs cursor-pointer text-primary hover:underline">View raw result details</summary>
                     <pre className="mt-2 text-xs overflow-auto bg-muted p-2 rounded max-h-64">
                       {JSON.stringify(scenario.results || {}, null, 2)}
                     </pre>

@@ -1,7 +1,5 @@
-import { ReactNode, useState } from "react";
 import { FCMModel } from "@/lib/types";
 import FCMEditor from "@/components/fcm/FCMEditor";
-import SimulationPanel from "@/components/simulation/SimulationPanel";
 
 interface MainWorkspaceProps {
   model: FCMModel;
@@ -9,8 +7,6 @@ interface MainWorkspaceProps {
 }
 
 export default function MainWorkspace({ model, onModelUpdate }: MainWorkspaceProps) {
-  const [activeTab, setActiveTab] = useState<'editor'|'simulation'>('editor');
-
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden">
       {/* Workspace Header: Only show model name, no sub-menu */}
@@ -20,7 +16,7 @@ export default function MainWorkspace({ model, onModelUpdate }: MainWorkspacePro
         </span>
       </div>
       {/* Main Content Area */}
-      <div className="flex-1 relative overflow-hidden min-h-0 h-full">
+      <div className="flex-1 relative overflow-hidden min-h-0">
         <FCMEditor model={model} onModelUpdate={onModelUpdate} />
       </div>
     </div>

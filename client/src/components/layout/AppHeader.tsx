@@ -414,6 +414,35 @@ export default function AppHeader({ model }: AppHeaderProps) {
     }
   };
 
+  const getPublicUrl = () => {
+    if (!currentPublicSlug) return null;
+    return `${window.location.origin}/public/models/${currentPublicSlug}`;
+  };
+
+  const openPublicPage = () => {
+    const url = getPublicUrl();
+    if (!url) {
+      toast({ variant: "destructive", title: "Set a slug first to open the public page" });
+      return;
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
+    toast({ title: "Opened public page in a new tab" });
+  };
+
+  const copyPublicLink = async () => {
+    const url = getPublicUrl();
+    if (!url) {
+      toast({ variant: "destructive", title: "Set a slug first to copy the public link" });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({ title: "Public link copied" });
+    } catch {
+      toast({ variant: "destructive", title: "Failed to copy link" });
+    }
+  };
+
   return (
     <header className="h-14 glass flex items-center justify-between px-4 z-10">
       <div className="flex items-center">
@@ -644,6 +673,14 @@ export default function AppHeader({ model }: AppHeaderProps) {
             />
             <div className="text-xs text-muted-foreground">
               Final URL: /public/models/{currentPublicSlug || "auto-generated-slug"}
+            </div>
+            <div className="flex gap-2 pt-1">
+              <Button variant="outline" onClick={openPublicPage} disabled={!currentPublicSlug}>
+                Open Public Page
+              </Button>
+              <Button variant="outline" onClick={copyPublicLink} disabled={!currentPublicSlug}>
+                Copy Link
+              </Button>
             </div>
           </div>
           <DialogFooter>
