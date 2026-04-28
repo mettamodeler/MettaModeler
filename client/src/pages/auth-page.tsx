@@ -146,6 +146,14 @@ export default function AuthPage() {
               <CardFooter className="flex flex-col items-center gap-2">
                 <button
                   className="text-sm text-primary underline-offset-4 hover:underline"
+                  type="button"
+                  onClick={() => setLocation("/forgot-username")}
+                >
+                  Forgot username?
+                </button>
+                <button
+                  className="text-sm text-primary underline-offset-4 hover:underline"
+                  type="button"
                   onClick={() => setLocation("/forgot-password")}
                 >
                   Forgot password?

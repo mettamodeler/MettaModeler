@@ -18,6 +18,8 @@ import { setupAuth, isAuthenticated } from "./auth";
 import { exportService, ExportFormat, ExportType } from "./export";
 import { SimulationResult as PythonSimulationResult } from './types';
 import axios, { AxiosError } from "axios";
+import { supportRequestSchema } from "./validation/auth";
+import { sendSupportRequestEmail } from "./services/email";
 import { ProjectSchema, ProjectStorageSchema, type ProjectStorage } from './types/generated/Project.v1.zod';
 import { ModelSchema, ModelStorageSchema, type ModelStorage, CreateModelSchema } from './types/generated/Model.v1.zod';
 import { ScenarioSchema, ScenarioStorageSchema, type ScenarioStorage, CreateScenarioSchema } from './types/generated/Scenario.v1.zod';
@@ -37,6 +39,40 @@ interface SimulationResponse {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
   setupAuth(app);
+
+  app.post("/api/support", async (req: Request, res: Response) => {
+    try {
+      const parsed = supportRequestSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({
+          error: "Validation failed",
+          details: parsed.error.errors.map((e) => ({
+            field: e.path.join("."),
+            message: e.message,
+          })),
+        });
+      }
+
+      try {
+        await sendSupportRequestEmail({
+          ...parsed.data,
+          username: req.user?.username,
+        });
+      } catch (error) {
+        console.error("Failed to send support request:", error);
+        return res.status(503).json({
+          error: "Support channel unavailable",
+          message: "Please try again shortly.",
+        });
+      }
+
+      return res.status(200).json({
+        message: "Thanks for your report. We received it successfully.",
+      });
+    } catch (error) {
+      return res.status(500).json({ message: "Failed to submit support request" });
+    }
+  });
 
   const getUserIdOrRespond = (req: Request, res: Response): number | null => {
     const userId = req.user?.id;

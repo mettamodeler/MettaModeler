@@ -118,4 +118,27 @@ describe("auth security flows", () => {
       expect(response.body?.error).toBe("Validation failed");
     }
   });
+
+  it("supports username recovery with enumeration-safe responses", async () => {
+    const username = `recoveruser_${Date.now()}`;
+    const email = `${username}@example.com`;
+
+    const registerResponse = await request(app).post("/api/register").send({
+      username,
+      email,
+      password: strongPassword,
+      displayName: username,
+    });
+    expect(registerResponse.status).toBe(201);
+
+    const existingResponse = await request(app).post("/api/forgot-username").send({ email });
+    expect(existingResponse.status).toBe(200);
+    expect(existingResponse.body?.message).toMatch(/if an account exists/i);
+
+    const unknownResponse = await request(app).post("/api/forgot-username").send({
+      email: `missing_${Date.now()}@example.com`,
+    });
+    expect(unknownResponse.status).toBe(200);
+    expect(unknownResponse.body?.message).toMatch(/if an account exists/i);
+  });
 });

@@ -8,11 +8,18 @@ import { storage } from "./storage";
 import { User as DrizzleUser } from "@shared/schema";
 import { User as GeneratedUser } from "@shared/generated";
 import { registrationLimiter, loginLimiter } from "./middleware/rateLimit";
-import { registerSchema, loginSchema, passwordResetRequestSchema, passwordResetSchema } from "./validation/auth";
+import {
+  registerSchema,
+  loginSchema,
+  passwordResetRequestSchema,
+  passwordResetSchema,
+  usernameRecoveryRequestSchema,
+} from "./validation/auth";
 import { generateTokenWithExpiration } from "./utils/tokens";
 import {
   sendPasswordResetEmail,
   sendSecurityAlertEmail,
+  sendUsernameReminderEmail,
   sendVerificationEmail,
   validateEmailConfiguration,
 } from "./services/email";
@@ -407,6 +414,44 @@ export function setupAuth(app: Express) {
       }
 
       res.status(200).json({ message: "If an account exists with this email, a password reset link has been sent" });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Recover username by email
+  app.post("/api/forgot-username", async (req, res, next) => {
+    try {
+      const validationResult = usernameRecoveryRequestSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({
+          error: "Validation failed",
+          details: validationResult.error.errors.map(e => ({
+            field: e.path.join('.'),
+            message: e.message
+          }))
+        });
+      }
+
+      const { email } = validationResult.data;
+      const user = await storage.getUserByEmail(email);
+
+      // Enumeration-safe response
+      if (!user) {
+        return res.status(200).json({
+          message: "If an account exists with this email, a username reminder has been sent",
+        });
+      }
+
+      try {
+        await sendUsernameReminderEmail(email, user.username);
+      } catch (emailError) {
+        console.error("Failed to send username reminder email:", emailError);
+      }
+
+      return res.status(200).json({
+        message: "If an account exists with this email, a username reminder has been sent",
+      });
     } catch (err) {
       next(err);
     }

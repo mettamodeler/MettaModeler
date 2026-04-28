@@ -306,6 +306,11 @@ export default function AppHeader({ model }: AppHeaderProps) {
           >
             help
           </button>
+          <Link href="/feedback">
+            <button className="px-3 py-1 text-sm rounded-md hover:bg-white/10 transition">
+              feedback
+            </button>
+          </Link>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="px-3 py-1 text-sm rounded-md hover:bg-white/10 transition">

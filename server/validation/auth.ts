@@ -77,10 +77,27 @@ export const passwordResetRequestSchema = z.object({
 });
 
 /**
+ * Username recovery request schema
+ */
+export const usernameRecoveryRequestSchema = z.object({
+  email: emailSchema,
+});
+
+/**
  * Password reset schema
  */
 export const passwordResetSchema = z.object({
   token: z.string().min(1, "Reset token is required"),
   password: passwordSchema,
+});
+
+/**
+ * Support request schema
+ */
+export const supportRequestSchema = z.object({
+  type: z.enum(["feedback", "bug"]),
+  email: emailSchema,
+  subject: z.string().min(3, "Subject is required").max(200, "Subject is too long").transform((v) => v.trim()),
+  message: z.string().min(10, "Please provide more detail").max(5000, "Message is too long").transform((v) => v.trim()),
 });
 

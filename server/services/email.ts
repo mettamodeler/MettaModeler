@@ -15,6 +15,7 @@ type EmailConfig = {
 };
 
 type SecurityAlertType = "account_locked" | "password_reset_success";
+type SupportRequestType = "feedback" | "bug";
 
 function getEmailConfigs(): EmailConfig[] {
   const provider = (process.env.EMAIL_PROVIDER || "resend").toLowerCase();
@@ -177,6 +178,22 @@ export async function sendPasswordResetEmail(email: string, token: string): Prom
   });
 }
 
+export async function sendUsernameReminderEmail(email: string, username: string): Promise<void> {
+  const frontendUrl = getFrontendUrl();
+
+  await sendEmail({
+    to: email,
+    subject: "Your MettaModeler username",
+    text: `You requested your username. Your MettaModeler username is: ${username}. You can sign in at ${frontendUrl}/auth`,
+    html: `
+      <p>You requested your username.</p>
+      <p>Your MettaModeler username is:</p>
+      <p><strong>${username}</strong></p>
+      <p><a href="${frontendUrl}/auth">Sign in</a></p>
+    `,
+  });
+}
+
 export async function sendSecurityAlertEmail(
   email: string,
   alertType: SecurityAlertType,
@@ -205,6 +222,39 @@ export async function sendSecurityAlertEmail(
       <p>Your password was changed successfully.</p>
       <p>If this was not you, secure your account immediately.</p>
       <p><a href="${frontendUrl}/forgot-password">Reset password</a></p>
+    `,
+  });
+}
+
+export async function sendSupportRequestEmail(params: {
+  type: SupportRequestType;
+  email: string;
+  subject: string;
+  message: string;
+  username?: string;
+}): Promise<void> {
+  const supportEmail = process.env.SUPPORT_EMAIL;
+  if (!supportEmail) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("SUPPORT_EMAIL is not configured");
+    }
+    return;
+  }
+
+  const originLabel = params.username
+    ? `User: ${params.username} (${params.email})`
+    : `Email: ${params.email}`;
+  const ticketSubject = `[${params.type.toUpperCase()}] ${params.subject}`;
+
+  await sendEmail({
+    to: supportEmail,
+    subject: ticketSubject,
+    text: `${originLabel}\n\n${params.message}`,
+    html: `
+      <p><strong>${originLabel}</strong></p>
+      <p><strong>Type:</strong> ${params.type}</p>
+      <p><strong>Subject:</strong> ${params.subject}</p>
+      <p>${params.message.replace(/\n/g, "<br/>")}</p>
     `,
   });
 }
