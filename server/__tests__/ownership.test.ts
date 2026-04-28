@@ -298,4 +298,111 @@ describe("ownership access control", () => {
     expect(publicResponse.status).toBe(200);
     expect(publicResponse.body.name).toBe("Public Model");
   });
+
+  it("returns fuzzy mapping suggestions for near-matching node labels", async () => {
+    const owner = request.agent(app);
+    await registerUser(owner, "fuzzy-owner", "fuzzy-owner@example.com");
+    await loginUser(owner, "fuzzy-owner");
+
+    const project = await createProject(owner, "Fuzzy Mapping Project");
+    const modelA = await owner.post("/api/models").send({
+      name: "Model A",
+      description: "",
+      projectId: project.id,
+      nodes: [{ id: "n1", label: "Water Quality", type: "regular", value: 0.4, positionX: 0, positionY: 0, color: "#000000" }],
+      edges: [],
+    });
+    expect(modelA.status).toBe(201);
+    const modelB = await owner.post("/api/models").send({
+      name: "Model B",
+      description: "",
+      projectId: project.id,
+      nodes: [{ id: "n2", label: "Water Quality Index", type: "regular", value: 0.5, positionX: 0, positionY: 0, color: "#000000" }],
+      edges: [],
+    });
+    expect(modelB.status).toBe(201);
+
+    const suggestions = await owner.get(`/api/projects/${project.id}/mapping-suggestions?modelIds=${modelA.body.id},${modelB.body.id}`);
+    expect(suggestions.status).toBe(200);
+    expect(Array.isArray(suggestions.body.suggestions)).toBe(true);
+    expect(suggestions.body.suggestions.length).toBeGreaterThan(0);
+    const fuzzyOrExact = suggestions.body.suggestions.find((s: any) =>
+      Array.isArray(s.members) &&
+      s.members.some((m: any) => m.modelId === modelA.body.id) &&
+      s.members.some((m: any) => m.modelId === modelB.body.id)
+    );
+    expect(fuzzyOrExact).toBeDefined();
+    expect(typeof fuzzyOrExact.score).toBe("number");
+    expect(["exact", "fuzzy"]).toContain(fuzzyOrExact.matchType);
+  });
+
+  it("supports mean and median edge aggregation with conflict metadata", async () => {
+    const owner = request.agent(app);
+    await registerUser(owner, "agg-owner", "agg-owner@example.com");
+    await loginUser(owner, "agg-owner");
+
+    const project = await createProject(owner, "Aggregation Project");
+    const model1 = await owner.post("/api/models").send({
+      name: "Aggregator 1",
+      description: "",
+      projectId: project.id,
+      nodes: [
+        { id: "a1", label: "Demand", type: "regular", value: 0.3, positionX: 0, positionY: 0, color: "#000000" },
+        { id: "b1", label: "Supply", type: "regular", value: 0.2, positionX: 0, positionY: 0, color: "#000000" },
+      ],
+      edges: [{ id: "e1", source: "a1", target: "b1", weight: 1.0 }],
+    });
+    expect(model1.status).toBe(201);
+
+    const model2 = await owner.post("/api/models").send({
+      name: "Aggregator 2",
+      description: "",
+      projectId: project.id,
+      nodes: [
+        { id: "a2", label: "Demand", type: "regular", value: 0.6, positionX: 0, positionY: 0, color: "#000000" },
+        { id: "b2", label: "Supply", type: "regular", value: 0.4, positionX: 0, positionY: 0, color: "#000000" },
+      ],
+      edges: [{ id: "e2", source: "a2", target: "b2", weight: -1.0 }],
+    });
+    expect(model2.status).toBe(201);
+
+    await owner.post(`/api/projects/${project.id}/mappings`).send({
+      canonicalNodeKey: "demand",
+      canonicalNodeLabel: "Demand",
+      sourceModelId: model1.body.id,
+      sourceNodeId: "a1",
+    });
+    await owner.post(`/api/projects/${project.id}/mappings`).send({
+      canonicalNodeKey: "demand",
+      canonicalNodeLabel: "Demand",
+      sourceModelId: model2.body.id,
+      sourceNodeId: "a2",
+    });
+    await owner.post(`/api/projects/${project.id}/mappings`).send({
+      canonicalNodeKey: "supply",
+      canonicalNodeLabel: "Supply",
+      sourceModelId: model1.body.id,
+      sourceNodeId: "b1",
+    });
+    await owner.post(`/api/projects/${project.id}/mappings`).send({
+      canonicalNodeKey: "supply",
+      canonicalNodeLabel: "Supply",
+      sourceModelId: model2.body.id,
+      sourceNodeId: "b2",
+    });
+
+    const meanPreview = await owner.get(`/api/projects/${project.id}/meta-model?modelIds=${model1.body.id},${model2.body.id}&aggregationMethod=mean`);
+    expect(meanPreview.status).toBe(200);
+    expect(meanPreview.body.aggregationMethod).toBe("mean");
+    expect(Array.isArray(meanPreview.body.edgeMetadata)).toBe(true);
+    expect(meanPreview.body.edgeMetadata[0].hasSignConflict).toBe(true);
+    expect(meanPreview.body.edgeMetadata[0].confidence).toBe("low");
+    expect(meanPreview.body.edgeMetadata[0].aggregatedWeight).toBeCloseTo(0, 5);
+
+    const medianPreview = await owner.get(`/api/projects/${project.id}/meta-model?modelIds=${model1.body.id},${model2.body.id}&aggregationMethod=median`);
+    expect(medianPreview.status).toBe(200);
+    expect(medianPreview.body.aggregationMethod).toBe("median");
+    expect(Array.isArray(medianPreview.body.edgeMetadata)).toBe(true);
+    expect(typeof medianPreview.body.edgeMetadata[0].aggregatedWeight).toBe("number");
+  });
 });

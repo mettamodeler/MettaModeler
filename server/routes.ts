@@ -33,6 +33,88 @@ const buildSlug = (input: string): string =>
     .slice(0, 80) || `model-${Date.now()}`;
 
 const toBooleanString = (value: unknown): "true" | "false" => (value ? "true" : "false");
+const normalizeNodeLabel = (value: string): string =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const parseModelIdsQuery = (queryValue: unknown): number[] => {
+  if (!queryValue || typeof queryValue !== "string") return [];
+  return queryValue
+    .split(",")
+    .map((raw) => Number(raw.trim()))
+    .filter((id) => !Number.isNaN(id));
+};
+
+const synonymMap: Record<string, string> = {
+  quality: "index",
+  index: "index",
+  cost: "expense",
+  expense: "expense",
+  gdp: "economy",
+  economic: "economy",
+  economics: "economy",
+  waterquality: "water_quality",
+  "water quality": "water_quality",
+};
+
+const toBigrams = (value: string): Set<string> => {
+  const normalized = value.replace(/\s+/g, "");
+  const bigrams = new Set<string>();
+  for (let i = 0; i < normalized.length - 1; i++) {
+    bigrams.add(normalized.slice(i, i + 2));
+  }
+  return bigrams;
+};
+
+const tokenizeForSimilarity = (label: string): string[] =>
+  normalizeNodeLabel(label)
+    .split(" ")
+    .map((token) => synonymMap[token] || token)
+    .filter(Boolean);
+
+const jaccardSimilarity = (left: string[], right: string[]): number => {
+  const a = new Set(left);
+  const b = new Set(right);
+  if (a.size === 0 && b.size === 0) return 1;
+  const intersection = Array.from(a).filter((token) => b.has(token)).length;
+  const union = new Set([...Array.from(a), ...Array.from(b)]).size;
+  return union === 0 ? 0 : intersection / union;
+};
+
+const diceSimilarity = (leftLabel: string, rightLabel: string): number => {
+  const left = toBigrams(normalizeNodeLabel(leftLabel));
+  const right = toBigrams(normalizeNodeLabel(rightLabel));
+  if (left.size === 0 && right.size === 0) return 1;
+  const intersection = Array.from(left).filter((token) => right.has(token)).length;
+  return (2 * intersection) / Math.max(1, left.size + right.size);
+};
+
+const fuzzyLabelScore = (leftLabel: string, rightLabel: string): number => {
+  const leftTokens = tokenizeForSimilarity(leftLabel);
+  const rightTokens = tokenizeForSimilarity(rightLabel);
+  const jaccard = jaccardSimilarity(leftTokens, rightTokens);
+  const dice = diceSimilarity(leftLabel, rightLabel);
+  return Math.min(1, Math.max(0, (jaccard * 0.55) + (dice * 0.45)));
+};
+
+type AggregationMethod = "mean" | "median";
+const getAggregationMethod = (value: unknown): AggregationMethod =>
+  value === "median" ? "median" : "mean";
+
+const aggregateWeights = (weights: number[], method: AggregationMethod): number => {
+  if (weights.length === 0) return 0;
+  if (method === "median") {
+    const sorted = [...weights].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 === 0
+      ? (sorted[mid - 1] + sorted[mid]) / 2
+      : sorted[mid];
+  }
+  return weights.reduce((sum, value) => sum + value, 0) / weights.length;
+};
 
 // Python simulation service URL
 // Normalize localhost to 127.0.0.1 to force IPv4 (avoid IPv6 resolution issues)
@@ -519,6 +601,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/projects/:projectId/mapping-suggestions", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (Number.isNaN(projectId)) return res.status(400).json({ message: "Invalid project ID" });
+      const userId = getUserIdOrRespond(req, res);
+      if (!userId) return;
+      const project = await getOwnedProjectOrRespond(projectId, userId, res);
+      if (!project) return;
+
+      const selectedModelIds = parseModelIdsQuery(req.query.modelIds);
+      const allModels = await storage.getModelsByProject(projectId);
+      const modelsInScope = selectedModelIds.length > 0
+        ? allModels.filter((model) => selectedModelIds.includes(model.id))
+        : allModels;
+
+      const grouped = new Map<string, Array<{ modelId: number; modelName: string; nodeId: string; nodeLabel: string }>>();
+      for (const model of modelsInScope) {
+        for (const node of model.nodes || []) {
+          const normalized = normalizeNodeLabel(String(node.label || ""));
+          if (!normalized) continue;
+          const existing = grouped.get(normalized) || [];
+          existing.push({
+            modelId: model.id,
+            modelName: model.name,
+            nodeId: String(node.id),
+            nodeLabel: String(node.label || node.id),
+          });
+          grouped.set(normalized, existing);
+        }
+      }
+
+      const exactSuggestions = Array.from(grouped.entries())
+        .map(([normalizedLabel, members]) => ({
+          canonicalNodeKey: normalizedLabel.replace(/\s+/g, "_"),
+          canonicalNodeLabel: members[0]?.nodeLabel || normalizedLabel,
+          normalizedLabel,
+          members,
+          matchType: "exact" as const,
+          score: 1,
+          confidence: members.length >= 3 ? "high" : members.length === 2 ? "medium" : "low",
+        }))
+        .filter((entry) => entry.members.length >= 2)
+        .sort((a, b) => b.members.length - a.members.length);
+
+      const singletonMembers = Array.from(grouped.entries())
+        .filter(([, members]) => members.length === 1)
+        .map(([, members]) => members[0]);
+      const consumed = new Set<string>();
+      const fuzzySuggestions: Array<{
+        canonicalNodeKey: string;
+        canonicalNodeLabel: string;
+        normalizedLabel: string;
+        members: Array<{ modelId: number; modelName: string; nodeId: string; nodeLabel: string }>;
+        matchType: "fuzzy";
+        score: number;
+        confidence: "high" | "medium" | "low";
+      }> = [];
+
+      for (const pivot of singletonMembers) {
+        const pivotKey = `${pivot.modelId}:${pivot.nodeId}`;
+        if (consumed.has(pivotKey)) continue;
+        const cluster = [pivot];
+        const scores: number[] = [];
+        for (const candidate of singletonMembers) {
+          const candidateKey = `${candidate.modelId}:${candidate.nodeId}`;
+          if (candidateKey === pivotKey || consumed.has(candidateKey)) continue;
+          if (candidate.modelId === pivot.modelId) continue;
+          const score = fuzzyLabelScore(pivot.nodeLabel, candidate.nodeLabel);
+          if (score >= 0.72) {
+            cluster.push(candidate);
+            scores.push(score);
+          }
+        }
+        if (cluster.length >= 2) {
+          cluster.forEach((member) => consumed.add(`${member.modelId}:${member.nodeId}`));
+          const avgScore = scores.length > 0
+            ? scores.reduce((sum, value) => sum + value, 0) / scores.length
+            : 0.72;
+          const confidence: "high" | "medium" | "low" =
+            avgScore >= 0.9 ? "high" : avgScore >= 0.8 ? "medium" : "low";
+          const canonicalNodeLabel = cluster[0].nodeLabel;
+          const canonicalNodeKey = normalizeNodeLabel(canonicalNodeLabel).replace(/\s+/g, "_");
+          fuzzySuggestions.push({
+            canonicalNodeKey,
+            canonicalNodeLabel,
+            normalizedLabel: normalizeNodeLabel(canonicalNodeLabel),
+            members: cluster,
+            matchType: "fuzzy",
+            score: Number(avgScore.toFixed(3)),
+            confidence,
+          });
+        }
+      }
+
+      const suggestions = [...exactSuggestions, ...fuzzySuggestions]
+        .sort((a, b) => b.members.length - a.members.length || b.score - a.score);
+
+      return res.json({
+        modelCount: modelsInScope.length,
+        suggestions,
+      });
+    } catch (error) {
+      return res.status(500).json({ message: "Failed to generate mapping suggestions" });
+    }
+  });
+
   app.post("/api/projects/:projectId/mappings", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const projectId = parseInt(req.params.projectId);
@@ -579,8 +767,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const project = await getOwnedProjectOrRespond(projectId, userId, res);
       if (!project) return;
 
+      const selectedModelIds = parseModelIdsQuery(req.query.modelIds);
+      const aggregationMethod = getAggregationMethod(req.query.aggregationMethod);
       const modelsInProject = await storage.getModelsByProject(projectId);
-      const mappings = await storage.listProjectNodeMappings(projectId);
+      const modelsInScope = selectedModelIds.length > 0
+        ? modelsInProject.filter((model) => selectedModelIds.includes(model.id))
+        : modelsInProject;
+      const mappings = (await storage.listProjectNodeMappings(projectId))
+        .filter((mapping) => selectedModelIds.length === 0 || selectedModelIds.includes(mapping.sourceModelId));
       const canonicalNodes = new Map<string, { id: string; label: string; sourceNodeIds: Set<string> }>();
 
       for (const mapping of mappings) {
@@ -607,7 +801,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
 
       const edgeWeights = new Map<string, { source: string; target: string; weights: number[] }>();
-      for (const model of modelsInProject) {
+      for (const model of modelsInScope) {
         for (const edge of model.edges || []) {
           const sourceMapping = mappings.find((m) => m.sourceModelId === model.id && m.sourceNodeId === edge.source);
           const targetMapping = mappings.find((m) => m.sourceModelId === model.id && m.sourceNodeId === edge.target);
@@ -626,19 +820,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      const edges = Array.from(edgeWeights.values()).map((edge, index) => ({
+      const edgeMetadata = Array.from(edgeWeights.values()).map((edge) => {
+        const positiveCount = edge.weights.filter((weight) => weight > 0).length;
+        const negativeCount = edge.weights.filter((weight) => weight < 0).length;
+        const zeroCount = edge.weights.filter((weight) => weight === 0).length;
+        const hasSignConflict = positiveCount > 0 && negativeCount > 0;
+        return {
+          edgeKey: `${edge.source}->${edge.target}`,
+          source: edge.source,
+          target: edge.target,
+          sourceWeights: edge.weights,
+          sampleSize: edge.weights.length,
+          aggregatedWeight: aggregateWeights(edge.weights, aggregationMethod),
+          positiveCount,
+          negativeCount,
+          zeroCount,
+          hasSignConflict,
+          confidence: hasSignConflict ? "low" : edge.weights.length >= 3 ? "high" : "medium",
+        };
+      });
+
+      const edges = edgeMetadata.map((edge, index) => ({
         id: `meta-edge-${index + 1}`,
         source: edge.source,
         target: edge.target,
-        weight: edge.weights.reduce((sum, value) => sum + value, 0) / edge.weights.length,
+        weight: edge.aggregatedWeight,
       }));
+      const lowConfidenceEdgeCount = edgeMetadata.filter((edge) => edge.confidence === "low").length;
+      const conflictEdgeCount = edgeMetadata.filter((edge) => edge.hasSignConflict).length;
 
       return res.json({
         name: `${project.name} Meta Model`,
         description: "Aggregated meta-model generated from project mappings",
         projectId,
+        aggregationMethod,
         nodes: nodeList,
         edges,
+        edgeMetadata,
+        lowConfidenceEdgeCount,
+        conflictEdgeCount,
       });
     } catch (error) {
       return res.status(500).json({ message: "Failed to generate meta-model" });
@@ -654,9 +874,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const project = await getEditableProjectOrRespond(projectId, userId, res);
       if (!project) return;
 
+      const selectedModelIds = Array.isArray(req.body?.modelIds)
+        ? req.body.modelIds.map((id: unknown) => Number(id)).filter((id: number) => !Number.isNaN(id))
+        : [];
+      const aggregationMethod = getAggregationMethod(req.body?.aggregationMethod);
       const modelsInProject = await storage.getModelsByProject(projectId);
-      const mappings = await storage.listProjectNodeMappings(projectId);
-      if (modelsInProject.length === 0 || mappings.length === 0) {
+      const modelsInScope = selectedModelIds.length > 0
+        ? modelsInProject.filter((model) => selectedModelIds.includes(model.id))
+        : modelsInProject;
+      const mappings = (await storage.listProjectNodeMappings(projectId))
+        .filter((mapping) => selectedModelIds.length === 0 || selectedModelIds.includes(mapping.sourceModelId));
+      if (modelsInScope.length === 0 || mappings.length === 0) {
         return res.status(400).json({ message: "Need at least one model and mapping to persist a meta-model" });
       }
       const canonicalNodes = new Map<string, { id: string; label: string; sourceNodeIds: Set<string> }>();
@@ -682,7 +910,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         color: "#A855F7",
       }));
       const edgeWeights = new Map<string, { source: string; target: string; weights: number[] }>();
-      for (const model of modelsInProject) {
+      for (const model of modelsInScope) {
         for (const edge of model.edges || []) {
           const sourceMapping = mappings.find((m) => m.sourceModelId === model.id && m.sourceNodeId === edge.source);
           const targetMapping = mappings.find((m) => m.sourceModelId === model.id && m.sourceNodeId === edge.target);
@@ -700,11 +928,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
       }
-      const edges = Array.from(edgeWeights.values()).map((edge, index) => ({
+      const edgeMetadata = Array.from(edgeWeights.values()).map((edge) => {
+        const positiveCount = edge.weights.filter((weight) => weight > 0).length;
+        const negativeCount = edge.weights.filter((weight) => weight < 0).length;
+        const zeroCount = edge.weights.filter((weight) => weight === 0).length;
+        const hasSignConflict = positiveCount > 0 && negativeCount > 0;
+        return {
+          edgeKey: `${edge.source}->${edge.target}`,
+          source: edge.source,
+          target: edge.target,
+          sourceWeights: edge.weights,
+          sampleSize: edge.weights.length,
+          aggregatedWeight: aggregateWeights(edge.weights, aggregationMethod),
+          positiveCount,
+          negativeCount,
+          zeroCount,
+          hasSignConflict,
+          confidence: hasSignConflict ? "low" : edge.weights.length >= 3 ? "high" : "medium",
+        };
+      });
+      const edges = edgeMetadata.map((edge, index) => ({
         id: `meta-edge-${index + 1}`,
         source: edge.source,
         target: edge.target,
-        weight: edge.weights.reduce((sum, value) => sum + value, 0) / edge.weights.length,
+        weight: edge.aggregatedWeight,
       }));
       const payload = req.body?.nodes && req.body?.edges
         ? req.body
@@ -713,6 +960,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             description: "Aggregated meta-model generated from project mappings",
             nodes: nodeList,
             edges,
+            aggregationMethod,
+            edgeMetadata,
           };
       const created = await storage.createModel({
         name: payload.name || `${project.name} Meta Model`,

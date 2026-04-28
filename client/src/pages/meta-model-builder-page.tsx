@@ -21,8 +21,42 @@ interface MappingRow {
 interface MetaModelPayload {
   name: string;
   description: string;
+  aggregationMethod?: "mean" | "median";
   nodes: any[];
   edges: any[];
+  edgeMetadata?: Array<{
+    edgeKey: string;
+    aggregatedWeight: number;
+    hasSignConflict: boolean;
+    confidence: "high" | "medium" | "low";
+    positiveCount: number;
+    negativeCount: number;
+    sampleSize: number;
+  }>;
+  lowConfidenceEdgeCount?: number;
+  conflictEdgeCount?: number;
+}
+
+interface MappingSuggestionMember {
+  modelId: number;
+  modelName: string;
+  nodeId: string;
+  nodeLabel: string;
+}
+
+interface MappingSuggestion {
+  canonicalNodeKey: string;
+  canonicalNodeLabel: string;
+  normalizedLabel: string;
+  matchType: "exact" | "fuzzy";
+  score: number;
+  confidence: "high" | "medium" | "low";
+  members: MappingSuggestionMember[];
+}
+
+interface MappingSuggestionsPayload {
+  modelCount: number;
+  suggestions: MappingSuggestion[];
 }
 
 export default function MetaModelBuilderPage() {
@@ -34,6 +68,10 @@ export default function MetaModelBuilderPage() {
   const [sourceModelId, setSourceModelId] = useState("");
   const [sourceNodeId, setSourceNodeId] = useState("");
   const [preview, setPreview] = useState<MetaModelPayload | null>(null);
+  const [selectedModelIds, setSelectedModelIds] = useState<number[]>([]);
+  const [aggregationMethod, setAggregationMethod] = useState<"mean" | "median">("mean");
+  const [confidenceFilter, setConfidenceFilter] = useState<"all" | "high" | "medium" | "low">("all");
+  const [matchTypeFilter, setMatchTypeFilter] = useState<"all" | "exact" | "fuzzy">("all");
 
   const { data: mappings = [], refetch } = useQuery<MappingRow[]>({
     queryKey: [`/api/projects/${projectId}/mappings`],
@@ -41,6 +79,14 @@ export default function MetaModelBuilderPage() {
   });
   const { data: models = [] } = useQuery<FCMModel[]>({
     queryKey: ['/api/models'],
+  });
+  const selectedModelIdsQuery = useMemo(
+    () => selectedModelIds.join(","),
+    [selectedModelIds]
+  );
+  const { data: suggestionsPayload, refetch: refetchSuggestions, isFetching: suggestionsLoading } = useQuery<MappingSuggestionsPayload>({
+    queryKey: [`/api/projects/${projectId}/mapping-suggestions?modelIds=${selectedModelIdsQuery}`],
+    enabled: !!projectId && selectedModelIds.length > 0,
   });
 
   const groupedMappings = useMemo(() => {
@@ -57,6 +103,57 @@ export default function MetaModelBuilderPage() {
     () => models.filter((model) => String(model.projectId) === projectId),
     [models, projectId]
   );
+  const visibleSuggestions = useMemo(() => {
+    const suggestions = suggestionsPayload?.suggestions || [];
+    return suggestions.filter((suggestion) => {
+      const confidenceOk = confidenceFilter === "all" || suggestion.confidence === confidenceFilter;
+      const matchTypeOk = matchTypeFilter === "all" || suggestion.matchType === matchTypeFilter;
+      return confidenceOk && matchTypeOk;
+    });
+  }, [confidenceFilter, matchTypeFilter, suggestionsPayload?.suggestions]);
+  const toggleModelSelection = (modelId: number) => {
+    setSelectedModelIds((prev) =>
+      prev.includes(modelId) ? prev.filter((id) => id !== modelId) : [...prev, modelId]
+    );
+  };
+
+  const applySuggestion = async (suggestion: MappingSuggestion) => {
+    if (!projectId) return;
+    try {
+      for (const member of suggestion.members) {
+        await apiRequest("POST", `/api/projects/${projectId}/mappings`, {
+          canonicalNodeKey: suggestion.canonicalNodeKey,
+          canonicalNodeLabel: suggestion.canonicalNodeLabel,
+          sourceModelId: member.modelId,
+          sourceNodeId: member.nodeId,
+        });
+      }
+      await refetch();
+      toast({ title: `Applied mapping for ${suggestion.canonicalNodeLabel}` });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Failed to apply suggestion" });
+    }
+  };
+
+  const applyAllSuggestions = async () => {
+    if (!suggestionsPayload?.suggestions?.length) return;
+    try {
+      for (const suggestion of suggestionsPayload.suggestions) {
+        for (const member of suggestion.members) {
+          await apiRequest("POST", `/api/projects/${projectId}/mappings`, {
+            canonicalNodeKey: suggestion.canonicalNodeKey,
+            canonicalNodeLabel: suggestion.canonicalNodeLabel,
+            sourceModelId: member.modelId,
+            sourceNodeId: member.nodeId,
+          });
+        }
+      }
+      await refetch();
+      toast({ title: "Applied suggested mappings" });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Failed to apply all suggestions" });
+    }
+  };
 
   const addMapping = async () => {
     if (!projectId || !canonicalNodeKey || !canonicalNodeLabel || !sourceModelId || !sourceNodeId) return;
@@ -80,7 +177,11 @@ export default function MetaModelBuilderPage() {
   const loadPreview = async () => {
     if (!projectId) return;
     try {
-      const payload = await apiRequest<MetaModelPayload>("GET", `/api/projects/${projectId}/meta-model`);
+      const queryParams = new URLSearchParams();
+      if (selectedModelIds.length > 0) queryParams.set("modelIds", selectedModelIds.join(","));
+      queryParams.set("aggregationMethod", aggregationMethod);
+      const query = queryParams.toString() ? `?${queryParams.toString()}` : "";
+      const payload = await apiRequest<MetaModelPayload>("GET", `/api/projects/${projectId}/meta-model${query}`);
       setPreview(payload);
     } catch (error) {
       toast({ variant: "destructive", title: "Failed to generate meta-model preview" });
@@ -90,8 +191,16 @@ export default function MetaModelBuilderPage() {
   const saveMetaModel = async () => {
     if (!projectId) return;
     try {
-      const payload = preview || (await apiRequest<MetaModelPayload>("GET", `/api/projects/${projectId}/meta-model`));
-      await apiRequest("POST", `/api/projects/${projectId}/meta-models`, payload);
+      const queryParams = new URLSearchParams();
+      if (selectedModelIds.length > 0) queryParams.set("modelIds", selectedModelIds.join(","));
+      queryParams.set("aggregationMethod", aggregationMethod);
+      const fetchQuery = queryParams.toString() ? `?${queryParams.toString()}` : "";
+      const payload = preview || (await apiRequest<MetaModelPayload>("GET", `/api/projects/${projectId}/meta-model${fetchQuery}`));
+      await apiRequest("POST", `/api/projects/${projectId}/meta-models`, {
+        ...payload,
+        modelIds: selectedModelIds,
+        aggregationMethod,
+      });
       toast({ title: "Meta-model saved" });
     } catch (error) {
       toast({ variant: "destructive", title: "Failed to save meta-model" });
@@ -104,6 +213,130 @@ export default function MetaModelBuilderPage() {
       <div className="flex flex-1 overflow-hidden">
         <Sidebar currentProjectId={projectId || null} />
         <div className="flex-1 overflow-auto p-6 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Model Selection</CardTitle>
+              <CardDescription>Select which models to aggregate and map.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {modelsInProject.length === 0 ? (
+                <div className="text-sm text-muted-foreground">No models found in this project.</div>
+              ) : (
+                modelsInProject.map((model) => (
+                  <label key={model.id} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={selectedModelIds.includes(Number(model.id))}
+                      onChange={() => toggleModelSelection(Number(model.id))}
+                    />
+                    <span>{model.name}</span>
+                    <span className="text-muted-foreground">#{model.id}</span>
+                  </label>
+                ))
+              )}
+              <div className="pt-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => refetchSuggestions()}
+                  disabled={selectedModelIds.length === 0}
+                >
+                  {suggestionsLoading ? "Finding matches..." : "Find Suggested Matches"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Aggregation Method</CardTitle>
+              <CardDescription>Choose how matched edge weights are aggregated across selected models.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex items-center gap-3">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="aggregation-method"
+                  checked={aggregationMethod === "mean"}
+                  onChange={() => setAggregationMethod("mean")}
+                />
+                Mean
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="aggregation-method"
+                  checked={aggregationMethod === "median"}
+                  onChange={() => setAggregationMethod("median")}
+                />
+                Median
+              </label>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Suggested Matches</CardTitle>
+              <CardDescription>Auto recommendations based on similar normalized node labels across selected models.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {!suggestionsPayload || suggestionsPayload.suggestions.length === 0 ? (
+                <div className="text-sm text-muted-foreground">
+                  No suggestions yet. Select at least two models and run suggestions.
+                </div>
+              ) : (
+                <>
+                  <div className="flex gap-2">
+                    <select
+                      value={confidenceFilter}
+                      onChange={(e) => setConfidenceFilter(e.target.value as "all" | "high" | "medium" | "low")}
+                      className="p-2 rounded bg-white/10 border border-white/10 text-sm"
+                    >
+                      <option value="all">All confidence</option>
+                      <option value="high">High confidence</option>
+                      <option value="medium">Medium confidence</option>
+                      <option value="low">Low confidence</option>
+                    </select>
+                    <select
+                      value={matchTypeFilter}
+                      onChange={(e) => setMatchTypeFilter(e.target.value as "all" | "exact" | "fuzzy")}
+                      className="p-2 rounded bg-white/10 border border-white/10 text-sm"
+                    >
+                      <option value="all">All match types</option>
+                      <option value="exact">Exact only</option>
+                      <option value="fuzzy">Fuzzy only</option>
+                    </select>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div className="text-xs text-muted-foreground">
+                      {visibleSuggestions.length} visible suggestions across {suggestionsPayload.modelCount} selected models
+                    </div>
+                    <Button variant="outline" onClick={applyAllSuggestions}>
+                      Apply All
+                    </Button>
+                  </div>
+                  {visibleSuggestions.map((suggestion) => (
+                    <div key={suggestion.normalizedLabel} className="border rounded p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="font-medium">
+                          {suggestion.canonicalNodeLabel} ({suggestion.canonicalNodeKey})
+                        </div>
+                        <Button size="sm" onClick={() => applySuggestion(suggestion)}>
+                          Apply
+                        </Button>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {suggestion.matchType.toUpperCase()} · Score: {suggestion.score.toFixed(3)} · Confidence: {suggestion.confidence} · Matches: {suggestion.members.length}
+                      </div>
+                      <div className="text-xs mt-1">
+                        {suggestion.members.map((member) => `${member.modelName}:${member.nodeLabel}`).join(", ")}
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Project Mapping Table</CardTitle>
@@ -161,8 +394,18 @@ export default function MetaModelBuilderPage() {
               {preview ? (
                 <div className="space-y-2">
                   <div className="text-sm text-muted-foreground">
-                    {preview.nodes.length} canonical nodes, {preview.edges.length} aggregated edges
+                    {preview.nodes.length} canonical nodes, {preview.edges.length} aggregated edges · {preview.conflictEdgeCount || 0} conflict edges · {preview.lowConfidenceEdgeCount || 0} low-confidence edges
                   </div>
+                  {preview.edgeMetadata && preview.edgeMetadata.length > 0 && (
+                    <div className="text-xs bg-muted p-3 rounded max-h-48 overflow-auto space-y-1">
+                      {preview.edgeMetadata.slice(0, 8).map((edge) => (
+                        <div key={edge.edgeKey}>
+                          {edge.edgeKey}: {edge.aggregatedWeight.toFixed(3)} ({edge.confidence}{edge.hasSignConflict ? ", conflict" : ""})
+                        </div>
+                      ))}
+                      {preview.edgeMetadata.length > 8 && <div>... {preview.edgeMetadata.length - 8} more edges</div>}
+                    </div>
+                  )}
                   <pre className="text-xs bg-muted p-3 rounded overflow-auto max-h-80">{JSON.stringify(preview, null, 2)}</pre>
                 </div>
               ) : (
