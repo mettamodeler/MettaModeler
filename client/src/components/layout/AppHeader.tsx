@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { Link, useLocation } from "wouter";
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 import {
   Dialog, 
   DialogContent, 
@@ -20,24 +21,40 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { FCMModel } from "@shared/schema";
+import { Project } from "@/lib/types";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { UserProfile } from "@/components/auth/user-profile";
 import { useTheme } from "@/components/ui/theme-provider";
 import { Switch } from "@/components/ui/switch";
+import { apiRequest } from "@/lib/queryClient";
 
 interface AppHeaderProps {
   model?: FCMModel;
 }
 
 export default function AppHeader({ model }: AppHeaderProps) {
-  const [location, setLocation] = useLocation();
+  const modelPublicSettings = model as (FCMModel & { isPublic?: string | null; publicSlug?: string | null }) | undefined;
   const [helpDialogOpen, setHelpDialogOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [publicDialogOpen, setPublicDialogOpen] = useState(false);
+  const [importProjectId, setImportProjectId] = useState("");
+  const [importNameOverride, setImportNameOverride] = useState("");
+  const [importText, setImportText] = useState("");
+  const [publicSlug, setPublicSlug] = useState("");
+  const [isModelPublic, setIsModelPublic] = useState(modelPublicSettings?.isPublic === "true");
   const { toast } = useToast();
+  const { data: projects = [] } = useQuery<Project[]>({
+    queryKey: ['/api/projects'],
+  });
 
-  // For backward compatibility with existing code
-  const handleExport = () => {
-    exportJSON();
-  };
+  const currentPublicSlug = publicSlug || modelPublicSettings?.publicSlug || "";
+
+  useEffect(() => {
+    setIsModelPublic(modelPublicSettings?.isPublic === "true");
+    setPublicSlug(modelPublicSettings?.publicSlug || "");
+  }, [modelPublicSettings?.isPublic, modelPublicSettings?.publicSlug]);
 
   const exportJSON = async () => {
     if (!model) {
@@ -289,6 +306,55 @@ export default function AppHeader({ model }: AppHeaderProps) {
     }
   };
 
+  const importModelFromJson = async () => {
+    if (!importProjectId || !importText.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Import details required",
+        description: "Select a project and provide model JSON.",
+      });
+      return;
+    }
+    try {
+      const parsed = JSON.parse(importText);
+      if (importNameOverride.trim()) {
+        parsed.name = importNameOverride.trim();
+      }
+      await apiRequest("POST", `/api/projects/${importProjectId}/models/import`, { model: parsed });
+      setImportDialogOpen(false);
+      setImportText("");
+      setImportNameOverride("");
+      toast({ title: "Model imported" });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Import failed",
+        description: error instanceof Error ? error.message : "Invalid JSON payload",
+      });
+    }
+  };
+
+  const savePublicSettings = async () => {
+    if (!model) return;
+    try {
+      const payload = await apiRequest<any>("PATCH", `/api/models/${model.id}/public`, {
+        isPublic: isModelPublic,
+        publicSlug: publicSlug.trim() || undefined,
+      });
+      setPublicSlug(payload.publicSlug || "");
+      setIsModelPublic(payload.isPublic === "true");
+      toast({
+        title: payload.isPublic === "true" ? "Public page enabled" : "Public page disabled",
+        description: payload.isPublic === "true" ? `Share link: /public/models/${payload.publicSlug}` : "Public page is no longer visible.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Failed to update public settings"
+      });
+    }
+  };
+
   return (
     <header className="h-14 glass flex items-center justify-between px-4 z-10">
       <div className="flex items-center">
@@ -324,6 +390,15 @@ export default function AppHeader({ model }: AppHeaderProps) {
               <DropdownMenuItem onClick={exportJupyter}>
                 Jupyter Notebook
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setImportDialogOpen(true)}>
+                Import Model JSON
+              </DropdownMenuItem>
+              {model && (
+                <DropdownMenuItem onClick={() => setPublicDialogOpen(true)}>
+                  Configure Public Page
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </nav>
@@ -429,6 +504,84 @@ export default function AppHeader({ model }: AppHeaderProps) {
             <Button variant="outline" onClick={() => setHelpDialogOpen(false)}>
               Close
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent className="dark-glass border border-white/10">
+          <DialogHeader>
+            <DialogTitle>Import Model From JSON</DialogTitle>
+            <DialogDescription>Paste model JSON and choose a target project.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1">
+              <Label htmlFor="import-project">Target Project</Label>
+              <select
+                id="import-project"
+                value={importProjectId}
+                onChange={(e) => setImportProjectId(e.target.value)}
+                className="w-full p-2 rounded bg-white/10 border border-white/10"
+              >
+                <option value="">Select a project</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="import-name">Optional name override</Label>
+              <Input
+                id="import-name"
+                value={importNameOverride}
+                onChange={(e) => setImportNameOverride(e.target.value)}
+                placeholder="Imported model name"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="import-json">Model JSON</Label>
+              <textarea
+                id="import-json"
+                value={importText}
+                onChange={(e) => setImportText(e.target.value)}
+                className="w-full min-h-48 p-2 rounded bg-white/10 border border-white/10 font-mono text-xs"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setImportDialogOpen(false)}>Cancel</Button>
+            <Button onClick={importModelFromJson}>Import</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={publicDialogOpen} onOpenChange={setPublicDialogOpen}>
+        <DialogContent className="dark-glass border border-white/10">
+          <DialogHeader>
+            <DialogTitle>Public Model Page</DialogTitle>
+            <DialogDescription>Create or update a public, read-only page for this model.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <div className="flex items-center justify-between rounded border border-white/10 p-2">
+              <div className="text-sm">Public page enabled</div>
+              <Switch checked={isModelPublic} onCheckedChange={setIsModelPublic} />
+            </div>
+            <Label htmlFor="public-slug">Public slug</Label>
+            <Input
+              id="public-slug"
+              value={publicSlug}
+              onChange={(e) => setPublicSlug(e.target.value)}
+              placeholder="e.g. climate-water-metta"
+            />
+            <div className="text-xs text-muted-foreground">
+              Final URL: /public/models/{currentPublicSlug || "auto-generated-slug"}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPublicDialogOpen(false)}>Close</Button>
+            <Button onClick={savePublicSettings}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
