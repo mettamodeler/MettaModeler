@@ -1,58 +1,122 @@
 import { 
-  User, InsertUser, 
-  Project, InsertProject, 
-  Model, InsertModel, 
-  Scenario, InsertScenario,
+  User, InsertUser, DrizzleUser,
+  Project, InsertProject, DrizzleProject,
+  Model, InsertModel, DrizzleModel,
+  Scenario, InsertScenario, DrizzleScenario,
+  users,
+  projects,
+  models,
+  scenarios,
+  projectMembers,
+  projectNodeMappings
+} from "@shared/schema";
+import {
   FCMNode,
   FCMEdge,
   SimulationResult,
   SimulationParameters,
-  users,
-  projects,
-  models,
-  scenarios
-} from "@shared/schema";
+  SimulationNode
+} from "@shared/generated";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { eq, and } from 'drizzle-orm';
+import { eq, and, or } from 'drizzle-orm';
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import createMemoryStore from "memorystore";
 import pg from "pg";
-import { ModelStorageSchema, ModelStorage } from './types/Model.v1.zod';
-import { ScenarioStorageSchema, type ScenarioStorage } from './types/Scenario.v1.zod';
 import { db } from "./db";
+import { toCamelScenario } from './utils/caseMapping';
 const { Pool } = pg;
+
+export interface CreateModelData {
+  name: string;
+  description?: string | null;
+  projectId?: number | null;
+  nodes: FCMNode[];
+  edges: FCMEdge[];
+}
+
+export interface CreateScenarioData {
+  name: string;
+  modelId: number;
+  description?: string | null;
+  nodes: SimulationNode[];
+  initialValues: Record<string, number>;
+  results?: SimulationResult;
+  simulationParams?: SimulationParameters;
+  clampedNodes?: string[];
+}
+
+export interface ProjectMemberRecord {
+  id: number;
+  projectId: number;
+  userId: number;
+  role: string;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
+export interface ProjectNodeMappingRecord {
+  id: number;
+  projectId: number;
+  canonicalNodeKey: string;
+  canonicalNodeLabel: string;
+  sourceModelId: number;
+  sourceNodeId: string;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
 
 export interface IStorage {
   // Session storage
   sessionStore: any; // Using any to avoid complex typings with express-session
 
   // User operations
-  getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  // Note: User type is now from generated types, but database returns DrizzleUser
+  // They're compatible, but we use DrizzleUser for internal type safety
+  getUser(id: number): Promise<DrizzleUser | undefined>;
+  getUserByUsername(username: string): Promise<DrizzleUser | undefined>;
+  getUserByEmail(email: string): Promise<DrizzleUser | undefined>;
+  getUserByVerificationToken(token: string): Promise<DrizzleUser | undefined>;
+  getUserByPasswordResetToken(token: string): Promise<DrizzleUser | undefined>;
+  createUser(user: InsertUser): Promise<DrizzleUser>;
+  updateUser(id: number, updates: Partial<DrizzleUser>): Promise<DrizzleUser | undefined>;
   
   // Project operations
-  getProjects(): Promise<Project[]>;
-  getProject(id: number): Promise<Project | undefined>;
-  createProject(project: InsertProject): Promise<Project>;
-  updateProject(id: number, project: Partial<Project>): Promise<Project | undefined>;
+  // Note: Project type is now from generated types, but database returns DrizzleProject
+  getProjects(): Promise<DrizzleProject[]>;
+  getProjectsByUser(userId: number): Promise<DrizzleProject[]>;
+  getProject(id: number): Promise<DrizzleProject | undefined>;
+  createProject(project: InsertProject): Promise<DrizzleProject>;
+  updateProject(id: number, project: Partial<DrizzleProject>): Promise<DrizzleProject | undefined>;
   deleteProject(id: number): Promise<boolean>;
+  hasProjectAccess(projectId: number, userId: number): Promise<boolean>;
+  hasProjectRole(projectId: number, userId: number, roles: string[]): Promise<boolean>;
+  listProjectMembers(projectId: number): Promise<ProjectMemberRecord[]>;
+  addProjectMember(projectId: number, userId: number, role: string): Promise<ProjectMemberRecord>;
+  removeProjectMember(projectId: number, userId: number): Promise<boolean>;
+  upsertProjectNodeMapping(data: Omit<ProjectNodeMappingRecord, "id" | "createdAt" | "updatedAt">): Promise<ProjectNodeMappingRecord>;
+  listProjectNodeMappings(projectId: number): Promise<ProjectNodeMappingRecord[]>;
+  deleteProjectNodeMapping(id: number): Promise<boolean>;
   
   // Model operations
-  getModels(): Promise<Model[]>;
-  getModelsByProject(projectId: number): Promise<Model[]>;
-  getModel(id: number): Promise<Model | undefined>;
-  createModel(model: InsertModel): Promise<Model>;
-  updateModel(id: number | string, updates: Partial<Model>): Promise<Model | undefined>;
+  // Note: Model type is now from generated types, but database returns DrizzleModel
+  getModels(): Promise<DrizzleModel[]>;
+  getModelsByUser(userId: number): Promise<DrizzleModel[]>;
+  getModelsByProject(projectId: number): Promise<DrizzleModel[]>;
+  getModel(id: number): Promise<DrizzleModel | null>;
+  createModel(data: CreateModelData): Promise<DrizzleModel>;
+  updateModel(id: number, data: Partial<DrizzleModel>): Promise<DrizzleModel>;
   deleteModel(id: number): Promise<boolean>;
   
   // Scenario operations
-  getScenarios(): Promise<Scenario[]>;
-  getScenariosByModel(modelId: number): Promise<Scenario[]>;
-  getScenario(id: number): Promise<Scenario | undefined>;
-  createScenario(scenario: ScenarioStorage): Promise<Scenario>;
+  // Note: Scenario type is now from generated types, but database returns DrizzleScenario
+  getScenarios(): Promise<DrizzleScenario[]>;
+  getScenariosByUser(userId: number): Promise<DrizzleScenario[]>;
+  getScenariosByModel(modelId: number): Promise<DrizzleScenario[]>;
+  getScenario(id: number): Promise<DrizzleScenario | null>;
+  createScenario(data: CreateScenarioData): Promise<DrizzleScenario>;
+  updateScenario(id: number, data: Partial<DrizzleScenario>): Promise<DrizzleScenario>;
   deleteScenario(id: number): Promise<boolean>;
 }
 
@@ -60,14 +124,15 @@ export class PostgresStorage implements IStorage {
   private db: ReturnType<typeof drizzle>;
   sessionStore: any;
   
-  constructor() {
-    // Create a PostgreSQL connection
-    const queryClient = postgres(process.env.DATABASE_URL || "");
-    this.db = drizzle(queryClient);
+  constructor(db: ReturnType<typeof drizzle>) {
+    this.db = db;
     
     // Create PostgreSQL session store
     const PostgresSessionStore = connectPg(session);
-    const pgPool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const pgPool = new Pool({ 
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+    });
     this.sessionStore = new PostgresSessionStore({ 
       pool: pgPool, 
       tableName: 'user_sessions', 
@@ -76,37 +141,74 @@ export class PostgresStorage implements IStorage {
   }
 
   // USER OPERATIONS
-  async getUser(id: number): Promise<User | undefined> {
+  async getUser(id: number): Promise<DrizzleUser | undefined> {
     const result = await this.db.select().from(users).where(eq(users.id, id));
     return result[0];
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
+  async getUserByUsername(username: string): Promise<DrizzleUser | undefined> {
     const result = await this.db.select().from(users).where(eq(users.username, username));
     return result[0];
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async getUserByEmail(email: string): Promise<DrizzleUser | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.email, email));
+    return result[0];
+  }
+
+  async getUserByVerificationToken(token: string): Promise<DrizzleUser | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.emailVerificationToken, token));
+    return result[0];
+  }
+
+  async getUserByPasswordResetToken(token: string): Promise<DrizzleUser | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.passwordResetToken, token));
+    return result[0];
+  }
+
+  async createUser(insertUser: InsertUser): Promise<DrizzleUser> {
     const result = await this.db.insert(users).values(insertUser).returning();
+    return result[0];
+  }
+
+  async updateUser(id: number, updates: Partial<DrizzleUser>): Promise<DrizzleUser | undefined> {
+    const result = await this.db.update(users)
+      .set({ ...updates })
+      .where(eq(users.id, id))
+      .returning();
     return result[0];
   }
   
   // PROJECT OPERATIONS
-  async getProjects(): Promise<Project[]> {
+  async getProjects(): Promise<DrizzleProject[]> {
     return await this.db.select().from(projects);
   }
+
+  async getProjectsByUser(userId: number): Promise<DrizzleProject[]> {
+    const ownedProjects = await this.db.select().from(projects).where(eq(projects.userId, userId));
+    const memberProjectLinks = await this.db
+      .select({ project: projects })
+      .from(projectMembers)
+      .innerJoin(projects, eq(projectMembers.projectId, projects.id))
+      .where(eq(projectMembers.userId, userId));
+
+    const deduped = new Map<number, DrizzleProject>();
+    for (const project of ownedProjects) deduped.set(project.id, project);
+    for (const row of memberProjectLinks) deduped.set(row.project.id, row.project);
+    return Array.from(deduped.values());
+  }
   
-  async getProject(id: number): Promise<Project | undefined> {
+  async getProject(id: number): Promise<DrizzleProject | undefined> {
     const result = await this.db.select().from(projects).where(eq(projects.id, id));
     return result[0];
   }
   
-  async createProject(insertProject: InsertProject): Promise<Project> {
+  async createProject(insertProject: InsertProject): Promise<DrizzleProject> {
     const result = await this.db.insert(projects).values(insertProject).returning();
     return result[0];
   }
   
-  async updateProject(id: number, updates: Partial<Project>): Promise<Project | undefined> {
+  async updateProject(id: number, updates: Partial<DrizzleProject>): Promise<DrizzleProject | undefined> {
     const result = await this.db.update(projects)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(projects.id, id))
@@ -126,6 +228,8 @@ export class PostgresStorage implements IStorage {
       
       // Then delete all associated models
       await this.db.delete(models).where(eq(models.projectId, id));
+      await this.db.delete(projectMembers).where(eq(projectMembers.projectId, id));
+      await this.db.delete(projectNodeMappings).where(eq(projectNodeMappings.projectId, id));
       
       // Finally, delete the project itself
       const result = await this.db.delete(projects).where(eq(projects.id, id)).returning({ id: projects.id });
@@ -137,176 +241,272 @@ export class PostgresStorage implements IStorage {
   }
   
   // MODEL OPERATIONS
-  async getModels(): Promise<Model[]> {
-    return await this.db.select().from(models);
+  async getModels(): Promise<DrizzleModel[]> {
+    const results = await this.db.select().from(models);
+    return results;
+  }
+
+  async getModelsByUser(userId: number): Promise<DrizzleModel[]> {
+    const results = await this.db
+      .select({ model: models })
+      .from(models)
+      .innerJoin(projects, eq(models.projectId, projects.id))
+      .leftJoin(projectMembers, eq(projectMembers.projectId, projects.id))
+      .where(or(eq(projects.userId, userId), eq(projectMembers.userId, userId)));
+    return results.map(result => result.model);
   }
   
-  async getModelsByProject(projectId: number): Promise<Model[]> {
-    return await this.db.select().from(models).where(eq(models.projectId, projectId));
+  async getModelsByProject(projectId: number): Promise<DrizzleModel[]> {
+    const results = await this.db.select().from(models).where(eq(models.projectId, projectId));
+    return results;
   }
   
-  async getModel(id: number): Promise<Model | undefined> {
+  async getModel(id: number): Promise<DrizzleModel | null> {
     const result = await this.db.select().from(models).where(eq(models.id, id));
-    return result[0];
+    return result[0] || null;
   }
   
-  async createModel(insertModel: InsertModel): Promise<Model> {
-    // Ensure nodes and edges are arrays of FCMNode/FCMEdge
-    const typedNodes: FCMNode[] = Array.isArray(insertModel.nodes) ? insertModel.nodes as FCMNode[] : [];
-    const typedEdges: FCMEdge[] = Array.isArray(insertModel.edges) ? insertModel.edges as FCMEdge[] : [];
-    const dbResult = await this.db.insert(models).values({
-      ...insertModel,
-      nodes: typedNodes,
-      edges: typedEdges
-    }).returning();
-    return dbResult[0];
-  }
-  
-  async updateModel(id: number | string, updates: Partial<Model>): Promise<Model | undefined> {
-    // Convert string ID to number if needed
-    const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
-    if (isNaN(numericId)) {
-      throw new Error('Invalid model ID');
-    }
-
-    // Convert API model to storage model
-    const storageUpdates: Partial<ModelStorage> = {
+  async createModel(data: CreateModelData): Promise<DrizzleModel> {
+    const [model] = await this.db.insert(models).values({
+      name: data.name,
+      description: data.description,
+      projectId: data.projectId,
+      nodes: data.nodes,
+      edges: data.edges,
+      isPublic: "false",
+      publicSlug: null,
+      createdAt: new Date(),
       updatedAt: new Date()
-    };
-
-    if (updates.name) storageUpdates.name = updates.name;
-    if (updates.description !== undefined) storageUpdates.description = updates.description;
-    if (updates.nodes) storageUpdates.nodes = updates.nodes;
-    if (updates.edges) storageUpdates.edges = updates.edges;
-    if (updates.id) storageUpdates.id = parseInt(updates.id, 10);
-    if (updates.projectId) storageUpdates.projectId = parseInt(updates.projectId, 10);
-    
-    const dbResult = await this.db.update(models)
-      .set(storageUpdates)
-      .where(eq(models.id, numericId))
+    }).returning();
+    return model;
+  }
+  
+  async updateModel(id: number, data: Partial<DrizzleModel>): Promise<DrizzleModel> {
+    const [model] = await this.db.update(models)
+      .set({
+        ...data,
+        updatedAt: new Date()
+      })
+      .where(eq(models.id, id))
       .returning();
-
-    if (!dbResult[0]) return undefined;
-
-    // Convert storage model back to API model
-    const model = dbResult[0];
-    return {
-      schemaVersion: "1.0.0",
-      id: model.id.toString(),
-      projectId: model.projectId?.toString() || "0",
-      name: model.name,
-      description: model.description || undefined,
-      nodes: model.nodes || [],
-      edges: model.edges || [],
-      createdAt: model.createdAt?.toISOString() || new Date().toISOString(),
-      updatedAt: model.updatedAt?.toISOString() || new Date().toISOString()
-    };
+    if (!model) throw new Error('Model not found');
+    return model;
   }
   
   async deleteModel(id: number): Promise<boolean> {
-    try {
-      // First delete all scenarios associated with this model
-      await this.db.delete(scenarios).where(eq(scenarios.modelId, id));
-      
-      // Then delete the model
-      const result = await this.db.delete(models).where(eq(models.id, id)).returning({ id: models.id });
-      return result.length > 0;
-    } catch (error) {
-      console.error("Error deleting model:", error);
-      return false;
-    }
+    const result = await this.db.delete(models).where(eq(models.id, id)).returning({ id: models.id });
+    return result.length > 0;
   }
   
   // SCENARIO OPERATIONS
-  async getScenarios(): Promise<Scenario[]> {
+  async getScenarios(): Promise<DrizzleScenario[]> {
     const results = await this.db.select().from(scenarios);
-    return results.map(s => ({ ...s, clampedNodes: s.clampedNodes || [] }));
+    return results.map(toCamelScenario) as DrizzleScenario[];
+  }
+
+  async getScenariosByUser(userId: number): Promise<DrizzleScenario[]> {
+    const results = await this.db
+      .select({ scenario: scenarios })
+      .from(scenarios)
+      .innerJoin(models, eq(scenarios.modelId, models.id))
+      .innerJoin(projects, eq(models.projectId, projects.id))
+      .where(eq(projects.userId, userId));
+    return results.map(result => toCamelScenario(result.scenario)) as DrizzleScenario[];
   }
   
-  async getScenariosByModel(modelId: number): Promise<Scenario[]> {
+  async getScenariosByModel(modelId: number): Promise<DrizzleScenario[]> {
     const results = await this.db.select().from(scenarios).where(eq(scenarios.modelId, modelId));
-    return results.map(s => ({ ...s, clampedNodes: s.clampedNodes || [] }));
+    return results.map(toCamelScenario) as DrizzleScenario[];
   }
   
-  async getScenario(id: number): Promise<Scenario | undefined> {
+  async getScenario(id: number): Promise<DrizzleScenario | null> {
     const result = await this.db.select().from(scenarios).where(eq(scenarios.id, id));
-    if (!result[0]) return undefined;
-    return { ...result[0], clampedNodes: result[0].clampedNodes || [] };
+    if (!result[0]) return null;
+    return toCamelScenario(result[0]) as DrizzleScenario;
   }
   
-  async createScenario(scenario: ScenarioStorage): Promise<Scenario> {
-    // Generate a new id if not provided
-    const id = scenario.id ?? this.scenarioId++;
-    const now = scenario.createdAt instanceof Date ? scenario.createdAt : new Date();
-    const updatedAt = scenario.updatedAt instanceof Date ? scenario.updatedAt : (scenario.updatedAt ? new Date(scenario.updatedAt) : now);
-    const scenarioObj: Scenario = {
-      ...scenario,
-      id,
+  async createScenario(data: CreateScenarioData): Promise<DrizzleScenario> {
+    const now = new Date();
+    console.log("createScenario received clampedNodes:", JSON.stringify(data.clampedNodes));
+    const [scenario] = await this.db.insert(scenarios).values({
+      name: data.name,
+      modelId: data.modelId,
+      description: data.description,
+      nodes: data.nodes,
+      initialValues: data.initialValues,
+      results: data.results,
+      simulationParams: data.simulationParams,
+      clampedNodes: Array.isArray(data.clampedNodes) ? data.clampedNodes : [],
+      includeInPublic: "false",
       createdAt: now,
-      updatedAt,
-    };
-    this.scenarios.set(id, scenarioObj);
-    return scenarioObj;
+      updatedAt: now
+    }).returning({
+      id: scenarios.id,
+      name: scenarios.name,
+      modelId: scenarios.modelId,
+      description: scenarios.description,
+      nodes: scenarios.nodes,
+      initialValues: scenarios.initialValues,
+      results: scenarios.results,
+      simulationParams: scenarios.simulationParams,
+      clampedNodes: scenarios.clampedNodes,
+      includeInPublic: scenarios.includeInPublic,
+      createdAt: scenarios.createdAt,
+      updatedAt: scenarios.updatedAt,
+    });
+    return toCamelScenario(scenario);
+  }
+  
+  async updateScenario(id: number, data: Partial<DrizzleScenario>): Promise<DrizzleScenario> {
+    const [scenario] = await this.db.update(scenarios)
+      .set({
+        ...data,
+        clampedNodes: data.clampedNodes || [],
+        updatedAt: new Date()
+      })
+      .where(eq(scenarios.id, id))
+      .returning({
+        id: scenarios.id,
+        name: scenarios.name,
+        modelId: scenarios.modelId,
+        description: scenarios.description,
+        nodes: scenarios.nodes,
+        initialValues: scenarios.initialValues,
+        results: scenarios.results,
+        simulationParams: scenarios.simulationParams,
+        clampedNodes: scenarios.clampedNodes,
+        includeInPublic: scenarios.includeInPublic,
+        createdAt: scenarios.createdAt,
+        updatedAt: scenarios.updatedAt,
+      });
+    if (!scenario) throw new Error('Scenario not found');
+    return toCamelScenario(scenario) as DrizzleScenario;
   }
   
   async deleteScenario(id: number): Promise<boolean> {
-    try {
-      const result = await this.db.delete(scenarios).where(eq(scenarios.id, id)).returning({ id: scenarios.id });
-      return result.length > 0;
-    } catch (error) {
-      console.error("Error deleting scenario:", error);
-      return false;
-    }
+    const result = await this.db.delete(scenarios).where(eq(scenarios.id, id)).returning({ id: scenarios.id });
+    return result.length > 0;
   }
 
-  async updateScenario(id: number, data: Partial<ScenarioStorage>): Promise<Scenario> {
-    let fixedResults = undefined;
-    if (data.results) {
-      fixedResults = {
-        ...data.results,
-        initialValues: data.results.initialValues ?? {},
-        timeSeries: Object.fromEntries(
-          Object.entries(data.results.timeSeries ?? {}).map(([k, v]) => [k, Array.isArray(v) ? v.map(Number) : []])
-        ),
-        finalState: data.results.finalState ?? {},
-      };
+  async hasProjectAccess(projectId: number, userId: number): Promise<boolean> {
+    const project = await this.getProject(projectId);
+    if (!project) return false;
+    if (project.userId === userId) return true;
+    const member = await this.db
+      .select()
+      .from(projectMembers)
+      .where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, userId)));
+    return member.length > 0;
+  }
+
+  async hasProjectRole(projectId: number, userId: number, roles: string[]): Promise<boolean> {
+    const project = await this.getProject(projectId);
+    if (!project) return false;
+    if (project.userId === userId && roles.includes("owner")) return true;
+    const member = await this.db
+      .select()
+      .from(projectMembers)
+      .where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, userId)));
+    if (!member[0]) return false;
+    return roles.includes(member[0].role);
+  }
+
+  async listProjectMembers(projectId: number): Promise<ProjectMemberRecord[]> {
+    const members = await this.db.select().from(projectMembers).where(eq(projectMembers.projectId, projectId));
+    return members as ProjectMemberRecord[];
+  }
+
+  async addProjectMember(projectId: number, userId: number, role: string): Promise<ProjectMemberRecord> {
+    const existing = await this.db
+      .select()
+      .from(projectMembers)
+      .where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, userId)));
+    if (existing[0]) {
+      const [updated] = await this.db
+        .update(projectMembers)
+        .set({ role, updatedAt: new Date() })
+        .where(eq(projectMembers.id, existing[0].id))
+        .returning();
+      return updated as ProjectMemberRecord;
     }
-    const updatedAt = new Date();
-    const dbData = {
-      ...data,
-      results: fixedResults,
-      updatedAt
-    };
-    const [scenario] = await this.db.update(scenarios)
-      .set(dbData)
-      .where(eq(scenarios.id, id))
+    const [created] = await this.db
+      .insert(projectMembers)
+      .values({ projectId, userId, role, createdAt: new Date(), updatedAt: new Date() })
       .returning();
-    return scenario;
+    return created as ProjectMemberRecord;
+  }
+
+  async removeProjectMember(projectId: number, userId: number): Promise<boolean> {
+    const deleted = await this.db
+      .delete(projectMembers)
+      .where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, userId)))
+      .returning({ id: projectMembers.id });
+    return deleted.length > 0;
+  }
+
+  async upsertProjectNodeMapping(data: Omit<ProjectNodeMappingRecord, "id" | "createdAt" | "updatedAt">): Promise<ProjectNodeMappingRecord> {
+    const existing = await this.db
+      .select()
+      .from(projectNodeMappings)
+      .where(
+        and(
+          eq(projectNodeMappings.projectId, data.projectId),
+          eq(projectNodeMappings.canonicalNodeKey, data.canonicalNodeKey),
+          eq(projectNodeMappings.sourceModelId, data.sourceModelId),
+          eq(projectNodeMappings.sourceNodeId, data.sourceNodeId),
+        )
+      );
+    if (existing[0]) {
+      return existing[0] as ProjectNodeMappingRecord;
+    }
+    const [created] = await this.db
+      .insert(projectNodeMappings)
+      .values({ ...data, createdAt: new Date(), updatedAt: new Date() })
+      .returning();
+    return created as ProjectNodeMappingRecord;
+  }
+
+  async listProjectNodeMappings(projectId: number): Promise<ProjectNodeMappingRecord[]> {
+    const rows = await this.db.select().from(projectNodeMappings).where(eq(projectNodeMappings.projectId, projectId));
+    return rows as ProjectNodeMappingRecord[];
+  }
+
+  async deleteProjectNodeMapping(id: number): Promise<boolean> {
+    const deleted = await this.db.delete(projectNodeMappings).where(eq(projectNodeMappings.id, id)).returning({ id: projectNodeMappings.id });
+    return deleted.length > 0;
   }
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private projects: Map<number, Project>;
-  private models: Map<number, Model>;
-  private scenarios: Map<number, Scenario>;
+  private users: Map<number, DrizzleUser>;
+  private projects: Map<number, DrizzleProject>;
+  private models: Map<number, DrizzleModel>;
+  private scenarios: Map<number, DrizzleScenario>;
+  private projectMembers: Map<number, ProjectMemberRecord>;
+  private projectNodeMappings: Map<number, ProjectNodeMappingRecord>;
   
   private userId: number;
   private projectId: number;
   private modelId: number;
   private scenarioId: number;
+  private projectMemberId: number;
+  private projectNodeMappingId: number;
   sessionStore: any;
 
-  constructor() {
+  constructor(initializeDemoData: boolean = false) {
     this.users = new Map();
     this.projects = new Map();
     this.models = new Map();
     this.scenarios = new Map();
+    this.projectMembers = new Map();
+    this.projectNodeMappings = new Map();
     
     this.userId = 1;
     this.projectId = 1;
     this.modelId = 1;
     this.scenarioId = 1;
+    this.projectMemberId = 1;
+    this.projectNodeMappingId = 1;
     
     // Create Memory session store
     const MemoryStore = createMemoryStore(session);
@@ -314,42 +514,96 @@ export class MemStorage implements IStorage {
       checkPeriod: 86400000 // 24 hours
     });
     
-    // Create demo data
-    this.initializeDemoData();
+    if (initializeDemoData) {
+      this.initializeDemoData();
+    }
   }
 
   // USER OPERATIONS
-  async getUser(id: number): Promise<User | undefined> {
+  async getUser(id: number): Promise<DrizzleUser | undefined> {
     return this.users.get(id);
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
+  async getUserByUsername(username: string): Promise<DrizzleUser | undefined> {
     return Array.from(this.users.values()).find(
       (user) => user.username === username,
     );
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async getUserByEmail(email: string): Promise<DrizzleUser | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.email === email,
+    );
+  }
+
+  async getUserByVerificationToken(token: string): Promise<DrizzleUser | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.emailVerificationToken === token,
+    );
+  }
+
+  async getUserByPasswordResetToken(token: string): Promise<DrizzleUser | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.passwordResetToken === token,
+    );
+  }
+
+  async createUser(insertUser: InsertUser): Promise<DrizzleUser> {
     const id = this.userId++;
-    const user = { ...insertUser, id, displayName: insertUser.displayName || null, role: insertUser.role || null };
+    const user: DrizzleUser = {
+      id,
+      username: insertUser.username,
+      password: insertUser.password,
+      displayName: insertUser.displayName || null,
+      role: insertUser.role || null,
+      email: (insertUser as DrizzleUser).email ?? null,
+      emailVerified: (insertUser as DrizzleUser).emailVerified ?? null,
+      emailVerificationToken: (insertUser as DrizzleUser).emailVerificationToken ?? null,
+      emailVerificationExpires: (insertUser as DrizzleUser).emailVerificationExpires ?? null,
+      failedLoginAttempts: (insertUser as DrizzleUser).failedLoginAttempts ?? null,
+      lockedUntil: (insertUser as DrizzleUser).lockedUntil ?? null,
+      passwordResetToken: (insertUser as DrizzleUser).passwordResetToken ?? null,
+      passwordResetExpires: (insertUser as DrizzleUser).passwordResetExpires ?? null,
+    };
     this.users.set(id, user);
     return user;
   }
-  
-  // PROJECT OPERATIONS
-  async getProjects(): Promise<Project[]> {
-    return Array.from(this.projects.values());
+
+  async updateUser(id: number, updates: Partial<DrizzleUser>): Promise<DrizzleUser | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    const updatedUser = { ...user, ...updates };
+    this.users.set(id, updatedUser);
+    return updatedUser;
   }
   
-  async getProject(id: number): Promise<Project | undefined> {
+  // PROJECT OPERATIONS
+  async getProjects(): Promise<DrizzleProject[]> {
+    return Array.from(this.projects.values());
+  }
+
+  async getProjectsByUser(userId: number): Promise<DrizzleProject[]> {
+    const owned = Array.from(this.projects.values()).filter(project => project.userId === userId);
+    const memberProjectIds = new Set(
+      Array.from(this.projectMembers.values())
+        .filter((member) => member.userId === userId)
+        .map((member) => member.projectId)
+    );
+    const memberProjects = Array.from(this.projects.values()).filter((project) => memberProjectIds.has(project.id));
+    const deduped = new Map<number, DrizzleProject>();
+    [...owned, ...memberProjects].forEach((project) => deduped.set(project.id, project));
+    return Array.from(deduped.values());
+  }
+  
+  async getProject(id: number): Promise<DrizzleProject | undefined> {
     return this.projects.get(id);
   }
   
-  async createProject(insertProject: InsertProject): Promise<Project> {
+  async createProject(insertProject: InsertProject): Promise<DrizzleProject> {
     const id = this.projectId++;
     const now = new Date();
     
-    const project: Project = { 
+    const project: DrizzleProject = { 
       id,
       name: insertProject.name,
       description: insertProject.description || null,
@@ -362,7 +616,7 @@ export class MemStorage implements IStorage {
     return project;
   }
   
-  async updateProject(id: number, updates: Partial<Project>): Promise<Project | undefined> {
+  async updateProject(id: number, updates: Partial<DrizzleProject>): Promise<DrizzleProject | undefined> {
     const project = this.projects.get(id);
     if (!project) return undefined;
     
@@ -395,38 +649,61 @@ export class MemStorage implements IStorage {
     }
     
     // Finally delete the project
+    Array.from(this.projectMembers.values())
+      .filter((member) => member.projectId === id)
+      .forEach((member) => this.projectMembers.delete(member.id));
+    Array.from(this.projectNodeMappings.values())
+      .filter((mapping) => mapping.projectId === id)
+      .forEach((mapping) => this.projectNodeMappings.delete(mapping.id));
     return this.projects.delete(id);
   }
   
   // MODEL OPERATIONS
-  async getModels(): Promise<Model[]> {
+  async getModels(): Promise<DrizzleModel[]> {
     return Array.from(this.models.values());
   }
+
+  async getModelsByUser(userId: number): Promise<DrizzleModel[]> {
+    const userProjectIds = new Set(
+      Array.from(this.projects.values())
+        .filter(project => project.userId === userId)
+        .map(project => project.id)
+    );
+    Array.from(this.projectMembers.values())
+      .filter((member) => member.userId === userId)
+      .forEach((member) => userProjectIds.add(member.projectId));
+
+    return Array.from(this.models.values())
+      .filter(model => model.projectId && userProjectIds.has(model.projectId));
+  }
   
-  async getModelsByProject(projectId: number): Promise<Model[]> {
+  async getModelsByProject(projectId: number): Promise<DrizzleModel[]> {
     return Array.from(this.models.values())
       .filter(model => model.projectId === projectId);
   }
   
-  async getModel(id: number): Promise<Model | undefined> {
-    return this.models.get(id);
+  async getModel(id: number): Promise<DrizzleModel | null> {
+    const model = this.models.get(id);
+    return model || null;
   }
   
-  async createModel(insertModel: InsertModel): Promise<Model> {
+  async createModel(data: CreateModelData): Promise<DrizzleModel> {
     const id = this.modelId++;
     const now = new Date();
     
     // Type assertions to help TypeScript
-    const typedNodes = insertModel.nodes ? (insertModel.nodes as unknown as FCMNode[]) : [];
-    const typedEdges = insertModel.edges ? (insertModel.edges as unknown as FCMEdge[]) : [];
+    const typedNodes = data.nodes ? (data.nodes as unknown as FCMNode[]) : [];
+    const typedEdges = data.edges ? (data.edges as unknown as FCMEdge[]) : [];
     
-    const model: Model = { 
+    const model: DrizzleModel = { 
       id,
-      name: insertModel.name,
-      description: insertModel.description || null,
-      projectId: insertModel.projectId || null,
+      name: data.name,
+      description: data.description || null,
+      projectId: data.projectId || null,
       nodes: typedNodes,
       edges: typedEdges,
+      isPublic: "false",
+      publicSlug: null,
       createdAt: now,
       updatedAt: now,
     };
@@ -435,47 +712,18 @@ export class MemStorage implements IStorage {
     return model;
   }
   
-  async updateModel(id: number | string, updates: Partial<Model>): Promise<Model | undefined> {
-    // Convert string ID to number if needed
-    const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
-    if (isNaN(numericId)) {
-      throw new Error('Invalid model ID');
-    }
-
-    const model = this.models.get(numericId);
-    if (!model) return undefined;
-    
-    // Convert API model to storage model
-    const storageUpdates: Partial<ModelStorage> = {
-      updatedAt: new Date()
-    };
-
-    if (updates.name) storageUpdates.name = updates.name;
-    if (updates.description !== undefined) storageUpdates.description = updates.description;
-    if (updates.nodes) storageUpdates.nodes = updates.nodes;
-    if (updates.edges) storageUpdates.edges = updates.edges;
-    if (updates.id) storageUpdates.id = parseInt(updates.id, 10);
-    if (updates.projectId) storageUpdates.projectId = parseInt(updates.projectId, 10);
+  async updateModel(id: number, data: Partial<DrizzleModel>): Promise<DrizzleModel> {
+    const model = this.models.get(id);
+    if (!model) throw new Error('Model not found');
     
     const updatedModel = { 
       ...model, 
-      ...storageUpdates
+      ...data,
+      updatedAt: new Date()
     };
     
-    this.models.set(numericId, updatedModel);
-
-    // Convert storage model back to API model
-    return {
-      schemaVersion: "1.0.0",
-      id: updatedModel.id.toString(),
-      projectId: updatedModel.projectId?.toString() || "0",
-      name: updatedModel.name,
-      description: updatedModel.description || undefined,
-      nodes: updatedModel.nodes || [],
-      edges: updatedModel.edges || [],
-      createdAt: updatedModel.createdAt?.toISOString() || new Date().toISOString(),
-      updatedAt: updatedModel.updatedAt?.toISOString() || new Date().toISOString()
-    };
+    this.models.set(id, updatedModel);
+    return updatedModel;
   }
   
   async deleteModel(id: number): Promise<boolean> {
@@ -492,87 +740,220 @@ export class MemStorage implements IStorage {
   }
   
   // SCENARIO OPERATIONS
-  async getScenarios(): Promise<Scenario[]> {
+  async getScenarios(): Promise<DrizzleScenario[]> {
     return Array.from(this.scenarios.values()).map(s => ({
       ...s,
       clampedNodes: Array.isArray(s.clampedNodes) ? s.clampedNodes : [],
       simulationParams: s.simulationParams ?? null,
-    }));
+    })) as DrizzleScenario[];
+  }
+
+  async getScenariosByUser(userId: number): Promise<DrizzleScenario[]> {
+    const userProjectIds = new Set(
+      Array.from(this.projects.values())
+        .filter(project => project.userId === userId)
+        .map(project => project.id)
+    );
+
+    const userModelIds = new Set(
+      Array.from(this.models.values())
+        .filter(model => model.projectId && userProjectIds.has(model.projectId))
+        .map(model => model.id)
+    );
+
+    return Array.from(this.scenarios.values())
+      .filter(scenario => scenario.modelId !== null && userModelIds.has(scenario.modelId))
+      .map(s => ({
+        ...s,
+        clampedNodes: Array.isArray(s.clampedNodes) ? s.clampedNodes : [],
+        simulationParams: s.simulationParams ?? null,
+      })) as DrizzleScenario[];
   }
   
-  async getScenariosByModel(modelId: number): Promise<Scenario[]> {
+  async getScenariosByModel(modelId: number): Promise<DrizzleScenario[]> {
     return Array.from(this.scenarios.values())
       .filter(scenario => scenario.modelId === modelId)
       .map(s => ({
         ...s,
         clampedNodes: Array.isArray(s.clampedNodes) ? s.clampedNodes : [],
         simulationParams: s.simulationParams ?? null,
-      }));
+      })) as DrizzleScenario[];
   }
   
-  async getScenario(id: number): Promise<Scenario | undefined> {
+  async getScenario(id: number): Promise<DrizzleScenario | null> {
     const s = this.scenarios.get(id);
-    if (!s) return undefined;
-    return { ...s, clampedNodes: Array.isArray(s.clampedNodes) ? s.clampedNodes : [], simulationParams: s.simulationParams ?? null };
+    if (!s) return null;
+    return { ...s, clampedNodes: Array.isArray(s.clampedNodes) ? s.clampedNodes : [], simulationParams: s.simulationParams ?? null } as DrizzleScenario;
   }
   
-  async createScenario(scenario: ScenarioStorage): Promise<Scenario> {
-    // Generate a new id if not provided
-    const id = scenario.id ?? this.scenarioId++;
-    const now = scenario.createdAt instanceof Date ? scenario.createdAt : new Date();
-    const updatedAt = scenario.updatedAt instanceof Date ? scenario.updatedAt : (scenario.updatedAt ? new Date(scenario.updatedAt) : now);
-    const scenarioObj: Scenario = {
-      ...scenario,
+  async createScenario(data: CreateScenarioData): Promise<DrizzleScenario> {
+    const id = this.scenarioId++;
+    const now = new Date();
+    
+    const scenario: DrizzleScenario = {
       id,
+      name: data.name,
+      modelId: data.modelId,
+      description: data.description || null,
+      nodes: data.nodes,
+      initialValues: data.initialValues,
+      results: data.results || null,
+      simulationParams: data.simulationParams || null,
+      clampedNodes: data.clampedNodes || null,
+      includeInPublic: "false",
       createdAt: now,
-      updatedAt,
+      updatedAt: now
     };
-    this.scenarios.set(id, scenarioObj);
-    return scenarioObj;
+    
+    this.scenarios.set(id, scenario);
+    return toCamelScenario(scenario) as DrizzleScenario;
+  }
+  
+  async updateScenario(id: number, data: Partial<DrizzleScenario>): Promise<DrizzleScenario> {
+    const scenario = this.scenarios.get(id);
+    if (!scenario) throw new Error('Scenario not found');
+    
+    const updatedScenario = {
+      ...scenario,
+      ...data,
+      updatedAt: new Date()
+    };
+    
+    this.scenarios.set(id, updatedScenario);
+    return toCamelScenario(updatedScenario) as DrizzleScenario;
   }
   
   async deleteScenario(id: number): Promise<boolean> {
     return this.scenarios.delete(id);
   }
+
+  async hasProjectAccess(projectId: number, userId: number): Promise<boolean> {
+    const project = this.projects.get(projectId);
+    if (!project) return false;
+    if (project.userId === userId) return true;
+    return Array.from(this.projectMembers.values()).some(
+      (member) => member.projectId === projectId && member.userId === userId
+    );
+  }
+
+  async hasProjectRole(projectId: number, userId: number, roles: string[]): Promise<boolean> {
+    const project = this.projects.get(projectId);
+    if (!project) return false;
+    if (project.userId === userId && roles.includes("owner")) return true;
+    const member = Array.from(this.projectMembers.values()).find(
+      (item) => item.projectId === projectId && item.userId === userId
+    );
+    if (!member) return false;
+    return roles.includes(member.role);
+  }
+
+  async listProjectMembers(projectId: number): Promise<ProjectMemberRecord[]> {
+    return Array.from(this.projectMembers.values()).filter((member) => member.projectId === projectId);
+  }
+
+  async addProjectMember(projectId: number, userId: number, role: string): Promise<ProjectMemberRecord> {
+    const existing = Array.from(this.projectMembers.values()).find(
+      (member) => member.projectId === projectId && member.userId === userId
+    );
+    if (existing) {
+      const updated = { ...existing, role, updatedAt: new Date() };
+      this.projectMembers.set(existing.id, updated);
+      return updated;
+    }
+    const created: ProjectMemberRecord = {
+      id: this.projectMemberId++,
+      projectId,
+      userId,
+      role,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.projectMembers.set(created.id, created);
+    return created;
+  }
+
+  async removeProjectMember(projectId: number, userId: number): Promise<boolean> {
+    const existing = Array.from(this.projectMembers.values()).find(
+      (member) => member.projectId === projectId && member.userId === userId
+    );
+    if (!existing) return false;
+    return this.projectMembers.delete(existing.id);
+  }
+
+  async upsertProjectNodeMapping(data: Omit<ProjectNodeMappingRecord, "id" | "createdAt" | "updatedAt">): Promise<ProjectNodeMappingRecord> {
+    const existing = Array.from(this.projectNodeMappings.values()).find(
+      (mapping) =>
+        mapping.projectId === data.projectId &&
+        mapping.canonicalNodeKey === data.canonicalNodeKey &&
+        mapping.sourceModelId === data.sourceModelId &&
+        mapping.sourceNodeId === data.sourceNodeId
+    );
+    if (existing) return existing;
+    const created: ProjectNodeMappingRecord = {
+      id: this.projectNodeMappingId++,
+      ...data,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.projectNodeMappings.set(created.id, created);
+    return created;
+  }
+
+  async listProjectNodeMappings(projectId: number): Promise<ProjectNodeMappingRecord[]> {
+    return Array.from(this.projectNodeMappings.values()).filter((mapping) => mapping.projectId === projectId);
+  }
+
+  async deleteProjectNodeMapping(id: number): Promise<boolean> {
+    return this.projectNodeMappings.delete(id);
+  }
   
   // Demo data initialization
   private initializeDemoData() {
     // Create demo user
-    const demoUser: User = {
+    const demoUser: DrizzleUser = {
       id: this.userId++,
       username: 'emma.wilson',
       password: 'password123', // not secure, just for demo
       displayName: 'Emma Wilson',
       role: 'researcher',
+      email: null,
+      emailVerified: null,
+      emailVerificationToken: null,
+      emailVerificationExpires: null,
+      failedLoginAttempts: 0,
+      lockedUntil: null,
+      passwordResetToken: null,
+      passwordResetExpires: null,
     };
-    this.users.set(demoUser.id, demoUser);
+    const demoUserId = Number(demoUser.id);
+    this.users.set(demoUserId, demoUser);
     
     // Create demo projects
     const projects = [
       {
         name: 'Climate Adaptation',
         description: 'Models for climate adaptation strategies',
-        userId: demoUser.id,
+        userId: demoUserId,
       },
       {
         name: 'Water Management',
         description: 'Hydrological system models',
-        userId: demoUser.id,
+        userId: demoUserId,
       },
       {
         name: 'Social Networks',
         description: 'Social network influence models',
-        userId: demoUser.id,
+        userId: demoUserId,
       },
     ];
     
-    const createdProjects: Project[] = [];
+    const createdProjects: DrizzleProject[] = [];
     
     projects.forEach(project => {
       const id = this.projectId++;
       const now = new Date();
       
-      const newProject: Project = {
+      const newProject: DrizzleProject = {
         ...project,
         id,
         createdAt: now,
@@ -698,9 +1079,11 @@ export class MemStorage implements IStorage {
       const id = this.modelId++;
       const now = new Date();
       
-      const newModel: Model = {
+      const newModel: DrizzleModel = {
         ...model,
         id,
+        isPublic: "false",
+        publicSlug: null,
         createdAt: now,
         updatedAt: now,
       };
@@ -712,6 +1095,6 @@ export class MemStorage implements IStorage {
 
 // Use PostgresStorage if DATABASE_URL is available, otherwise use MemStorage
 const usePostgres = !!process.env.DATABASE_URL;
-export const storage = usePostgres ? new PostgresStorage() : new MemStorage();
+export const storage = usePostgres ? new PostgresStorage(db as any) : new MemStorage(false);
 
 console.log(`Using ${usePostgres ? 'PostgreSQL' : 'in-memory'} storage for MettaModeler`);

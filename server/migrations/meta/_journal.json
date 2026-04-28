@@ -1,0 +1,34 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1747492906632,
+      "tag": "0000_quiet_pixie",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1747500000000,
+      "tag": "0001_add_nodes_to_scenarios",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1747501000000,
+      "tag": "0002_add_security_fields_to_users",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1747502000000,
+      "tag": "0003_feature_drop_foundations",
+      "breakpoints": true
+    }
+  ]
+}
