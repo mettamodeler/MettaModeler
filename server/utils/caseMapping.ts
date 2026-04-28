@@ -16,6 +16,7 @@ export function toCamelScenario(row: any) {
     results: row.results,
     simulationParams: get('simulationParams', 'simulation_params'),
     clampedNodes: get('clampedNodes', 'clamped_nodes', []),
+    includeInPublic: get('includeInPublic', 'include_in_public', 'false'),
     nodes: row.nodes || [],
     createdAt: get('createdAt', 'created_at')
       ? new Date(get('createdAt', 'created_at'))

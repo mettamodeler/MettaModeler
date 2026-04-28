@@ -37,6 +37,8 @@ export const models = pgTable("models", {
   projectId: integer("project_id").references(() => projects.id),
   nodes: jsonb("nodes").$type<FCMNode[]>().default([]),
   edges: jsonb("edges").$type<FCMEdge[]>().default([]),
+  isPublic: text("is_public").default("false"),
+  publicSlug: text("public_slug").unique(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -56,8 +58,29 @@ export const scenarios = pgTable("scenarios", {
   }),
   clampedNodes: jsonb("clamped_nodes").$type<string[]>().default([]),
   nodes: jsonb("nodes").$type<any[]>().default([]),
+  includeInPublic: text("include_in_public").default("false"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const projectMembers = pgTable("project_members", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull().references(() => projects.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  role: text("role").notNull().default("editor"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const projectNodeMappings = pgTable("project_node_mappings", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull().references(() => projects.id),
+  canonicalNodeKey: text("canonical_node_key").notNull(),
+  canonicalNodeLabel: text("canonical_node_label").notNull(),
+  sourceModelId: integer("source_model_id").notNull().references(() => models.id),
+  sourceNodeId: text("source_node_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Types for Fuzzy Cognitive Maps
@@ -112,6 +135,8 @@ export const insertModelSchema = createInsertSchema(models).pick({
   projectId: true,
   nodes: true,
   edges: true,
+  isPublic: true,
+  publicSlug: true,
 });
 
 export const insertScenarioSchema = createInsertSchema(scenarios).pick({
@@ -123,6 +148,7 @@ export const insertScenarioSchema = createInsertSchema(scenarios).pick({
   simulationParams: true,
   clampedNodes: true,
   nodes: true,
+  includeInPublic: true,
   createdAt: true,
   updatedAt: true
 });

@@ -25,6 +25,15 @@ import { ModelSchema, ModelStorageSchema, type ModelStorage, CreateModelSchema }
 import { ScenarioSchema, ScenarioStorageSchema, type ScenarioStorage, CreateScenarioSchema } from './types/generated/Scenario.v1.zod';
 import { CreateModelData, CreateScenarioData } from './storage';
 
+const buildSlug = (input: string): string =>
+  input
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80) || `model-${Date.now()}`;
+
+const toBooleanString = (value: unknown): "true" | "false" => (value ? "true" : "false");
+
 // Python simulation service URL
 // Normalize localhost to 127.0.0.1 to force IPv4 (avoid IPv6 resolution issues)
 const PYTHON_SIM_URL = (process.env.PYTHON_SIM_URL || 'http://127.0.0.1:5050').replace(/localhost/g, '127.0.0.1');
@@ -89,7 +98,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(404).json({ message: "Project not found" });
       return null;
     }
-    if (project.userId !== userId) {
+    const hasAccess = await storage.hasProjectAccess(projectId, userId);
+    if (!hasAccess) {
+      res.status(403).json({ message: "Forbidden" });
+      return null;
+    }
+    return project;
+  };
+
+  const getEditableProjectOrRespond = async (projectId: number, userId: number, res: Response) => {
+    const project = await storage.getProject(projectId);
+    if (!project) {
+      res.status(404).json({ message: "Project not found" });
+      return null;
+    }
+    const canEdit = await storage.hasProjectRole(projectId, userId, ["owner", "editor"]);
+    if (!canEdit) {
+      res.status(403).json({ message: "Forbidden" });
+      return null;
+    }
+    return project;
+  };
+
+  const getOwnerProjectOrRespond = async (projectId: number, userId: number, res: Response) => {
+    const project = await storage.getProject(projectId);
+    if (!project) {
+      res.status(404).json({ message: "Project not found" });
+      return null;
+    }
+    const isOwner = await storage.hasProjectRole(projectId, userId, ["owner"]);
+    if (!isOwner) {
       res.status(403).json({ message: "Forbidden" });
       return null;
     }
@@ -102,9 +140,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(404).json({ message: "Model not found" });
       return null;
     }
-    const project = await storage.getProject(model.projectId);
-    if (!project || project.userId !== userId) {
+    const hasAccess = await storage.hasProjectAccess(model.projectId, userId);
+    if (!hasAccess) {
       res.status(404).json({ message: "Model not found" });
+      return null;
+    }
+    return model;
+  };
+
+  const getEditableModelOrRespond = async (modelId: number, userId: number, res: Response) => {
+    const model = await storage.getModel(modelId);
+    if (!model || !model.projectId) {
+      res.status(404).json({ message: "Model not found" });
+      return null;
+    }
+    const canEdit = await storage.hasProjectRole(model.projectId, userId, ["owner", "editor"]);
+    if (!canEdit) {
+      res.status(403).json({ message: "Forbidden" });
       return null;
     }
     return model;
@@ -198,7 +250,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = getUserIdOrRespond(req, res);
       if (!userId) return;
 
-      const ownsProject = await getOwnedProjectOrRespond(id, userId, res);
+      const ownsProject = await getOwnerProjectOrRespond(id, userId, res);
       if (!ownsProject) return;
 
       const result = ProjectSchema.partial().safeParse(req.body);
@@ -238,7 +290,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = getUserIdOrRespond(req, res);
       if (!userId) return;
 
-      const ownsProject = await getOwnedProjectOrRespond(id, userId, res);
+      const ownsProject = await getOwnerProjectOrRespond(id, userId, res);
       if (!ownsProject) return;
 
       const result = await storage.deleteProject(id);
@@ -318,7 +370,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = getUserIdOrRespond(req, res);
       if (!userId) return;
 
-      const ownsProject = await getOwnedProjectOrRespond(result.data.projectId, userId, res);
+      const ownsProject = await getEditableProjectOrRespond(result.data.projectId, userId, res);
       if (!ownsProject) return;
 
       // Generate fields on the server
@@ -339,6 +391,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/projects/:projectId/models/import", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (Number.isNaN(projectId)) {
+        return res.status(400).json({ message: "Invalid project ID" });
+      }
+      const userId = getUserIdOrRespond(req, res);
+      if (!userId) return;
+      const editableProject = await getEditableProjectOrRespond(projectId, userId, res);
+      if (!editableProject) return;
+
+      const sourceModel = req.body?.model ?? req.body;
+      const parsed = CreateModelSchema.safeParse({
+        name: sourceModel?.name ?? "Imported Model",
+        description: sourceModel?.description ?? null,
+        projectId,
+        nodes: Array.isArray(sourceModel?.nodes) ? sourceModel.nodes : [],
+        edges: Array.isArray(sourceModel?.edges) ? sourceModel.edges : [],
+      });
+      if (!parsed.success) {
+        return res.status(400).json({
+          status: 400,
+          code: 'INVALID_PAYLOAD',
+          fieldErrors: parsed.error.errors
+        });
+      }
+
+      const modelData: CreateModelData = {
+        name: parsed.data.name,
+        description: parsed.data.description || null,
+        projectId,
+        nodes: parsed.data.nodes || [],
+        edges: parsed.data.edges || [],
+      };
+      const imported = await storage.createModel(modelData);
+      return res.status(201).json(imported);
+    } catch (error) {
+      return res.status(500).json({ message: "Failed to import model" });
+    }
+  });
+
   app.put("/api/models/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
@@ -349,7 +442,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = getUserIdOrRespond(req, res);
       if (!userId) return;
 
-      const ownsModel = await getOwnedModelOrRespond(id, userId, res);
+      const ownsModel = await getEditableModelOrRespond(id, userId, res);
       if (!ownsModel) return;
 
       const result = ModelSchema.partial().safeParse(req.body);
@@ -364,7 +457,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Convert API schema to storage schema
       const storageData: Partial<ModelStorage> = {};
       if (result.data.projectId !== undefined) {
-        const targetProject = await getOwnedProjectOrRespond(result.data.projectId, userId, res);
+        const targetProject = await getEditableProjectOrRespond(result.data.projectId, userId, res);
         if (!targetProject) return;
         storageData.projectId = result.data.projectId;
       }
@@ -397,7 +490,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = getUserIdOrRespond(req, res);
       if (!userId) return;
 
-      const ownsModel = await getOwnedModelOrRespond(id, userId, res);
+      const ownsModel = await getEditableModelOrRespond(id, userId, res);
       if (!ownsModel) return;
 
       const result = await storage.deleteModel(id);
@@ -408,6 +501,303 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Failed to delete model" });
+    }
+  });
+
+  app.get("/api/projects/:projectId/mappings", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (Number.isNaN(projectId)) return res.status(400).json({ message: "Invalid project ID" });
+      const userId = getUserIdOrRespond(req, res);
+      if (!userId) return;
+      const project = await getOwnedProjectOrRespond(projectId, userId, res);
+      if (!project) return;
+      const mappings = await storage.listProjectNodeMappings(projectId);
+      return res.json(mappings);
+    } catch (error) {
+      return res.status(500).json({ message: "Failed to list node mappings" });
+    }
+  });
+
+  app.post("/api/projects/:projectId/mappings", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (Number.isNaN(projectId)) return res.status(400).json({ message: "Invalid project ID" });
+      const userId = getUserIdOrRespond(req, res);
+      if (!userId) return;
+      const project = await getEditableProjectOrRespond(projectId, userId, res);
+      if (!project) return;
+
+      const schema = z.object({
+        canonicalNodeKey: z.string().min(1),
+        canonicalNodeLabel: z.string().min(1),
+        sourceModelId: z.number(),
+        sourceNodeId: z.string().min(1),
+      });
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.errors });
+
+      const model = await getOwnedModelOrRespond(parsed.data.sourceModelId, userId, res);
+      if (!model) return;
+
+      const mapping = await storage.upsertProjectNodeMapping({
+        projectId,
+        canonicalNodeKey: parsed.data.canonicalNodeKey,
+        canonicalNodeLabel: parsed.data.canonicalNodeLabel,
+        sourceModelId: parsed.data.sourceModelId,
+        sourceNodeId: parsed.data.sourceNodeId,
+      });
+      return res.status(201).json(mapping);
+    } catch (error) {
+      return res.status(500).json({ message: "Failed to save mapping" });
+    }
+  });
+
+  app.delete("/api/projects/:projectId/mappings/:mappingId", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      const mappingId = parseInt(req.params.mappingId);
+      if (Number.isNaN(projectId) || Number.isNaN(mappingId)) return res.status(400).json({ message: "Invalid ID" });
+      const userId = getUserIdOrRespond(req, res);
+      if (!userId) return;
+      const project = await getEditableProjectOrRespond(projectId, userId, res);
+      if (!project) return;
+      const deleted = await storage.deleteProjectNodeMapping(mappingId);
+      if (!deleted) return res.status(404).json({ message: "Mapping not found" });
+      return res.status(204).send();
+    } catch (error) {
+      return res.status(500).json({ message: "Failed to delete mapping" });
+    }
+  });
+
+  app.get("/api/projects/:projectId/meta-model", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (Number.isNaN(projectId)) return res.status(400).json({ message: "Invalid project ID" });
+      const userId = getUserIdOrRespond(req, res);
+      if (!userId) return;
+      const project = await getOwnedProjectOrRespond(projectId, userId, res);
+      if (!project) return;
+
+      const modelsInProject = await storage.getModelsByProject(projectId);
+      const mappings = await storage.listProjectNodeMappings(projectId);
+      const canonicalNodes = new Map<string, { id: string; label: string; sourceNodeIds: Set<string> }>();
+
+      for (const mapping of mappings) {
+        const existing = canonicalNodes.get(mapping.canonicalNodeKey);
+        if (existing) {
+          existing.sourceNodeIds.add(mapping.sourceNodeId);
+        } else {
+          canonicalNodes.set(mapping.canonicalNodeKey, {
+            id: mapping.canonicalNodeKey,
+            label: mapping.canonicalNodeLabel,
+            sourceNodeIds: new Set([mapping.sourceNodeId]),
+          });
+        }
+      }
+
+      const nodeList = Array.from(canonicalNodes.values()).map((node, index) => ({
+        id: node.id,
+        label: node.label,
+        type: "regular",
+        value: 0,
+        positionX: (index % 6) * 200,
+        positionY: Math.floor(index / 6) * 120,
+        color: "#A855F7",
+      }));
+
+      const edgeWeights = new Map<string, { source: string; target: string; weights: number[] }>();
+      for (const model of modelsInProject) {
+        for (const edge of model.edges || []) {
+          const sourceMapping = mappings.find((m) => m.sourceModelId === model.id && m.sourceNodeId === edge.source);
+          const targetMapping = mappings.find((m) => m.sourceModelId === model.id && m.sourceNodeId === edge.target);
+          if (!sourceMapping || !targetMapping) continue;
+          const key = `${sourceMapping.canonicalNodeKey}->${targetMapping.canonicalNodeKey}`;
+          const existing = edgeWeights.get(key);
+          if (existing) {
+            existing.weights.push(Number(edge.weight || 0));
+          } else {
+            edgeWeights.set(key, {
+              source: sourceMapping.canonicalNodeKey,
+              target: targetMapping.canonicalNodeKey,
+              weights: [Number(edge.weight || 0)],
+            });
+          }
+        }
+      }
+
+      const edges = Array.from(edgeWeights.values()).map((edge, index) => ({
+        id: `meta-edge-${index + 1}`,
+        source: edge.source,
+        target: edge.target,
+        weight: edge.weights.reduce((sum, value) => sum + value, 0) / edge.weights.length,
+      }));
+
+      return res.json({
+        name: `${project.name} Meta Model`,
+        description: "Aggregated meta-model generated from project mappings",
+        projectId,
+        nodes: nodeList,
+        edges,
+      });
+    } catch (error) {
+      return res.status(500).json({ message: "Failed to generate meta-model" });
+    }
+  });
+
+  app.post("/api/projects/:projectId/meta-models", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (Number.isNaN(projectId)) return res.status(400).json({ message: "Invalid project ID" });
+      const userId = getUserIdOrRespond(req, res);
+      if (!userId) return;
+      const project = await getEditableProjectOrRespond(projectId, userId, res);
+      if (!project) return;
+
+      const modelsInProject = await storage.getModelsByProject(projectId);
+      const mappings = await storage.listProjectNodeMappings(projectId);
+      if (modelsInProject.length === 0 || mappings.length === 0) {
+        return res.status(400).json({ message: "Need at least one model and mapping to persist a meta-model" });
+      }
+      const canonicalNodes = new Map<string, { id: string; label: string; sourceNodeIds: Set<string> }>();
+      for (const mapping of mappings) {
+        const existing = canonicalNodes.get(mapping.canonicalNodeKey);
+        if (existing) {
+          existing.sourceNodeIds.add(mapping.sourceNodeId);
+        } else {
+          canonicalNodes.set(mapping.canonicalNodeKey, {
+            id: mapping.canonicalNodeKey,
+            label: mapping.canonicalNodeLabel,
+            sourceNodeIds: new Set([mapping.sourceNodeId]),
+          });
+        }
+      }
+      const nodeList = Array.from(canonicalNodes.values()).map((node, index) => ({
+        id: node.id,
+        label: node.label,
+        type: "regular",
+        value: 0,
+        positionX: (index % 6) * 200,
+        positionY: Math.floor(index / 6) * 120,
+        color: "#A855F7",
+      }));
+      const edgeWeights = new Map<string, { source: string; target: string; weights: number[] }>();
+      for (const model of modelsInProject) {
+        for (const edge of model.edges || []) {
+          const sourceMapping = mappings.find((m) => m.sourceModelId === model.id && m.sourceNodeId === edge.source);
+          const targetMapping = mappings.find((m) => m.sourceModelId === model.id && m.sourceNodeId === edge.target);
+          if (!sourceMapping || !targetMapping) continue;
+          const key = `${sourceMapping.canonicalNodeKey}->${targetMapping.canonicalNodeKey}`;
+          const existing = edgeWeights.get(key);
+          if (existing) {
+            existing.weights.push(Number(edge.weight || 0));
+          } else {
+            edgeWeights.set(key, {
+              source: sourceMapping.canonicalNodeKey,
+              target: targetMapping.canonicalNodeKey,
+              weights: [Number(edge.weight || 0)],
+            });
+          }
+        }
+      }
+      const edges = Array.from(edgeWeights.values()).map((edge, index) => ({
+        id: `meta-edge-${index + 1}`,
+        source: edge.source,
+        target: edge.target,
+        weight: edge.weights.reduce((sum, value) => sum + value, 0) / edge.weights.length,
+      }));
+      const payload = req.body?.nodes && req.body?.edges
+        ? req.body
+        : {
+            name: `${project.name} Meta Model`,
+            description: "Aggregated meta-model generated from project mappings",
+            nodes: nodeList,
+            edges,
+          };
+      const created = await storage.createModel({
+        name: payload.name || `${project.name} Meta Model`,
+        description: payload.description || "Persisted meta-model",
+        projectId,
+        nodes: payload.nodes || [],
+        edges: payload.edges || [],
+      });
+      return res.status(201).json(created);
+    } catch (error) {
+      return res.status(500).json({ message: "Failed to persist meta-model" });
+    }
+  });
+
+  app.get("/api/projects/:projectId/members", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (Number.isNaN(projectId)) return res.status(400).json({ message: "Invalid project ID" });
+      const userId = getUserIdOrRespond(req, res);
+      if (!userId) return;
+      const project = await getOwnedProjectOrRespond(projectId, userId, res);
+      if (!project) return;
+
+      const members = await storage.listProjectMembers(projectId);
+      const owner = project.userId ? await storage.getUser(project.userId) : null;
+      const hydrated = await Promise.all(
+        members.map(async (member) => {
+          const user = await storage.getUser(member.userId);
+          return {
+            userId: member.userId,
+            username: user?.username || "unknown",
+            role: member.role,
+          };
+        })
+      );
+      return res.json({
+        owner: owner ? { userId: owner.id, username: owner.username, role: "owner" } : null,
+        members: hydrated,
+      });
+    } catch (error) {
+      return res.status(500).json({ message: "Failed to fetch project members" });
+    }
+  });
+
+  app.post("/api/projects/:projectId/members", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (Number.isNaN(projectId)) return res.status(400).json({ message: "Invalid project ID" });
+      const userId = getUserIdOrRespond(req, res);
+      if (!userId) return;
+      const project = await getOwnerProjectOrRespond(projectId, userId, res);
+      if (!project) return;
+
+      const schema = z.object({
+        username: z.string().min(1),
+      });
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: "Invalid payload", errors: parsed.error.errors });
+
+      const user = await storage.getUserByUsername(parsed.data.username);
+      if (!user) return res.status(404).json({ message: "User not found" });
+      if (project.userId === user.id) return res.status(400).json({ message: "Project owner already has access" });
+
+      const member = await storage.addProjectMember(projectId, user.id, "editor");
+      return res.status(201).json(member);
+    } catch (error) {
+      return res.status(500).json({ message: "Failed to add project member" });
+    }
+  });
+
+  app.delete("/api/projects/:projectId/members/:userId", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      const memberUserId = parseInt(req.params.userId);
+      if (Number.isNaN(projectId) || Number.isNaN(memberUserId)) return res.status(400).json({ message: "Invalid ID" });
+      const userId = getUserIdOrRespond(req, res);
+      if (!userId) return;
+      const project = await getOwnerProjectOrRespond(projectId, userId, res);
+      if (!project) return;
+
+      const removed = await storage.removeProjectMember(projectId, memberUserId);
+      if (!removed) return res.status(404).json({ message: "Member not found" });
+      return res.status(204).send();
+    } catch (error) {
+      return res.status(500).json({ message: "Failed to remove project member" });
     }
   });
 
@@ -570,7 +960,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         results: result.data.results,
       };
 
-      const ownsModel = await getOwnedModelOrRespond(result.data.modelId, userId, res);
+      const ownsModel = await getEditableModelOrRespond(result.data.modelId, userId, res);
       if (!ownsModel) return;
 
       const scenario = await storage.createScenario(scenarioData);
@@ -599,7 +989,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (Number.isNaN(targetModelId)) {
           return res.status(400).json({ message: "Invalid model ID" });
         }
-        const ownsModel = await getOwnedModelOrRespond(targetModelId, userId, res);
+        const ownsModel = await getEditableModelOrRespond(targetModelId, userId, res);
         if (!ownsModel) return;
       }
 
@@ -611,6 +1001,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(safeScenario);
     } catch (error) {
       res.status(500).json({ message: "Failed to update scenario", error: error instanceof Error ? error.message : String(error) });
+    }
+  });
+
+  app.patch("/api/scenarios/:id/public", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (Number.isNaN(id)) return res.status(400).json({ message: "Invalid scenario ID" });
+      const userId = getUserIdOrRespond(req, res);
+      if (!userId) return;
+      const scenario = await getOwnedScenarioOrRespond(id, userId, res);
+      if (!scenario || !scenario.modelId) return;
+      const editableModel = await getEditableModelOrRespond(scenario.modelId, userId, res);
+      if (!editableModel) return;
+
+      const parsed = z.object({ includeInPublic: z.boolean() }).safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: "Invalid payload" });
+      const updated = await storage.updateScenario(id, { includeInPublic: toBooleanString(parsed.data.includeInPublic) } as any);
+      return res.json(updated);
+    } catch (error) {
+      return res.status(500).json({ message: "Failed to update public scenario setting" });
+    }
+  });
+
+  app.patch("/api/models/:id/public", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (Number.isNaN(id)) return res.status(400).json({ message: "Invalid model ID" });
+      const userId = getUserIdOrRespond(req, res);
+      if (!userId) return;
+      const model = await getEditableModelOrRespond(id, userId, res);
+      if (!model) return;
+
+      const parsed = z.object({
+        isPublic: z.boolean(),
+        publicSlug: z.string().optional(),
+      }).safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: "Invalid payload" });
+
+      const nextIsPublic = toBooleanString(parsed.data.isPublic);
+      const slugCandidate = parsed.data.publicSlug || model.publicSlug || buildSlug(model.name);
+      const updated = await storage.updateModel(id, {
+        isPublic: nextIsPublic,
+        publicSlug: parsed.data.isPublic ? slugCandidate : null,
+      } as any);
+      return res.json(updated);
+    } catch (error) {
+      return res.status(500).json({ message: "Failed to update model public settings" });
+    }
+  });
+
+  app.get("/api/public/models/:slug", async (req: Request, res: Response) => {
+    try {
+      const slug = req.params.slug;
+      if (!slug) return res.status(400).json({ message: "Slug required" });
+      const models = await storage.getModels();
+      const model = models.find((item: any) => item.publicSlug === slug && item.isPublic === "true");
+      if (!model) return res.status(404).json({ message: "Public model not found" });
+
+      const scenarios = await storage.getScenariosByModel(model.id);
+      const publicScenarios = scenarios
+        .filter((scenario: any) => scenario.includeInPublic === "true")
+        .map((scenario) => ({
+          id: scenario.id,
+          name: scenario.name,
+          description: scenario.description,
+          results: scenario.results,
+          simulationParams: scenario.simulationParams,
+          updatedAt: scenario.updatedAt,
+        }));
+
+      return res.json({
+        id: model.id,
+        name: model.name,
+        description: model.description,
+        nodes: model.nodes,
+        edges: model.edges,
+        publicSlug: model.publicSlug,
+        scenarios: publicScenarios,
+      });
+    } catch (error) {
+      return res.status(500).json({ message: "Failed to fetch public model" });
     }
   });
 
