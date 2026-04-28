@@ -83,6 +83,29 @@ def _type_specific_notebook_cells(notebook, export_type: str):
             "    plt.show()",
         ]
         notebook.cells.append(new_code_cell("\n".join(scenario_code)))
+        notebook.cells.append(new_markdown_cell(
+            "## Scenario Development Sandbox\n"
+            "Edit `interventions` and rerun this cell to prototype alternative scenarios."
+        ))
+        sandbox_code = [
+            "# Editable interventions: {'node_id': forced_start_value}",
+            "interventions = {",
+            "    # 'n1': 0.95,",
+            "}",
+            "",
+            "scenario_nodes_df = apply_interventions(nodes_df, interventions)",
+            "display(scenario_nodes_df.head())",
+            "",
+            "if not scenario_nodes_df.empty and not edges_df.empty:",
+            "    scenario_simulation_df = simulate_fcm(scenario_nodes_df, edges_df, max_iterations=20)",
+            "    display(scenario_simulation_df.tail())",
+            "    scenario_simulation_df.plot(title='Scenario development trajectories')",
+            "    plt.xlabel('Iteration')",
+            "    plt.ylabel('Activation')",
+            "    plt.tight_layout()",
+            "    plt.show()",
+        ]
+        notebook.cells.append(new_code_cell("\n".join(sandbox_code)))
     elif export_type == "comparison":
         notebook.cells.append(new_markdown_cell(
             "## Comparison Analysis\n"
@@ -230,12 +253,17 @@ def generate_notebook(data: Dict, export_type: str, model_id: Optional[int] = No
         # Transform the data to use proper Python types
         model_data = transform_json_for_python(data)
         
+    payload_json = json.dumps(model_data, indent=2)
     data_cell = [
-        f"# Load {export_type} data",
-        f"{export_type}_data = {json.dumps(model_data, indent=2)}",
+        f"# Load {export_type} data safely from JSON",
+        "raw_payload_json = '''",
+        payload_json,
+        "'''",
+        f"{export_type}_data = json.loads(raw_payload_json)",
         "",
         "# Display basic information",
-        f"print(f\"Data type: {export_type}\")"
+        f"print(f\"Data type: {export_type}\")",
+        f"print('Top-level keys:', sorted(list({export_type}_data.keys())))",
     ]
     
     notebook.cells.append(new_code_cell("\n".join(data_cell)))
@@ -272,6 +300,44 @@ def generate_notebook(data: Dict, export_type: str, model_id: Optional[int] = No
         "    display(edges_df.head())",
     ]
     notebook.cells.append(new_code_cell("\n".join(validation_and_tables)))
+
+    shared_simulation_helpers = [
+        "# Shared simulation helpers for model/scenario experimentation",
+        "def _sigmoid(x):",
+        "    return 1.0 / (1.0 + np.exp(-x))",
+        "",
+        "def run_fcm_iteration(node_values, edges_df):",
+        "    next_values = dict(node_values)",
+        "    for _, edge in edges_df.iterrows():",
+        "        src = edge.get('source')",
+        "        tgt = edge.get('target')",
+        "        if src not in node_values or tgt is None:",
+        "            continue",
+        "        weight = float(edge.get('weight', 0))",
+        "        next_values[tgt] = next_values.get(tgt, 0.0) + float(node_values.get(src, 0.0)) * weight",
+        "    for node_id in list(next_values.keys()):",
+        "        next_values[node_id] = float(_sigmoid(float(next_values[node_id])))",
+        "    return next_values",
+        "",
+        "def simulate_fcm(nodes_df, edges_df, max_iterations=20):",
+        "    values = {row['id']: float(row.get('value', 0)) for _, row in nodes_df.iterrows()}",
+        "    history = [dict(values)]",
+        "    for _ in range(int(max_iterations)):",
+        "        values = run_fcm_iteration(values, edges_df)",
+        "        history.append(dict(values))",
+        "    return pd.DataFrame(history)",
+        "",
+        "def apply_interventions(nodes_df, interventions):",
+        "    updated = nodes_df.copy()",
+        "    if updated.empty:",
+        "        return updated",
+        "    for node_id, forced_value in interventions.items():",
+        "        mask = updated['id'] == node_id",
+        "        if mask.any():",
+        "            updated.loc[mask, 'value'] = float(forced_value)",
+        "    return updated",
+    ]
+    notebook.cells.append(new_code_cell("\n".join(shared_simulation_helpers)))
 
     _type_specific_notebook_cells(notebook, export_type)
     
@@ -475,28 +541,8 @@ def generate_notebook(data: Dict, export_type: str, model_id: Optional[int] = No
         
         notebook.cells.append(new_code_cell("\n".join(viz_code)))
 
-        simulation_helper_code = [
-            "def run_fcm_iteration(node_values, edges_df):",
-            "    next_values = node_values.copy()",
-            "    for _, edge in edges_df.iterrows():",
-            "        src = edge['source']",
-            "        tgt = edge['target']",
-            "        w = float(edge.get('weight', 0))",
-            "        next_values[tgt] = next_values.get(tgt, 0) + node_values.get(src, 0) * w",
-            "    # sigmoid squash",
-            "    for node_id in list(next_values.keys()):",
-            "        x = next_values[node_id]",
-            "        next_values[node_id] = 1.0 / (1.0 + np.exp(-x))",
-            "    return next_values",
-            "",
-            "def simulate_fcm(nodes_df, edges_df, max_iterations=20):",
-            "    values = {row['id']: float(row.get('value', 0)) for _, row in nodes_df.iterrows()}",
-            "    history = [values.copy()]",
-            "    for _ in range(max_iterations):",
-            "        values = run_fcm_iteration(values, edges_df)",
-            "        history.append(values.copy())",
-            "    return pd.DataFrame(history)",
-            "",
+        model_quickstart_code = [
+            "# Quick-start simulation run",
             "if not nodes_df.empty and not edges_df.empty:",
             "    simulation_df = simulate_fcm(nodes_df, edges_df, max_iterations=20)",
             "    display(simulation_df.tail())",
@@ -505,7 +551,7 @@ def generate_notebook(data: Dict, export_type: str, model_id: Optional[int] = No
             "    plt.ylabel('Activation')",
             "    plt.show()",
         ]
-        notebook.cells.append(new_code_cell("\n".join(simulation_helper_code)))
+        notebook.cells.append(new_code_cell("\n".join(model_quickstart_code)))
     
     # Add export cell
     export_code = [
