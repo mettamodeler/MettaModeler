@@ -53,6 +53,7 @@ export default function AuthPage() {
     resolver: zodResolver(registerSchema),
     defaultValues: {
       username: "",
+      email: "",
       password: "",
       displayName: "",
     },
@@ -142,8 +143,14 @@ export default function AuthPage() {
                 </Form>
               </CardContent>
               
-              <CardFooter className="flex flex-col items-center">
-                <p className="text-sm text-muted-foreground mt-2">
+              <CardFooter className="flex flex-col items-center gap-2">
+                <button
+                  className="text-sm text-primary underline-offset-4 hover:underline"
+                  onClick={() => setLocation("/forgot-password")}
+                >
+                  Forgot password?
+                </button>
+                <p className="text-sm text-muted-foreground">
                   Don't have an account?{" "}
                   <button
                     className="text-primary underline-offset-4 hover:underline"
@@ -175,6 +182,26 @@ export default function AuthPage() {
                           <FormControl>
                             <Input placeholder="username" {...field} />
                           </FormControl>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            3-30 characters, letters, numbers, underscores, and hyphens only
+                          </p>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={registerForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input type="email" placeholder="your.email@example.com" {...field} />
+                          </FormControl>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            We'll send a verification email to this address
+                          </p>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -197,15 +224,52 @@ export default function AuthPage() {
                     <FormField
                       control={registerForm.control}
                       name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="••••••••" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      render={({ field }) => {
+                        const password = field.value || '';
+                        const hasMinLength = password.length >= 12;
+                        const hasMaxLength = password.length <= 128;
+                        const hasUppercase = /[A-Z]/.test(password);
+                        const hasLowercase = /[a-z]/.test(password);
+                        const hasNumber = /[0-9]/.test(password);
+                        const hasSpecial = /[^A-Za-z0-9]/.test(password);
+                        
+                        return (
+                          <FormItem>
+                            <FormLabel>Password</FormLabel>
+                            <FormControl>
+                              <Input type="password" placeholder="••••••••" {...field} />
+                            </FormControl>
+                            <div className="mt-2 space-y-1">
+                              <p className="text-xs text-muted-foreground mb-2">
+                                Password must meet all of the following requirements:
+                              </p>
+                              <div className="space-y-1 text-xs">
+                                <div className={`flex items-center gap-2 ${hasMinLength ? 'text-green-500' : 'text-muted-foreground'}`}>
+                                  <span>{hasMinLength ? '✓' : '○'}</span>
+                                  <span>At least 12 characters</span>
+                                </div>
+                                <div className={`flex items-center gap-2 ${hasUppercase ? 'text-green-500' : 'text-muted-foreground'}`}>
+                                  <span>{hasUppercase ? '✓' : '○'}</span>
+                                  <span>One uppercase letter (A-Z)</span>
+                                </div>
+                                <div className={`flex items-center gap-2 ${hasLowercase ? 'text-green-500' : 'text-muted-foreground'}`}>
+                                  <span>{hasLowercase ? '✓' : '○'}</span>
+                                  <span>One lowercase letter (a-z)</span>
+                                </div>
+                                <div className={`flex items-center gap-2 ${hasNumber ? 'text-green-500' : 'text-muted-foreground'}`}>
+                                  <span>{hasNumber ? '✓' : '○'}</span>
+                                  <span>One number (0-9)</span>
+                                </div>
+                                <div className={`flex items-center gap-2 ${hasSpecial ? 'text-green-500' : 'text-muted-foreground'}`}>
+                                  <span>{hasSpecial ? '✓' : '○'}</span>
+                                  <span>One special character (!@#$%^&*...)</span>
+                                </div>
+                              </div>
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
                     />
                     
                     <Button type="submit" className="w-full" disabled={registerMutation.isPending}>

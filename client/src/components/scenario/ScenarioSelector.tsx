@@ -53,8 +53,8 @@ export default function ScenarioSelector({
         </SelectTrigger>
         <SelectContent>
           {filteredScenarios.map((scenario) => (
-            <SelectItem key={scenario.id} value={scenario.id}>
-              {scenario.name}
+            <SelectItem key={String(scenario.id)} value={String(scenario.id)}>
+              {String(scenario.name)}
             </SelectItem>
           ))}
         </SelectContent>

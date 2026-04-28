@@ -11,15 +11,41 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 // Validation schemas for login and registration
+// These match the server-side validation in server/validation/auth.ts
+export const usernameSchema = z.string()
+  .min(3, "Username must be at least 3 characters")
+  .max(30, "Username must be less than 30 characters")
+  .regex(/^[a-zA-Z0-9_-]+$/, "Username can only contain letters, numbers, underscores, and hyphens")
+  .transform(val => val.toLowerCase().trim());
+
+export const passwordSchema = z.string()
+  .min(12, "Password must be at least 12 characters")
+  .max(128, "Password must be less than 128 characters")
+  .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+  .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+  .regex(/[0-9]/, "Password must contain at least one number")
+  .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character");
+
+export const emailSchema = z.string()
+  .email("Please enter a valid email address")
+  .max(255, "Email must be less than 255 characters")
+  .transform(val => val.toLowerCase().trim());
+
+export const displayNameSchema = z.string()
+  .max(100, "Display name must be less than 100 characters")
+  .optional()
+  .transform(val => val?.trim() || undefined);
+
 export const loginSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  username: usernameSchema,
+  password: z.string().min(1, "Password is required"),
 });
 
 export const registerSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  displayName: z.string().optional(),
+  username: usernameSchema,
+  email: emailSchema,
+  password: passwordSchema,
+  displayName: displayNameSchema,
 });
 
 type AuthContextType = {

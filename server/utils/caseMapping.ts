@@ -18,11 +18,11 @@ export function toCamelScenario(row: any) {
     clampedNodes: get('clampedNodes', 'clamped_nodes', []),
     nodes: row.nodes || [],
     createdAt: get('createdAt', 'created_at')
-      ? new Date(get('createdAt', 'created_at')).toISOString()
-      : "",
+      ? new Date(get('createdAt', 'created_at'))
+      : null,
     updatedAt: get('updatedAt', 'updated_at')
-      ? new Date(get('updatedAt', 'updated_at')).toISOString()
-      : "",
+      ? new Date(get('updatedAt', 'updated_at'))
+      : null,
     // Add more fields as needed in the future
   };
 } 

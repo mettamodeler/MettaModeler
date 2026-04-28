@@ -1006,3 +1006,178 @@ INFO:root:Simulation converged
 INFO:root:Simulation completed after 3 iterations
 INFO:root:Converged: True
 INFO:werkzeug:127.0.0.1 - - [14/Nov/2025 20:04:43] "POST /api/simulate HTTP/1.1" 200 -
+INFO:root:Analyze nodes count: 1
+INFO:root:Analyze edges count: 0
+INFO:werkzeug:127.0.0.1 - - [16/Nov/2025 19:14:21] "POST /api/analyze HTTP/1.1" 200 -
+INFO:root:Received simulation request: {
+  "schemaVersion": "1.0.0",
+  "nodes": [
+    {
+      "id": "node-1763338411489",
+      "value": 0.5,
+      "label": "COffeew ",
+      "type": "regular"
+    }
+  ],
+  "edges": [],
+  "activation": "sigmoid",
+  "threshold": 0.001,
+  "maxIterations": 20,
+  "compareToBaseline": false
+}
+INFO:root:Running simulation...
+INFO:root:Initializing FCM Simulator
+INFO:root:Activation function: sigmoid
+INFO:root:Threshold: 0.001
+INFO:root:Max iterations: 20
+INFO:root:Adding nodes to graph:
+INFO:root:Adding edges to graph:
+INFO:root:Graph initialization complete
+INFO:root:Number of nodes: 1
+INFO:root:Number of edges: 0
+INFO:root:=== Starting Simulation ===
+INFO:root:Simulation converged
+INFO:root:Simulation completed after 1 iterations
+INFO:root:Converged: True
+INFO:root:Simulation completed successfully
+INFO:werkzeug:127.0.0.1 - - [16/Nov/2025 19:14:21] "POST /api/simulate HTTP/1.1" 200 -
+INFO:root:Received simulation request: {
+  "schemaVersion": "1.0.0",
+  "nodes": [
+    {
+      "id": "node-1763338411489",
+      "value": 0.5,
+      "label": "COffeew ",
+      "type": "regular"
+    },
+    {
+      "id": "node-1763338481620",
+      "value": 0.5,
+      "label": "New Node",
+      "type": "regular"
+    }
+  ],
+  "edges": [
+    {
+      "source": "node-1763338411489",
+      "target": "node-1763338481620",
+      "weight": 0.5
+    },
+    {
+      "source": "node-1763338481620",
+      "target": "node-1763338411489",
+      "weight": 0.5
+    }
+  ],
+  "activation": "sigmoid",
+  "threshold": 0.001,
+  "maxIterations": 20,
+  "compareToBaseline": false,
+  "clampedNodes": [
+    "node-1763338411489"
+  ]
+}
+INFO:root:Running simulation...
+INFO:root:Initializing FCM Simulator
+INFO:root:Activation function: sigmoid
+INFO:root:Threshold: 0.001
+INFO:root:Max iterations: 20
+INFO:root:Adding nodes to graph:
+INFO:root:Adding edges to graph:
+INFO:root:Graph initialization complete
+INFO:root:Number of nodes: 2
+INFO:root:Number of edges: 2
+INFO:root:=== Starting Simulation ===
+INFO:root:Simulation converged
+INFO:root:Simulation completed after 2 iterations
+INFO:root:Converged: True
+INFO:root:Simulation completed successfully
+INFO:werkzeug:127.0.0.1 - - [16/Nov/2025 19:15:13] "POST /api/simulate HTTP/1.1" 200 -
+INFO:root:Received simulation request: {
+  "schemaVersion": "1.0.0",
+  "nodes": [
+    {
+      "id": "node-1763338411489",
+      "value": 0.5,
+      "label": "COffeew ",
+      "type": "regular"
+    },
+    {
+      "id": "node-1763338481620",
+      "value": 0.5,
+      "label": "New Node",
+      "type": "regular"
+    }
+  ],
+  "edges": [
+    {
+      "source": "node-1763338411489",
+      "target": "node-1763338481620",
+      "weight": 0.5
+    },
+    {
+      "source": "node-1763338481620",
+      "target": "node-1763338411489",
+      "weight": 0.5
+    }
+  ],
+  "activation": "sigmoid",
+  "threshold": 0.001,
+  "maxIterations": 20,
+  "compareToBaseline": true,
+  "modelInitialValues": {
+    "node-1763338411489": 0.5,
+    "node-1763338481620": 0.5
+  },
+  "scenarioInitialValues": {
+    "node-1763338411489": 0.88,
+    "node-1763338481620": 0.5
+  },
+  "clampedNodes": [
+    "node-1763338411489"
+  ]
+}
+INFO:root:=== Starting Baseline vs Scenario Comparison ===
+INFO:root:Model initial values: {'node-1763338411489': 0.5, 'node-1763338481620': 0.5}
+INFO:root:Scenario initial values: {'node-1763338411489': 0.88, 'node-1763338481620': 0.5}
+INFO:root:Clamped nodes: ['node-1763338411489']
+INFO:root:Applying model initial values: {'node-1763338411489': 0.5, 'node-1763338481620': 0.5}
+INFO:root:Setting baseline node node-1763338411489 to 0.5
+INFO:root:Setting baseline node node-1763338481620 to 0.5
+INFO:root:Applying scenario initial values: {'node-1763338411489': 0.88, 'node-1763338481620': 0.5}
+INFO:root:Setting scenario node node-1763338411489 to 0.88
+INFO:root:Setting scenario node node-1763338481620 to 0.5
+INFO:root:Baseline node values: [('node-1763338411489', 0.5), ('node-1763338481620', 0.5)]
+INFO:root:Scenario node values: [('node-1763338411489', 0.88), ('node-1763338481620', 0.5)]
+INFO:root:Initializing FCM Simulator
+INFO:root:Activation function: sigmoid
+INFO:root:Threshold: 0.001
+INFO:root:Max iterations: 20
+INFO:root:Adding nodes to graph:
+INFO:root:Adding edges to graph:
+INFO:root:Graph initialization complete
+INFO:root:Number of nodes: 2
+INFO:root:Number of edges: 2
+INFO:root:=== Starting Simulation ===
+INFO:root:Simulation converged
+INFO:root:Simulation completed after 3 iterations
+INFO:root:Converged: True
+INFO:root:Initializing FCM Simulator
+INFO:root:Activation function: sigmoid
+INFO:root:Threshold: 0.001
+INFO:root:Max iterations: 20
+INFO:root:Adding nodes to graph:
+INFO:root:Adding edges to graph:
+INFO:root:Graph initialization complete
+INFO:root:Number of nodes: 2
+INFO:root:Number of edges: 2
+INFO:root:Clamped values for scenario: {'node-1763338411489': 0.88}
+INFO:root:=== Starting Simulation ===
+INFO:root:Simulation converged
+INFO:root:Simulation completed after 2 iterations
+INFO:root:Converged: True
+INFO:werkzeug:127.0.0.1 - - [16/Nov/2025 19:15:16] "POST /api/simulate HTTP/1.1" 200 -
+INFO:root:Analyze nodes count: 2
+INFO:root:Analyze edges count: 2
+INFO:werkzeug:127.0.0.1 - - [16/Nov/2025 19:16:12] "POST /api/analyze HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [16/Nov/2025 19:16:13] "POST /api/export/notebook HTTP/1.1" 200 -

@@ -115,3 +115,4 @@ If still having issues, share:
 3. **Node.js server logs** - the line showing "Expecting Python service at..."
 4. **Environment variables** (screenshot, redact secrets) - to see if `PYTHON_SIM_URL` is set
 
+

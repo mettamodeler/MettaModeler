@@ -38,31 +38,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
   setupAuth(app);
 
+  const getUserIdOrRespond = (req: Request, res: Response): number | null => {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ message: "Not authenticated" });
+      return null;
+    }
+    return userId;
+  };
+
+  const getOwnedProjectOrRespond = async (projectId: number, userId: number, res: Response) => {
+    const project = await storage.getProject(projectId);
+    if (!project) {
+      res.status(404).json({ message: "Project not found" });
+      return null;
+    }
+    if (project.userId !== userId) {
+      res.status(403).json({ message: "Forbidden" });
+      return null;
+    }
+    return project;
+  };
+
+  const getOwnedModelOrRespond = async (modelId: number, userId: number, res: Response) => {
+    const model = await storage.getModel(modelId);
+    if (!model || !model.projectId) {
+      res.status(404).json({ message: "Model not found" });
+      return null;
+    }
+    const project = await storage.getProject(model.projectId);
+    if (!project || project.userId !== userId) {
+      res.status(404).json({ message: "Model not found" });
+      return null;
+    }
+    return model;
+  };
+
+  const getOwnedScenarioOrRespond = async (scenarioId: number, userId: number, res: Response) => {
+    const scenario = await storage.getScenario(scenarioId);
+    if (!scenario) {
+      res.status(404).json({ message: "Scenario not found" });
+      return null;
+    }
+    if (!scenario.modelId) {
+      res.status(404).json({ message: "Scenario not found" });
+      return null;
+    }
+    const model = await getOwnedModelOrRespond(scenario.modelId, userId, res);
+    if (!model) return null;
+    return scenario;
+  };
+
   // API routes
   // Projects
   app.get("/api/projects", isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.id;
-      const projects = await storage.getProjects();
-      // Only return projects belonging to the current user
-      const userProjects = projects.filter(p => p.userId === userId);
+      const userId = getUserIdOrRespond(req, res);
+      if (!userId) return;
+
+      const userProjects = await storage.getProjectsByUser(userId);
       res.json(userProjects);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch projects" });
     }
   });
 
-  app.get("/api/projects/:id", async (req: Request, res: Response) => {
+  app.get("/api/projects/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid project ID" });
       }
 
-      const project = await storage.getProject(id);
-      if (!project) {
-        return res.status(404).json({ message: "Project not found" });
-      }
+      const userId = getUserIdOrRespond(req, res);
+      if (!userId) return;
+
+      const project = await getOwnedProjectOrRespond(id, userId, res);
+      if (!project) return;
 
       res.json(project);
     } catch (error) {
@@ -100,12 +152,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/projects/:id", async (req: Request, res: Response) => {
+  app.put("/api/projects/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid project ID" });
       }
+
+      const userId = getUserIdOrRespond(req, res);
+      if (!userId) return;
+
+      const ownsProject = await getOwnedProjectOrRespond(id, userId, res);
+      if (!ownsProject) return;
 
       const result = ProjectSchema.partial().safeParse(req.body);
       if (!result.success) {
@@ -134,12 +192,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/projects/:id", async (req: Request, res: Response) => {
+  app.delete("/api/projects/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid project ID" });
       }
+
+      const userId = getUserIdOrRespond(req, res);
+      if (!userId) return;
+
+      const ownsProject = await getOwnedProjectOrRespond(id, userId, res);
+      if (!ownsProject) return;
 
       const result = await storage.deleteProject(id);
       if (!result) {
@@ -153,21 +217,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Models
-  app.get("/api/models", async (_req: Request, res: Response) => {
+  app.get("/api/models", isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const models = await storage.getModels();
-      res.json(models);
+      const userId = getUserIdOrRespond(req, res);
+      if (!userId) return;
+
+      const userModels = await storage.getModelsByUser(userId);
+      res.json(userModels);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch models" });
     }
   });
 
-  app.get("/api/projects/:projectId/models", async (req: Request, res: Response) => {
+  app.get("/api/projects/:projectId/models", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const projectId = parseInt(req.params.projectId);
       if (isNaN(projectId)) {
         return res.status(400).json({ message: "Invalid project ID" });
       }
+
+      const userId = getUserIdOrRespond(req, res);
+      if (!userId) return;
+
+      const project = await getOwnedProjectOrRespond(projectId, userId, res);
+      if (!project) return;
 
       const models = await storage.getModelsByProject(projectId);
       res.json(models);
@@ -176,17 +249,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/models/:id", async (req: Request, res: Response) => {
+  app.get("/api/models/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid model ID" });
       }
 
-      const model = await storage.getModel(id);
-      if (!model) {
-        return res.status(404).json({ message: "Model not found" });
-      }
+      const userId = getUserIdOrRespond(req, res);
+      if (!userId) return;
+
+      const model = await getOwnedModelOrRespond(id, userId, res);
+      if (!model) return;
 
       res.json(model);
     } catch (error) {
@@ -194,7 +268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/models", async (req: Request, res: Response) => {
+  app.post("/api/models", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const result = CreateModelSchema.safeParse(req.body);
       if (!result.success) {
@@ -204,6 +278,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           fieldErrors: result.error.errors
         });
       }
+
+      const userId = getUserIdOrRespond(req, res);
+      if (!userId) return;
+
+      const ownsProject = await getOwnedProjectOrRespond(result.data.projectId, userId, res);
+      if (!ownsProject) return;
 
       // Generate fields on the server
       const now = new Date();
@@ -223,12 +303,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/models/:id", async (req: Request, res: Response) => {
+  app.put("/api/models/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid model ID" });
       }
+
+      const userId = getUserIdOrRespond(req, res);
+      if (!userId) return;
+
+      const ownsModel = await getOwnedModelOrRespond(id, userId, res);
+      if (!ownsModel) return;
 
       const result = ModelSchema.partial().safeParse(req.body);
       if (!result.success) {
@@ -241,7 +327,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Convert API schema to storage schema
       const storageData: Partial<ModelStorage> = {};
-      if (result.data.projectId !== undefined) storageData.projectId = result.data.projectId;
+      if (result.data.projectId !== undefined) {
+        const targetProject = await getOwnedProjectOrRespond(result.data.projectId, userId, res);
+        if (!targetProject) return;
+        storageData.projectId = result.data.projectId;
+      }
       if (result.data.name) storageData.name = result.data.name;
       if (result.data.description !== undefined) storageData.description = result.data.description || null;
       if (result.data.nodes) storageData.nodes = result.data.nodes;
@@ -261,12 +351,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/models/:id", async (req: Request, res: Response) => {
+  app.delete("/api/models/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid model ID" });
       }
+
+      const userId = getUserIdOrRespond(req, res);
+      if (!userId) return;
+
+      const ownsModel = await getOwnedModelOrRespond(id, userId, res);
+      if (!ownsModel) return;
 
       const result = await storage.deleteModel(id);
       if (!result) {
@@ -280,11 +376,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Scenarios
-  app.get("/api/scenarios", async (_req: Request, res: Response) => {
+  app.get("/api/scenarios", isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const scenarios = await storage.getScenarios();
+      const userId = getUserIdOrRespond(req, res);
+      if (!userId) return;
+
+      const userScenarios = await storage.getScenariosByUser(userId);
       // Transform and validate each scenario to ensure API consistency
-      const safeScenarios = scenarios.map(scenario => {
+      const safeScenarios = userScenarios.map(scenario => {
         // Transform the scenario data to match API format
         const transformed = {
           ...scenario,
@@ -316,12 +415,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/models/:modelId/scenarios", async (req: Request, res: Response) => {
+  app.get("/api/models/:modelId/scenarios", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const modelId = parseInt(req.params.modelId);
       if (isNaN(modelId)) {
         return res.status(400).json({ message: "Invalid model ID" });
       }
+
+      const userId = getUserIdOrRespond(req, res);
+      if (!userId) return;
+
+      const ownsModel = await getOwnedModelOrRespond(modelId, userId, res);
+      if (!ownsModel) return;
 
       const scenarios = await storage.getScenariosByModel(modelId);
       // Transform and validate each scenario to ensure API consistency
@@ -357,17 +462,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/scenarios/:id", async (req: Request, res: Response) => {
+  app.get("/api/scenarios/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid scenario ID" });
       }
 
-      const scenario = await storage.getScenario(id);
-      if (!scenario) {
-        return res.status(404).json({ message: "Scenario not found" });
-      }
+      const userId = getUserIdOrRespond(req, res);
+      if (!userId) return;
+
+      const scenario = await getOwnedScenarioOrRespond(id, userId, res);
+      if (!scenario) return;
       
       // Transform the scenario data to match API format
       const transformed = {
@@ -401,7 +507,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/scenarios", isAuthenticated, async (req: Request, res: Response) => {
     console.log("REQ.BODY:", JSON.stringify(req.body, null, 2));
     try {
-      const userId = req.user?.id;
+      const userId = getUserIdOrRespond(req, res);
+      if (!userId) return;
+
       const now = new Date();
 
       // Validate only the user-supplied fields
@@ -429,6 +537,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       console.log("Scenario data to be inserted:", JSON.stringify(scenarioData, null, 2));
 
+      const ownsModel = await getOwnedModelOrRespond(result.data.modelId, userId, res);
+      if (!ownsModel) return;
+
       const scenario = await storage.createScenario(scenarioData);
       console.log("Scenario from DB:", scenario);
       const safeScenario = ScenarioSchema.parse(scenario);
@@ -439,11 +550,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/scenarios/:id", async (req: Request, res: Response) => {
+  app.patch("/api/scenarios/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid scenario ID" });
+      }
+
+      const userId = getUserIdOrRespond(req, res);
+      if (!userId) return;
+
+      const ownsScenario = await getOwnedScenarioOrRespond(id, userId, res);
+      if (!ownsScenario) return;
+
+      if (req.body?.modelId !== undefined) {
+        const targetModelId = Number(req.body.modelId);
+        if (Number.isNaN(targetModelId)) {
+          return res.status(400).json({ message: "Invalid model ID" });
+        }
+        const ownsModel = await getOwnedModelOrRespond(targetModelId, userId, res);
+        if (!ownsModel) return;
       }
 
       const scenario = await storage.updateScenario(id, req.body);
@@ -459,12 +585,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/scenarios/:id", async (req: Request, res: Response) => {
+  app.delete("/api/scenarios/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid scenario ID" });
       }
+
+      const userId = getUserIdOrRespond(req, res);
+      if (!userId) return;
+
+      const ownsScenario = await getOwnedScenarioOrRespond(id, userId, res);
+      if (!ownsScenario) return;
 
       const result = await storage.deleteScenario(id);
       if (!result) {

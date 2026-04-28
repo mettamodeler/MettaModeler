@@ -281,7 +281,7 @@ export default function Sidebar({ currentProjectId }: SidebarProps) {
   };
 
   const isActiveProject = (project: Project) => {
-    return effectiveProjectId === project.id.toString();
+    return effectiveProjectId === String(project.id);
   };
 
   const isActiveModel = (model: FCMModel) => {
@@ -322,10 +322,11 @@ export default function Sidebar({ currentProjectId }: SidebarProps) {
         {/* Projects List */}
         <ul className="space-y-4">
           {projects.map((project) => {
-            const childModels = models.filter(m => m.projectId?.toString() === project.id.toString());
+            const projectId = String(project.id);
+            const childModels = models.filter(m => String(m.projectId) === projectId);
             const isExpandable = childModels.length > 0;
             return (
-              <li key={project.id} className="group">
+              <li key={projectId} className="group">
                 <div
                   className={cn(
                     'flex items-center cursor-pointer px-2 py-1 rounded transition relative',
@@ -333,11 +334,11 @@ export default function Sidebar({ currentProjectId }: SidebarProps) {
                       ? 'text-sidebar-primary font-semibold bg-transparent light:text-[#3B82F6]'
                       : 'text-sidebar-foreground light:text-[#22223B]'
                   )}
-                  onClick={() => isExpandable ? toggleProject(project.id.toString()) : handleProjectClick(project.id.toString())}
+                  onClick={() => isExpandable ? toggleProject(projectId) : handleProjectClick(projectId)}
                 >
                   {/* Always show chevron if project has children */}
                   {isExpandable ? (
-                    expandedProjects[project.id] ? <ChevronDownIcon className="transition-transform" /> : <ChevronRightIcon className="transition-transform" />
+                    expandedProjects[projectId] ? <ChevronDownIcon className="transition-transform" /> : <ChevronRightIcon className="transition-transform" />
                   ) : (
                     <span className="w-4 h-4 inline-block" />
                   )}
@@ -347,7 +348,7 @@ export default function Sidebar({ currentProjectId }: SidebarProps) {
                     style={{ pointerEvents: 'auto' }}
                     onClick={e => {
                       e.stopPropagation();
-                      setNewModelProjectId(project.id.toString());
+                      setNewModelProjectId(projectId);
                       setIsCreatingModel(true);
                     }}
                     title="Create Model in this Project"
@@ -370,7 +371,7 @@ export default function Sidebar({ currentProjectId }: SidebarProps) {
                   </button>
                 </div>
                 {/* Models nested under project */}
-                {expandedProjects[project.id] && isExpandable &&
+                {expandedProjects[projectId] && isExpandable &&
                   <ul className="ml-6 space-y-2 border-l border-sidebar-border pl-2">
                     {childModels.map(model => (
                       <li key={model.id} className="group">

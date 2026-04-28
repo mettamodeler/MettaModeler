@@ -160,7 +160,7 @@ export default function Home() {
                 <div>
                   <h1 className="text-3xl font-bold tracking-tight">
                     {currentProjectId 
-                      ? projects.find(p => p.id.toString() === currentProjectId)?.name || 'Project'
+                      ? projects.find(p => String(p.id) === currentProjectId)?.name || 'Project'
                       : 'All Projects'}
                   </h1>
                   <p className="text-muted-foreground">
@@ -245,7 +245,9 @@ export default function Home() {
       <Dialog open={isCreatingProject} onOpenChange={setIsCreatingProject}>
         <DialogContent className="dark-glass border border-white/10">
           <DialogHeader>
-            <DialogTitle>create new project</DialogTitle>
+            <DialogTitle>
+              create new project
+            </DialogTitle>
             <DialogDescription>
               Projects help you organize your models by topic or research area.
             </DialogDescription>
@@ -276,7 +278,9 @@ export default function Home() {
       <Dialog open={isCreatingModel} onOpenChange={setIsCreatingModel}>
         <DialogContent className="dark-glass border border-white/10">
           <DialogHeader>
-            <DialogTitle>create new model</DialogTitle>
+            <DialogTitle>
+              create new model
+            </DialogTitle>
             <DialogDescription>
               Create a new Fuzzy Cognitive Map model for your research.
             </DialogDescription>

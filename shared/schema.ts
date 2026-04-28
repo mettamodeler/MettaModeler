@@ -9,6 +9,14 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   displayName: text("display_name"),
   role: text("role").default("user"),
+  email: text("email"),
+  emailVerified: text("email_verified").default("false"),
+  emailVerificationToken: text("email_verification_token"),
+  emailVerificationExpires: timestamp("email_verification_expires"),
+  failedLoginAttempts: integer("failed_login_attempts").default(0),
+  lockedUntil: timestamp("locked_until"),
+  passwordResetToken: text("password_reset_token"),
+  passwordResetExpires: timestamp("password_reset_expires"),
 });
 
 // Projects table
@@ -82,6 +90,14 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
   displayName: true,
   role: true,
+  email: true,
+  emailVerified: true,
+  emailVerificationToken: true,
+  emailVerificationExpires: true,
+  failedLoginAttempts: true,
+  lockedUntil: true,
+  passwordResetToken: true,
+  passwordResetExpires: true,
 });
 
 export const insertProjectSchema = createInsertSchema(projects).pick({

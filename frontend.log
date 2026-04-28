@@ -4170,3 +4170,221 @@
 [1]     at afterConnectMultiple (node:net:1714:7)
 [1] 10:21:39 PM [vite] vite.config.ts changed, restarting server...
 [1] 10:21:39 PM [vite] server restarted.
+[1] 4:07:40 AM [vite] http proxy error: /api/user
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 4:07:40 AM [vite] http proxy error: /api/user
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 7:14:31 AM [vite] http proxy error: /api/user
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 7:14:31 AM [vite] http proxy error: /api/user
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 9:49:50 AM [vite] http proxy error: /api/user
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 9:49:50 AM [vite] http proxy error: /api/user
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 10:16:49 AM [vite] http proxy error: /api/user
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 10:16:49 AM [vite] http proxy error: /api/user
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 2:35:42 PM [vite] http proxy error: /api/user
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 2:35:42 PM [vite] http proxy error: /api/user
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 5:09:30 PM [vite] http proxy error: /api/user
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 5:09:30 PM [vite] http proxy error: /api/user
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 2:26:19 AM [vite] http proxy error: /api/user
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 2:26:19 AM [vite] http proxy error: /api/user
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 4:30:54 AM [vite] http proxy error: /api/user
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 4:30:54 AM [vite] http proxy error: /api/user
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 6:36:15 PM [vite] http proxy error: /api/user
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 6:36:15 PM [vite] http proxy error: /api/user
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 6:46:04 PM [vite] http proxy error: /api/user
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 6:46:18 PM [vite] http proxy error: /api/user
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 6:47:17 PM [vite] http proxy error: /api/login
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 6:47:26 PM [vite] http proxy error: /api/login
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 6:47:34 PM [vite] http proxy error: /api/register
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 7:08:25 PM [vite] hmr update /src/components/fcm/CustomNode.tsx, /src/index.css
+[1] 7:08:27 PM [vite] hmr update /src/components/fcm/CustomNode.tsx, /src/index.css
+[1] 7:08:29 PM [vite] hmr update /src/components/fcm/CustomEdge.tsx, /src/index.css
+[1] 7:08:35 PM [vite] hmr update /src/components/fcm/CustomEdge.tsx, /src/index.css
+[1] 7:08:49 PM [vite] hmr update /src/components/scenario/ScenarioManager.tsx, /src/index.css
+[1] 7:08:49 PM [vite] hmr invalidate /src/components/scenario/ScenarioManager.tsx Could not Fast Refresh ("validateInitialValues" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[1] 7:08:49 PM [vite] hmr update /src/index.css, /src/pages/ModelEditor.tsx
+[1] 7:08:51 PM [vite] hmr update /src/components/scenario/ScenarioManager.tsx, /src/index.css
+[1] 7:08:51 PM [vite] hmr invalidate /src/components/scenario/ScenarioManager.tsx Could not Fast Refresh ("validateInitialValues" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[1] 7:08:51 PM [vite] hmr update /src/index.css, /src/pages/ModelEditor.tsx
+[1] 7:08:54 PM [vite] hmr update /src/components/scenario/ScenarioManager.tsx, /src/index.css
+[1] 7:08:54 PM [vite] hmr invalidate /src/components/scenario/ScenarioManager.tsx Could not Fast Refresh ("validateInitialValues" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[1] 7:08:54 PM [vite] hmr update /src/index.css, /src/pages/ModelEditor.tsx
+[1] 7:08:58 PM [vite] hmr update /src/pages/home.tsx, /src/index.css
+[1] 7:08:59 PM [vite] hmr update /src/pages/home.tsx, /src/index.css
+[1] 7:09:01 PM [vite] hmr update /src/pages/home.tsx, /src/index.css
+[1] 7:09:15 PM [vite] hmr update /src/pages/ModelEditor.tsx, /src/index.css
+[1] 7:09:19 PM [vite] hmr update /src/pages/ModelEditor.tsx, /src/index.css
+[1] 7:09:44 PM [vite] hmr update /src/components/scenario/ScenarioManager.tsx, /src/index.css
+[1] 7:09:44 PM [vite] hmr update /src/components/fcm/CustomNode.tsx, /src/index.css
+[1] 7:09:44 PM [vite] hmr update /src/components/ui/info-tooltip.tsx, /src/index.css
+[1] 7:09:44 PM [vite] hmr update /src/components/fcm/CustomEdge.tsx, /src/index.css
+[1] 7:09:44 PM [vite] hmr update /src/pages/ModelEditor.tsx, /src/index.css
+[1] 7:09:44 PM [vite] hmr update /src/pages/home.tsx, /src/index.css
+[1] 7:09:45 PM [vite] hmr invalidate /src/components/scenario/ScenarioManager.tsx Could not Fast Refresh ("validateInitialValues" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[1] 7:09:45 PM [vite] hmr update /src/index.css, /src/pages/ModelEditor.tsx
+[1] 7:11:41 PM [vite] http proxy error: /api/register
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 7:11:51 PM [vite] http proxy error: /api/login
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 8:51:18 AM [vite] hmr update /src/components/fcm/CustomNode.tsx, /src/index.css
+[1] 8:51:28 AM [vite] hmr update /src/components/fcm/CustomEdge.tsx, /src/index.css
+[1] 8:51:30 AM [vite] hmr update /src/components/fcm/CustomNode.tsx, /src/index.css
+[1] 8:51:30 AM [vite] hmr update /src/components/fcm/CustomEdge.tsx, /src/index.css
+[1] 8:52:53 AM [vite] hmr update /src/components/fcm/CustomEdge.tsx, /src/index.css
+[1] 8:52:54 AM [vite] hmr update /src/components/scenario/ScenarioManager.tsx, /src/index.css
+[1] 8:52:55 AM [vite] hmr invalidate /src/components/scenario/ScenarioManager.tsx Could not Fast Refresh ("validateInitialValues" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[1] 8:52:55 AM [vite] hmr update /src/index.css, /src/pages/ModelEditor.tsx
+[1] 8:52:59 AM [vite] hmr update /src/components/scenario/ScenarioManager.tsx, /src/index.css
+[1] 8:52:59 AM [vite] hmr invalidate /src/components/scenario/ScenarioManager.tsx Could not Fast Refresh ("validateInitialValues" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[1] 8:52:59 AM [vite] hmr update /src/index.css, /src/pages/ModelEditor.tsx
+[1] 8:53:02 AM [vite] hmr update /src/components/scenario/ScenarioManager.tsx, /src/index.css
+[1] 8:53:02 AM [vite] hmr invalidate /src/components/scenario/ScenarioManager.tsx Could not Fast Refresh ("validateInitialValues" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[1] 8:53:02 AM [vite] hmr update /src/index.css, /src/pages/ModelEditor.tsx
+[1] 8:53:03 AM [vite] hmr update /src/pages/home.tsx, /src/index.css
+[1] 8:53:04 AM [vite] hmr update /src/pages/home.tsx, /src/index.css
+[1] 8:53:06 AM [vite] hmr update /src/pages/home.tsx, /src/index.css
+[1] 8:53:06 AM [vite] hmr update /src/pages/home.tsx, /src/index.css
+[1] 8:53:06 AM [vite] http proxy error: /api/models
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 8:53:06 AM [vite] http proxy error: /api/projects
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 8:53:07 AM [vite] hmr update /src/pages/ModelEditor.tsx, /src/index.css
+[1] 8:53:11 AM [vite] hmr update /src/components/ui/info-tooltip.tsx, /src/index.css
+[1] 8:54:21 AM [vite] hmr update /src/components/fcm/CustomEdge.tsx, /src/index.css
+[1] 8:54:21 AM [vite] hmr update /src/pages/home.tsx, /src/index.css
+[1] 8:54:21 AM [vite] hmr update /src/pages/ModelEditor.tsx, /src/index.css
+[1] 8:54:21 AM [vite] hmr update /src/components/scenario/ScenarioManager.tsx, /src/index.css
+[1] 8:54:22 AM [vite] hmr invalidate /src/components/scenario/ScenarioManager.tsx Could not Fast Refresh ("validateInitialValues" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[1] 8:54:22 AM [vite] hmr update /src/index.css, /src/pages/ModelEditor.tsx
+[1] 8:57:52 AM [vite] hmr update /src/hooks/use-auth.tsx, /src/index.css
+[1] 8:57:53 AM [vite] hmr invalidate /src/hooks/use-auth.tsx Could not Fast Refresh (new export)
+[1] 8:57:53 AM [vite] page reload src/hooks/use-auth.tsx
+[1] 8:57:55 AM [vite] http proxy error: /api/user
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 8:58:57 AM [vite] hmr update /src/hooks/use-auth.tsx, /src/index.css
+[1] 8:58:58 AM [vite] hmr invalidate /src/hooks/use-auth.tsx Could not Fast Refresh ("AuthContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[1] 8:58:58 AM [vite] page reload src/hooks/use-auth.tsx
+[1] 8:58:59 AM [vite] http proxy error: /api/user
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 9:01:15 AM [vite] http proxy error: /api/user
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 9:05:19 AM [vite] hmr update /src/pages/auth-page.tsx, /src/index.css
+[1] 9:05:23 AM [vite] hmr update /src/pages/auth-page.tsx, /src/index.css
+[1] 9:05:40 AM [vite] hmr update /src/pages/auth-page.tsx, /src/index.css
+[1] 9:08:47 AM [vite] hmr update /src/hooks/use-auth.tsx, /src/index.css
+[1] 9:08:47 AM [vite] hmr invalidate /src/hooks/use-auth.tsx Could not Fast Refresh (new export)
+[1] 9:08:47 AM [vite] page reload src/hooks/use-auth.tsx
+[1] 9:08:49 AM [vite] hmr update /src/pages/auth-page.tsx, /src/index.css
+[1] 9:08:57 AM [vite] hmr update /src/pages/auth-page.tsx, /src/index.css
+[1] 9:09:05 AM [vite] hmr update /src/pages/auth-page.tsx, /src/index.css
+[1] 9:09:57 AM [vite] hmr update /src/App.tsx, /src/index.css
+[1] 9:10:47 AM [vite] hmr update /src/hooks/use-auth.tsx, /src/index.css
+[1] 9:10:47 AM [vite] hmr update /src/pages/auth-page.tsx, /src/index.css
+[1] 9:10:47 AM [vite] hmr update /src/pages/reset-password.tsx, /src/index.css
+[1] 9:10:47 AM [vite] hmr update /src/pages/forgot-password.tsx, /src/index.css
+[1] 9:10:47 AM [vite] hmr update /src/App.tsx, /src/index.css
+[1] 9:10:47 AM [vite] hmr invalidate /src/hooks/use-auth.tsx Could not Fast Refresh ("AuthContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[1] 9:10:47 AM [vite] page reload src/hooks/use-auth.tsx
+[1] 9:24:37 AM [vite] http proxy error: /api/login
+[1] Error: socket hang up
+[1]     at Socket.socketOnEnd (node:_http_client:542:25)
+[1]     at Socket.emit (node:events:530:35)
+[1]     at endReadableNT (node:internal/streams/readable:1698:12)
+[1]     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+[1] 9:24:56 AM [vite] http proxy error: /api/register
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 9:25:02 AM [vite] http proxy error: /api/register
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 9:25:07 AM [vite] http proxy error: /api/user
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] 9:25:26 AM [vite] http proxy error: /api/register
+[1] AggregateError [ECONNREFUSED]: 
+[1]     at internalConnectMultiple (node:net:1139:18)
+[1]     at afterConnectMultiple (node:net:1714:7)
+[1] vite exited with code 0

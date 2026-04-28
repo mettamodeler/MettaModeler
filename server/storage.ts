@@ -54,11 +54,16 @@ export interface IStorage {
   // They're compatible, but we use DrizzleUser for internal type safety
   getUser(id: number): Promise<DrizzleUser | undefined>;
   getUserByUsername(username: string): Promise<DrizzleUser | undefined>;
+  getUserByEmail(email: string): Promise<DrizzleUser | undefined>;
+  getUserByVerificationToken(token: string): Promise<DrizzleUser | undefined>;
+  getUserByPasswordResetToken(token: string): Promise<DrizzleUser | undefined>;
   createUser(user: InsertUser): Promise<DrizzleUser>;
+  updateUser(id: number, updates: Partial<DrizzleUser>): Promise<DrizzleUser | undefined>;
   
   // Project operations
   // Note: Project type is now from generated types, but database returns DrizzleProject
   getProjects(): Promise<DrizzleProject[]>;
+  getProjectsByUser(userId: number): Promise<DrizzleProject[]>;
   getProject(id: number): Promise<DrizzleProject | undefined>;
   createProject(project: InsertProject): Promise<DrizzleProject>;
   updateProject(id: number, project: Partial<DrizzleProject>): Promise<DrizzleProject | undefined>;
@@ -67,6 +72,7 @@ export interface IStorage {
   // Model operations
   // Note: Model type is now from generated types, but database returns DrizzleModel
   getModels(): Promise<DrizzleModel[]>;
+  getModelsByUser(userId: number): Promise<DrizzleModel[]>;
   getModelsByProject(projectId: number): Promise<DrizzleModel[]>;
   getModel(id: number): Promise<DrizzleModel | null>;
   createModel(data: CreateModelData): Promise<DrizzleModel>;
@@ -76,6 +82,7 @@ export interface IStorage {
   // Scenario operations
   // Note: Scenario type is now from generated types, but database returns DrizzleScenario
   getScenarios(): Promise<DrizzleScenario[]>;
+  getScenariosByUser(userId: number): Promise<DrizzleScenario[]>;
   getScenariosByModel(modelId: number): Promise<DrizzleScenario[]>;
   getScenario(id: number): Promise<DrizzleScenario | null>;
   createScenario(data: CreateScenarioData): Promise<DrizzleScenario>;
@@ -114,14 +121,41 @@ export class PostgresStorage implements IStorage {
     return result[0];
   }
 
+  async getUserByEmail(email: string): Promise<DrizzleUser | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.email, email));
+    return result[0];
+  }
+
+  async getUserByVerificationToken(token: string): Promise<DrizzleUser | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.emailVerificationToken, token));
+    return result[0];
+  }
+
+  async getUserByPasswordResetToken(token: string): Promise<DrizzleUser | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.passwordResetToken, token));
+    return result[0];
+  }
+
   async createUser(insertUser: InsertUser): Promise<DrizzleUser> {
     const result = await this.db.insert(users).values(insertUser).returning();
+    return result[0];
+  }
+
+  async updateUser(id: number, updates: Partial<DrizzleUser>): Promise<DrizzleUser | undefined> {
+    const result = await this.db.update(users)
+      .set({ ...updates })
+      .where(eq(users.id, id))
+      .returning();
     return result[0];
   }
   
   // PROJECT OPERATIONS
   async getProjects(): Promise<DrizzleProject[]> {
     return await this.db.select().from(projects);
+  }
+
+  async getProjectsByUser(userId: number): Promise<DrizzleProject[]> {
+    return await this.db.select().from(projects).where(eq(projects.userId, userId));
   }
   
   async getProject(id: number): Promise<DrizzleProject | undefined> {
@@ -169,6 +203,15 @@ export class PostgresStorage implements IStorage {
     const results = await this.db.select().from(models);
     return results;
   }
+
+  async getModelsByUser(userId: number): Promise<DrizzleModel[]> {
+    const results = await this.db
+      .select({ model: models })
+      .from(models)
+      .innerJoin(projects, eq(models.projectId, projects.id))
+      .where(eq(projects.userId, userId));
+    return results.map(result => result.model);
+  }
   
   async getModelsByProject(projectId: number): Promise<DrizzleModel[]> {
     const results = await this.db.select().from(models).where(eq(models.projectId, projectId));
@@ -214,6 +257,16 @@ export class PostgresStorage implements IStorage {
   async getScenarios(): Promise<DrizzleScenario[]> {
     const results = await this.db.select().from(scenarios);
     return results.map(toCamelScenario) as DrizzleScenario[];
+  }
+
+  async getScenariosByUser(userId: number): Promise<DrizzleScenario[]> {
+    const results = await this.db
+      .select({ scenario: scenarios })
+      .from(scenarios)
+      .innerJoin(models, eq(scenarios.modelId, models.id))
+      .innerJoin(projects, eq(models.projectId, projects.id))
+      .where(eq(projects.userId, userId));
+    return results.map(result => toCamelScenario(result.scenario)) as DrizzleScenario[];
   }
   
   async getScenariosByModel(modelId: number): Promise<DrizzleScenario[]> {
@@ -333,16 +386,60 @@ export class MemStorage implements IStorage {
     );
   }
 
+  async getUserByEmail(email: string): Promise<DrizzleUser | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.email === email,
+    );
+  }
+
+  async getUserByVerificationToken(token: string): Promise<DrizzleUser | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.emailVerificationToken === token,
+    );
+  }
+
+  async getUserByPasswordResetToken(token: string): Promise<DrizzleUser | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.passwordResetToken === token,
+    );
+  }
+
   async createUser(insertUser: InsertUser): Promise<DrizzleUser> {
     const id = this.userId++;
-    const user = { ...insertUser, id, displayName: insertUser.displayName || null, role: insertUser.role || null };
+    const user: DrizzleUser = {
+      id,
+      username: insertUser.username,
+      password: insertUser.password,
+      displayName: insertUser.displayName || null,
+      role: insertUser.role || null,
+      email: (insertUser as DrizzleUser).email ?? null,
+      emailVerified: (insertUser as DrizzleUser).emailVerified ?? null,
+      emailVerificationToken: (insertUser as DrizzleUser).emailVerificationToken ?? null,
+      emailVerificationExpires: (insertUser as DrizzleUser).emailVerificationExpires ?? null,
+      failedLoginAttempts: (insertUser as DrizzleUser).failedLoginAttempts ?? null,
+      lockedUntil: (insertUser as DrizzleUser).lockedUntil ?? null,
+      passwordResetToken: (insertUser as DrizzleUser).passwordResetToken ?? null,
+      passwordResetExpires: (insertUser as DrizzleUser).passwordResetExpires ?? null,
+    };
     this.users.set(id, user);
     return user;
+  }
+
+  async updateUser(id: number, updates: Partial<DrizzleUser>): Promise<DrizzleUser | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    const updatedUser = { ...user, ...updates };
+    this.users.set(id, updatedUser);
+    return updatedUser;
   }
   
   // PROJECT OPERATIONS
   async getProjects(): Promise<DrizzleProject[]> {
     return Array.from(this.projects.values());
+  }
+
+  async getProjectsByUser(userId: number): Promise<DrizzleProject[]> {
+    return Array.from(this.projects.values()).filter(project => project.userId === userId);
   }
   
   async getProject(id: number): Promise<DrizzleProject | undefined> {
@@ -405,6 +502,17 @@ export class MemStorage implements IStorage {
   // MODEL OPERATIONS
   async getModels(): Promise<DrizzleModel[]> {
     return Array.from(this.models.values());
+  }
+
+  async getModelsByUser(userId: number): Promise<DrizzleModel[]> {
+    const userProjectIds = new Set(
+      Array.from(this.projects.values())
+        .filter(project => project.userId === userId)
+        .map(project => project.id)
+    );
+
+    return Array.from(this.models.values())
+      .filter(model => model.projectId && userProjectIds.has(model.projectId));
   }
   
   async getModelsByProject(projectId: number): Promise<DrizzleModel[]> {
@@ -475,6 +583,28 @@ export class MemStorage implements IStorage {
       simulationParams: s.simulationParams ?? null,
     })) as DrizzleScenario[];
   }
+
+  async getScenariosByUser(userId: number): Promise<DrizzleScenario[]> {
+    const userProjectIds = new Set(
+      Array.from(this.projects.values())
+        .filter(project => project.userId === userId)
+        .map(project => project.id)
+    );
+
+    const userModelIds = new Set(
+      Array.from(this.models.values())
+        .filter(model => model.projectId && userProjectIds.has(model.projectId))
+        .map(model => model.id)
+    );
+
+    return Array.from(this.scenarios.values())
+      .filter(scenario => scenario.modelId !== null && userModelIds.has(scenario.modelId))
+      .map(s => ({
+        ...s,
+        clampedNodes: Array.isArray(s.clampedNodes) ? s.clampedNodes : [],
+        simulationParams: s.simulationParams ?? null,
+      })) as DrizzleScenario[];
+  }
   
   async getScenariosByModel(modelId: number): Promise<DrizzleScenario[]> {
     return Array.from(this.scenarios.values())
@@ -535,31 +665,40 @@ export class MemStorage implements IStorage {
   // Demo data initialization
   private initializeDemoData() {
     // Create demo user
-    const demoUser: User = {
+    const demoUser: DrizzleUser = {
       id: this.userId++,
       username: 'emma.wilson',
       password: 'password123', // not secure, just for demo
       displayName: 'Emma Wilson',
       role: 'researcher',
+      email: null,
+      emailVerified: null,
+      emailVerificationToken: null,
+      emailVerificationExpires: null,
+      failedLoginAttempts: 0,
+      lockedUntil: null,
+      passwordResetToken: null,
+      passwordResetExpires: null,
     };
-    this.users.set(demoUser.id, demoUser);
+    const demoUserId = Number(demoUser.id);
+    this.users.set(demoUserId, demoUser);
     
     // Create demo projects
     const projects = [
       {
         name: 'Climate Adaptation',
         description: 'Models for climate adaptation strategies',
-        userId: demoUser.id,
+        userId: demoUserId,
       },
       {
         name: 'Water Management',
         description: 'Hydrological system models',
-        userId: demoUser.id,
+        userId: demoUserId,
       },
       {
         name: 'Social Networks',
         description: 'Social network influence models',
-        userId: demoUser.id,
+        userId: demoUserId,
       },
     ];
     

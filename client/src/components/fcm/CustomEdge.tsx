@@ -121,22 +121,25 @@ export default function CustomEdge({
             <PopoverContent className="w-64 p-4 dark-glass">
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs">{weight.toFixed(1)}</span>
-                  <span className={`text-xs ${weight >= 0 ? 'text-blue-500' : 'text-red-500'}`}>
-                    {weight >= 0 ? 'Positive' : 'Negative'}
-                  </span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onChange?.(id, 0); // Reset weight to trigger deletion
-                    }}
-                    className="ml-2 p-1 hover:bg-red-500/20 rounded-sm"
-                    title="Delete edge"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M18 6L6 18M6 6l12 12"/>
-                    </svg>
-                  </button>
+                  <span className="text-xs font-medium">Edge Weight</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs">{weight.toFixed(1)}</span>
+                    <span className={`text-xs ${weight >= 0 ? 'text-blue-500' : 'text-red-500'}`}>
+                      {weight >= 0 ? 'Positive' : 'Negative'}
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onChange?.(id, 0); // Reset weight to trigger deletion
+                      }}
+                      className="ml-2 p-1 hover:bg-red-500/20 rounded-sm"
+                      title="Delete edge"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
                 <Slider
                   value={[weight]}

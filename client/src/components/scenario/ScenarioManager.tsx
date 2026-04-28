@@ -348,7 +348,7 @@ export default function ScenarioManager({ model, selectedScenarioIds, setSelecte
                   >
                     <td className="p-3 font-medium text-[hsl(var(--foreground))]">{scenario.name}</td>
                     <td className="p-3 text-[hsl(var(--muted-foreground))]">
-                      {scenario.createdAt && !isNaN(new Date(scenario.createdAt))
+                      {scenario.createdAt && !Number.isNaN(new Date(scenario.createdAt).getTime())
                         ? format(new Date(scenario.createdAt), "MMM d, yyyy")
                         : "N/A"}
                     </td>
@@ -417,7 +417,9 @@ export default function ScenarioManager({ model, selectedScenarioIds, setSelecte
         <TooltipProvider>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Create New Scenario</DialogTitle>
+              <DialogTitle>
+                Create New Scenario
+              </DialogTitle>
               <DialogDescription>
                 Set initial node values for your simulation scenario.
               </DialogDescription>
@@ -437,18 +439,14 @@ export default function ScenarioManager({ model, selectedScenarioIds, setSelecte
                 </div>
                 
                 <div className="mt-4">
-                  <Label>Initial Node Values
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button type="button" className="ml-2 text-blue-400 hover:text-blue-600" onClick={() => setShowClampHelp(h => !h)}>
-                          <FaInfoCircle />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>What is clamping?</TooltipContent>
-                    </Tooltip>
-                  </Label>
+                  <div className="mb-2">
+                    <Label>Initial Node Values</Label>
+                  </div>
+                  <div className="mb-2">
+                    <Label className="text-sm text-muted-foreground">Clamped Nodes</Label>
+                  </div>
                   {showClampHelp && (
-                    <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded text-blue-900 text-sm">
+                    <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded text-blue-900 dark:text-blue-200 text-sm">
                       <b>Clamping</b> means holding a variable at your chosen value for the entire simulation. Use this to model interventions where a variable is externally controlled (e.g., a policy or sustained external input).
                     </div>
                   )}

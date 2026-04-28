@@ -15,6 +15,13 @@
       "when": 1747500000000,
       "tag": "0001_add_nodes_to_scenarios",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1747501000000,
+      "tag": "0002_add_security_fields_to_users",
+      "breakpoints": true
     }
   ]
 }

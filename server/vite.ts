@@ -1,7 +1,7 @@
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
-import { createServer as createViteServer, createLogger } from "vite";
+import { createServer as createViteServer, createLogger, type ServerOptions } from "vite";
 import { type Server } from "http";
 import { nanoid } from "nanoid";
 
@@ -22,7 +22,7 @@ export async function setupVite(app: Express, server: Server) {
   // Only import vite.config in development (lazy import to avoid bundling issues)
   const viteConfig = await import("../vite.config").then(m => m.default);
   
-  const serverOptions = {
+  const serverOptions: ServerOptions = {
     middlewareMode: true,
     hmr: { server },
     allowedHosts: true,

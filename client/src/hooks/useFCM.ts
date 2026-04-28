@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { FCMModel, FCMNode, FCMEdge } from '@/lib/types';
 import { apiRequest } from '@/lib/queryClient';
@@ -42,12 +42,17 @@ export function useFCM(modelId: string) {
   
   // Add node
   const addNode = useCallback(
-    (node: Omit<FCMNode, 'id'>) => {
+    (node: Pick<FCMNode, 'label' | 'type' | 'value' | 'positionX' | 'positionY' | 'color'>) => {
       if (!model) return;
       
       const newNode: FCMNode = {
-        ...node,
         id: `node-${Date.now()}`,
+        label: node.label,
+        type: node.type,
+        value: node.value,
+        positionX: node.positionX,
+        positionY: node.positionY,
+        color: node.color,
       };
       
       const updatedModel: FCMModel = {
@@ -103,12 +108,16 @@ export function useFCM(modelId: string) {
   
   // Add edge
   const addEdge = useCallback(
-    (edge: Omit<FCMEdge, 'id'>) => {
+    (edge: Pick<FCMEdge, 'source' | 'target' | 'weight' | 'sourceHandle' | 'targetHandle'>) => {
       if (!model) return;
       
       const newEdge: FCMEdge = {
-        ...edge,
         id: `edge-${Date.now()}`,
+        source: edge.source,
+        target: edge.target,
+        weight: edge.weight,
+        sourceHandle: edge.sourceHandle,
+        targetHandle: edge.targetHandle,
       };
       
       const updatedModel: FCMModel = {

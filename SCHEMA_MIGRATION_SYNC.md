@@ -85,3 +85,4 @@ WHERE table_name = 'scenarios' AND column_name = 'nodes';
 
 Should return: `nodes | jsonb`
 
+
