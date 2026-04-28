@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   sendPasswordResetEmail,
+  sendSecurityAlertEmail,
   sendVerificationEmail,
   validateEmailConfiguration,
 } from "../services/email";
@@ -40,6 +41,8 @@ describe("email service configuration", () => {
 
     await expect(sendVerificationEmail("user@example.com", "token123")).resolves.toBeUndefined();
     await expect(sendPasswordResetEmail("user@example.com", "token456")).resolves.toBeUndefined();
+    await expect(sendSecurityAlertEmail("user@example.com", "account_locked")).resolves.toBeUndefined();
+    await expect(sendSecurityAlertEmail("user@example.com", "password_reset_success")).resolves.toBeUndefined();
   });
 });
 

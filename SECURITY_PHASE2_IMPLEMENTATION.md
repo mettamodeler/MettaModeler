@@ -187,9 +187,10 @@ npm run migrate
 
 ### Phase 3: Email Enhancements
 - [ ] Add branded HTML templates and localization
-- [ ] Add delivery retries and dead-letter handling
-- [ ] Add provider failover support
-- [ ] Add security notification emails (new login/device/activity)
+- [x] Add delivery retries
+- [x] Add provider failover support (secondary Resend key)
+- [x] Add security notification emails (account lock/password change alerts)
+- [ ] Add dead-letter queue handling
 
 ### Phase 4: Additional Security
 - [ ] Two-factor authentication (2FA)

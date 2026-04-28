@@ -10,7 +10,12 @@ import { User as GeneratedUser } from "@shared/generated";
 import { registrationLimiter, loginLimiter } from "./middleware/rateLimit";
 import { registerSchema, loginSchema, passwordResetRequestSchema, passwordResetSchema } from "./validation/auth";
 import { generateTokenWithExpiration } from "./utils/tokens";
-import { sendPasswordResetEmail, sendVerificationEmail, validateEmailConfiguration } from "./services/email";
+import {
+  sendPasswordResetEmail,
+  sendSecurityAlertEmail,
+  sendVerificationEmail,
+  validateEmailConfiguration,
+} from "./services/email";
 
 // Use generated User type for Express.User (API responses)
 // Drizzle User type is still used for database operations
@@ -112,6 +117,14 @@ export function setupAuth(app: Express) {
                 failedLoginAttempts: failedAttempts,
                 lockedUntil,
               });
+
+              if (drizzleUser.email) {
+                try {
+                  await sendSecurityAlertEmail(drizzleUser.email, "account_locked");
+                } catch (emailError) {
+                  console.error("Failed to send account lock alert:", emailError);
+                }
+              }
             } else {
               await storage.updateUser(drizzleUser.id!, {
                 failedLoginAttempts: failedAttempts,
@@ -436,6 +449,14 @@ export function setupAuth(app: Express) {
         failedLoginAttempts: 0, // Reset failed attempts on password reset
         lockedUntil: null,
       });
+
+      if (user.email) {
+        try {
+          await sendSecurityAlertEmail(user.email, "password_reset_success");
+        } catch (emailError) {
+          console.error("Failed to send password change alert:", emailError);
+        }
+      }
 
       res.status(200).json({ message: "Password reset successfully" });
     } catch (err) {

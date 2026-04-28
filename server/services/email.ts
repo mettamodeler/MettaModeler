@@ -14,9 +14,12 @@ type EmailConfig = {
   frontendUrl: string;
 };
 
-function getEmailConfig(): EmailConfig | null {
+type SecurityAlertType = "account_locked" | "password_reset_success";
+
+function getEmailConfigs(): EmailConfig[] {
   const provider = (process.env.EMAIL_PROVIDER || "resend").toLowerCase();
-  const apiKey = process.env.RESEND_API_KEY;
+  const primaryApiKey = process.env.RESEND_API_KEY;
+  const secondaryApiKey = process.env.RESEND_API_KEY_SECONDARY;
   const from = process.env.EMAIL_FROM;
   const frontendUrl = process.env.FRONTEND_URL;
 
@@ -24,27 +27,40 @@ function getEmailConfig(): EmailConfig | null {
     throw new Error(`Unsupported EMAIL_PROVIDER: ${provider}`);
   }
 
-  if (!apiKey || !from || !frontendUrl) {
+  if (!primaryApiKey || !from || !frontendUrl) {
     if (process.env.NODE_ENV === "production") {
       throw new Error(
         "Missing email configuration. Required: EMAIL_FROM, FRONTEND_URL, RESEND_API_KEY",
       );
     }
-    return null;
+    return [];
   }
 
-  return {
-    provider: "resend",
-    apiKey,
-    from,
-    frontendUrl,
-  };
+  const configs: EmailConfig[] = [
+    {
+      provider: "resend",
+      apiKey: primaryApiKey,
+      from,
+      frontendUrl,
+    },
+  ];
+
+  if (secondaryApiKey) {
+    configs.push({
+      provider: "resend",
+      apiKey: secondaryApiKey,
+      from,
+      frontendUrl,
+    });
+  }
+
+  return configs;
 }
 
 export function validateEmailConfiguration() {
   // In production we fail fast if auth emails cannot be delivered.
   if (process.env.NODE_ENV === "production") {
-    getEmailConfig();
+    getEmailConfigs();
   }
 }
 
@@ -70,24 +86,59 @@ async function sendWithResend(config: EmailConfig, payload: EmailPayload): Promi
   }
 }
 
+function getMaxRetries(): number {
+  const parsed = Number(process.env.EMAIL_MAX_RETRIES || "2");
+  if (Number.isNaN(parsed) || parsed < 0) {
+    return 2;
+  }
+  return parsed;
+}
+
+function getRetryDelayMs(attempt: number): number {
+  const baseMs = Number(process.env.EMAIL_RETRY_BASE_MS || "300");
+  return baseMs * Math.pow(2, attempt);
+}
+
+async function sleep(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function sendEmail(payload: EmailPayload): Promise<void> {
   // Avoid external calls in tests.
   if (process.env.NODE_ENV === "test") {
     return;
   }
 
-  const config = getEmailConfig();
-  if (!config) {
+  const configs = getEmailConfigs();
+  if (configs.length === 0) {
     return;
   }
 
-  await sendWithResend(config, payload);
+  const maxRetries = getMaxRetries();
+  let lastError: Error | null = null;
+
+  for (let providerIndex = 0; providerIndex < configs.length; providerIndex += 1) {
+    const config = configs[providerIndex];
+    for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+      try {
+        await sendWithResend(config, payload);
+        return;
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        if (attempt < maxRetries) {
+          await sleep(getRetryDelayMs(attempt));
+        }
+      }
+    }
+  }
+
+  throw new Error(`All email providers failed: ${lastError?.message || "unknown error"}`);
 }
 
 function getFrontendUrl(): string {
-  const config = getEmailConfig();
-  if (config?.frontendUrl) {
-    return config.frontendUrl;
+  const configs = getEmailConfigs();
+  if (configs[0]?.frontendUrl) {
+    return configs[0].frontendUrl;
   }
   return process.env.FRONTEND_URL || "http://localhost:5173";
 }
@@ -122,6 +173,38 @@ export async function sendPasswordResetEmail(email: string, token: string): Prom
       <p><a href="${resetUrl}">Reset password</a></p>
       <p>This link expires in 1 hour.</p>
       <p>If you did not request this, you can ignore this message.</p>
+    `,
+  });
+}
+
+export async function sendSecurityAlertEmail(
+  email: string,
+  alertType: SecurityAlertType,
+): Promise<void> {
+  const frontendUrl = getFrontendUrl();
+
+  if (alertType === "account_locked") {
+    await sendEmail({
+      to: email,
+      subject: "MettaModeler security alert: account temporarily locked",
+      text: `Your account was temporarily locked after multiple failed login attempts. If this wasn't you, reset your password here: ${frontendUrl}/forgot-password`,
+      html: `
+        <p>Your account was temporarily locked after multiple failed login attempts.</p>
+        <p>If this wasn't you, we recommend resetting your password immediately.</p>
+        <p><a href="${frontendUrl}/forgot-password">Reset password</a></p>
+      `,
+    });
+    return;
+  }
+
+  await sendEmail({
+    to: email,
+    subject: "MettaModeler security notice: password changed",
+    text: "Your password was changed successfully. If this was not you, reset your password immediately.",
+    html: `
+      <p>Your password was changed successfully.</p>
+      <p>If this was not you, secure your account immediately.</p>
+      <p><a href="${frontendUrl}/forgot-password">Reset password</a></p>
     `,
   });
 }
