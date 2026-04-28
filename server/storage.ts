@@ -31,6 +31,9 @@ const { Pool } = pg;
 export interface CreateModelData {
   name: string;
   description?: string | null;
+  creatorLabel?: string | null;
+  problemStatement?: string | null;
+  collectionType?: string | null;
   projectId?: number | null;
   nodes: FCMNode[];
   edges: FCMEdge[];
@@ -270,6 +273,9 @@ export class PostgresStorage implements IStorage {
     const [model] = await this.db.insert(models).values({
       name: data.name,
       description: data.description,
+      creatorLabel: data.creatorLabel || null,
+      problemStatement: data.problemStatement || null,
+      collectionType: data.collectionType || null,
       projectId: data.projectId,
       nodes: data.nodes,
       edges: data.edges,
@@ -699,6 +705,9 @@ export class MemStorage implements IStorage {
       id,
       name: data.name,
       description: data.description || null,
+      creatorLabel: data.creatorLabel || null,
+      problemStatement: data.problemStatement || null,
+      collectionType: data.collectionType || null,
       projectId: data.projectId || null,
       nodes: typedNodes,
       edges: typedEdges,
@@ -1082,6 +1091,9 @@ export class MemStorage implements IStorage {
       const newModel: DrizzleModel = {
         ...model,
         id,
+        creatorLabel: null,
+        problemStatement: null,
+        collectionType: null,
         isPublic: "false",
         publicSlug: null,
         createdAt: now,

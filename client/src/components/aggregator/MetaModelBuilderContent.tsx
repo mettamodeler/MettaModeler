@@ -114,6 +114,16 @@ export default function MetaModelBuilderContent({ projectId }: MetaModelBuilderC
     });
   }, [confidenceFilter, matchTypeFilter, suggestionsPayload?.suggestions]);
 
+  const selectedSourceModel = useMemo(
+    () => modelsInProject.find((model) => String(model.id) === sourceModelId),
+    [modelsInProject, sourceModelId],
+  );
+
+  const sourceModelNodes = useMemo(
+    () => (selectedSourceModel?.nodes || []).map((node) => ({ id: String(node.id), label: String(node.label || node.id) })),
+    [selectedSourceModel],
+  );
+
   const toggleModelSelection = (modelId: number) => {
     setSelectedModelIds((prev) =>
       prev.includes(modelId) ? prev.filter((id) => id !== modelId) : [...prev, modelId],
@@ -212,12 +222,28 @@ export default function MetaModelBuilderContent({ projectId }: MetaModelBuilderC
     }
   };
 
+  const formatMappedSource = (row: MappingRow): string => {
+    const sourceModel = modelsInProject.find((model) => Number(model.id) === Number(row.sourceModelId));
+    const sourceNode = sourceModel?.nodes?.find((node) => String(node.id) === String(row.sourceNodeId));
+    const modelName = sourceModel?.name || `Model ${row.sourceModelId}`;
+    const nodeLabel = sourceNode?.label || row.sourceNodeId;
+    return `${modelName}: ${nodeLabel}`;
+  };
+
   return (
     <div className="h-full overflow-auto p-6 space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Model Selection</CardTitle>
-          <CardDescription>Select which models to aggregate and map.</CardDescription>
+          <CardTitle>How Mapping Works</CardTitle>
+          <CardDescription>
+            1) Select models, 2) apply automatic exact/fuzzy matches, 3) add or edit manual mappings, 4) preview and save the aggregated model.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>1. Select Models in Scope</CardTitle>
+          <CardDescription>Choose the models that should participate in matching and aggregation.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
           {modelsInProject.length === 0 ? (
@@ -249,7 +275,7 @@ export default function MetaModelBuilderContent({ projectId }: MetaModelBuilderC
 
       <Card>
         <CardHeader>
-          <CardTitle>Aggregation Method</CardTitle>
+          <CardTitle>2. Edge Weight Aggregation Method</CardTitle>
           <CardDescription>
             Choose how matched edge weights are aggregated across selected models.
           </CardDescription>
@@ -278,9 +304,9 @@ export default function MetaModelBuilderContent({ projectId }: MetaModelBuilderC
 
       <Card>
         <CardHeader>
-          <CardTitle>Suggested Matches</CardTitle>
+          <CardTitle>3. Automatic Matches (Exact + Fuzzy)</CardTitle>
           <CardDescription>
-            Auto recommendations based on similar normalized node labels across selected models.
+            Exact matches use normalized labels; fuzzy matches use token + phrase similarity. Review then apply.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -350,8 +376,8 @@ export default function MetaModelBuilderContent({ projectId }: MetaModelBuilderC
 
       <Card>
         <CardHeader>
-          <CardTitle>Project Mapping Table</CardTitle>
-          <CardDescription>Map source model nodes into canonical node identities</CardDescription>
+          <CardTitle>4. Manual Mapping</CardTitle>
+          <CardDescription>Use this when automatic suggestions miss or need correction.</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <Input
@@ -376,18 +402,27 @@ export default function MetaModelBuilderContent({ projectId }: MetaModelBuilderC
               </option>
             ))}
           </select>
-          <Input
-            placeholder="Source node ID"
+          <select
             value={sourceNodeId}
             onChange={(e) => setSourceNodeId(e.target.value)}
-          />
+            className="w-full p-2 rounded bg-white/10 border border-white/10"
+            disabled={!sourceModelId}
+          >
+            <option value="">{sourceModelId ? "Select source node" : "Select model first"}</option>
+            {sourceModelNodes.map((node) => (
+              <option key={node.id} value={node.id}>
+                {node.label} ({node.id})
+              </option>
+            ))}
+          </select>
           <Button onClick={addMapping}>Add Mapping</Button>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Current Mappings</CardTitle>
+          <CardTitle>Current Canonical Mappings</CardTitle>
+          <CardDescription>Canonical concepts and the source nodes currently mapped into each one.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {groupedMappings.length === 0 ? (
@@ -395,11 +430,17 @@ export default function MetaModelBuilderContent({ projectId }: MetaModelBuilderC
           ) : (
             groupedMappings.map(([groupKey, rows]) => (
               <div key={groupKey} className="border rounded p-3">
-                <div className="font-medium">
-                  {rows[0].canonicalNodeLabel} ({rows[0].canonicalNodeKey})
+                <div className="font-medium flex items-center justify-between gap-2">
+                  <span>{rows[0].canonicalNodeLabel}</span>
+                  <span className="text-xs text-muted-foreground">{rows.length} linked nodes</span>
                 </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {rows.map((row) => `model:${row.sourceModelId}/node:${row.sourceNodeId}`).join(", ")}
+                <div className="text-xs text-muted-foreground mt-1">Key: {rows[0].canonicalNodeKey}</div>
+                <div className="mt-2 space-y-1">
+                  {rows.map((row) => (
+                    <div key={row.id} className="text-sm rounded bg-muted/60 px-2 py-1">
+                      {formatMappedSource(row)}
+                    </div>
+                  ))}
                 </div>
               </div>
             ))

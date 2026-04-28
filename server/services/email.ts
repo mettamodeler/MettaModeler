@@ -235,10 +235,7 @@ export async function sendSupportRequestEmail(params: {
 }): Promise<void> {
   const supportEmail = process.env.SUPPORT_EMAIL;
   if (!supportEmail) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error("SUPPORT_EMAIL is not configured");
-    }
-    return;
+    throw new Error("SUPPORT_EMAIL is not configured");
   }
 
   const originLabel = params.username

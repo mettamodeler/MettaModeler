@@ -72,8 +72,20 @@ const toBigrams = (value: string): Set<string> => {
 const tokenizeForSimilarity = (label: string): string[] =>
   normalizeNodeLabel(label)
     .split(" ")
-    .map((token) => synonymMap[token] || token)
+    .map((token) => {
+      const normalizedToken = token.endsWith("ing") && token.length > 4 ? token.slice(0, -3) : token;
+      return synonymMap[normalizedToken] || normalizedToken;
+    })
     .filter(Boolean);
+
+const hasTokenSubsetOverlap = (leftLabel: string, rightLabel: string): boolean => {
+  const left = new Set(tokenizeForSimilarity(leftLabel));
+  const right = new Set(tokenizeForSimilarity(rightLabel));
+  if (left.size === 0 || right.size === 0) return false;
+  const leftInRight = Array.from(left).every((token) => right.has(token));
+  const rightInLeft = Array.from(right).every((token) => left.has(token));
+  return leftInRight || rightInLeft;
+};
 
 const jaccardSimilarity = (left: string[], right: string[]): number => {
   const a = new Set(left);
@@ -97,7 +109,8 @@ const fuzzyLabelScore = (leftLabel: string, rightLabel: string): number => {
   const rightTokens = tokenizeForSimilarity(rightLabel);
   const jaccard = jaccardSimilarity(leftTokens, rightTokens);
   const dice = diceSimilarity(leftLabel, rightLabel);
-  return Math.min(1, Math.max(0, (jaccard * 0.55) + (dice * 0.45)));
+  const subsetBoost = hasTokenSubsetOverlap(leftLabel, rightLabel) ? 0.14 : 0;
+  return Math.min(1, Math.max(0, (jaccard * 0.55) + (dice * 0.45) + subsetBoost));
 };
 
 type AggregationMethod = "mean" | "median";
@@ -153,7 +166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Failed to send support request:", error);
         return res.status(503).json({
           error: "Support channel unavailable",
-          message: "Please try again shortly.",
+          message: error instanceof Error ? error.message : "Please try again shortly.",
         });
       }
 
@@ -461,6 +474,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const modelData: CreateModelData = {
         name: result.data.name,
         description: result.data.description || null,
+        creatorLabel: result.data.creatorLabel || null,
+        problemStatement: result.data.problemStatement || null,
+        collectionType: result.data.collectionType || null,
         projectId: result.data.projectId,
         nodes: result.data.nodes || [],
         edges: result.data.edges || [],
@@ -503,6 +519,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const modelData: CreateModelData = {
         name: parsed.data.name,
         description: parsed.data.description || null,
+        creatorLabel: parsed.data.creatorLabel || null,
+        problemStatement: parsed.data.problemStatement || null,
+        collectionType: parsed.data.collectionType || null,
         projectId,
         nodes: parsed.data.nodes || [],
         edges: parsed.data.edges || [],
@@ -545,6 +564,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       if (result.data.name) storageData.name = result.data.name;
       if (result.data.description !== undefined) storageData.description = result.data.description || null;
+      if (result.data.creatorLabel !== undefined) storageData.creatorLabel = result.data.creatorLabel || null;
+      if (result.data.problemStatement !== undefined) storageData.problemStatement = result.data.problemStatement || null;
+      if (result.data.collectionType !== undefined) storageData.collectionType = result.data.collectionType || null;
       if (result.data.nodes) storageData.nodes = result.data.nodes;
       if (result.data.edges) storageData.edges = result.data.edges;
       if (result.data.updatedAt) storageData.updatedAt = new Date(result.data.updatedAt);

@@ -40,6 +40,7 @@ describe("email service configuration", () => {
     delete process.env.EMAIL_FROM;
     delete process.env.FRONTEND_URL;
     delete process.env.RESEND_API_KEY;
+    process.env.SUPPORT_EMAIL = "support@example.com";
 
     await expect(sendVerificationEmail("user@example.com", "token123")).resolves.toBeUndefined();
     await expect(sendPasswordResetEmail("user@example.com", "token456")).resolves.toBeUndefined();
