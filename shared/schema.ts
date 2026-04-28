@@ -34,9 +34,6 @@ export const models = pgTable("models", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
-  creatorLabel: text("creator_label"),
-  problemStatement: text("problem_statement"),
-  collectionType: text("collection_type"),
   projectId: integer("project_id").references(() => projects.id),
   nodes: jsonb("nodes").$type<FCMNode[]>().default([]),
   edges: jsonb("edges").$type<FCMEdge[]>().default([]),
@@ -103,9 +100,6 @@ export interface FCMModel {
   id: number;
   name: string;
   description: string | null;
-  creatorLabel?: string | null;
-  problemStatement?: string | null;
-  collectionType?: string | null;
   nodes: FCMNode[];
   edges: FCMEdge[];
   projectId: number | null;
@@ -138,9 +132,6 @@ export const insertProjectSchema = createInsertSchema(projects).pick({
 export const insertModelSchema = createInsertSchema(models).pick({
   name: true,
   description: true,
-  creatorLabel: true,
-  problemStatement: true,
-  collectionType: true,
   projectId: true,
   nodes: true,
   edges: true,

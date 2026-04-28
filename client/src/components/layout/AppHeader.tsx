@@ -39,18 +39,11 @@ export default function AppHeader({ model }: AppHeaderProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [publicDialogOpen, setPublicDialogOpen] = useState(false);
-  const [metadataDialogOpen, setMetadataDialogOpen] = useState(false);
   const [importProjectId, setImportProjectId] = useState("");
   const [importNameOverride, setImportNameOverride] = useState("");
   const [importText, setImportText] = useState("");
   const [publicSlug, setPublicSlug] = useState("");
   const [isModelPublic, setIsModelPublic] = useState(modelPublicSettings?.isPublic === "true");
-  const [metadataName, setMetadataName] = useState("");
-  const [metadataDescription, setMetadataDescription] = useState("");
-  const [metadataProjectId, setMetadataProjectId] = useState("");
-  const [metadataCreatorLabel, setMetadataCreatorLabel] = useState("");
-  const [metadataProblemStatement, setMetadataProblemStatement] = useState("");
-  const [metadataCollectionType, setMetadataCollectionType] = useState("");
   const { toast } = useToast();
   const { data: projects = [] } = useQuery<Project[]>({
     queryKey: ['/api/projects'],
@@ -61,12 +54,6 @@ export default function AppHeader({ model }: AppHeaderProps) {
   useEffect(() => {
     setIsModelPublic(modelPublicSettings?.isPublic === "true");
     setPublicSlug(modelPublicSettings?.publicSlug || "");
-    setMetadataName(model?.name || "");
-    setMetadataDescription(model?.description || "");
-    setMetadataProjectId(model?.projectId ? String(model.projectId) : "");
-    setMetadataCreatorLabel((model as any)?.creatorLabel || "");
-    setMetadataProblemStatement((model as any)?.problemStatement || "");
-    setMetadataCollectionType((model as any)?.collectionType || "");
   }, [model, modelPublicSettings?.isPublic, modelPublicSettings?.publicSlug]);
 
   const exportJSON = async () => {
@@ -456,35 +443,6 @@ export default function AppHeader({ model }: AppHeaderProps) {
     }
   };
 
-  const saveModelMetadata = async () => {
-    if (!model) return;
-    if (!metadataName.trim()) {
-      toast({ variant: "destructive", title: "Model name is required" });
-      return;
-    }
-    if (!metadataProjectId) {
-      toast({ variant: "destructive", title: "Project is required" });
-      return;
-    }
-    try {
-      await apiRequest("PUT", `/api/models/${model.id}`, {
-        name: metadataName.trim(),
-        description: metadataDescription.trim() || null,
-        projectId: Number(metadataProjectId),
-        creatorLabel: metadataCreatorLabel.trim() || null,
-        problemStatement: metadataProblemStatement.trim() || null,
-        collectionType: metadataCollectionType.trim() || null,
-      });
-      toast({ title: "Model metadata updated" });
-      setMetadataDialogOpen(false);
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Failed to update model metadata",
-        description: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
-  };
 
   return (
     <header className="h-14 glass flex items-center justify-between px-4 z-10">
@@ -536,11 +494,6 @@ export default function AppHeader({ model }: AppHeaderProps) {
               {model && (
                 <DropdownMenuItem onClick={() => setPublicDialogOpen(true)}>
                   Configure Public Page
-                </DropdownMenuItem>
-              )}
-              {model && (
-                <DropdownMenuItem onClick={() => setMetadataDialogOpen(true)}>
-                  Edit Model Metadata
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>
@@ -738,74 +691,6 @@ export default function AppHeader({ model }: AppHeaderProps) {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={metadataDialogOpen} onOpenChange={setMetadataDialogOpen}>
-        <DialogContent className="dark-glass border border-white/10">
-          <DialogHeader>
-            <DialogTitle>Model Metadata</DialogTitle>
-            <DialogDescription>Edit project assignment and model documentation fields.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 py-2">
-            <div className="space-y-1">
-              <Label htmlFor="model-name">Model name</Label>
-              <Input id="model-name" value={metadataName} onChange={(e) => setMetadataName(e.target.value)} />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="model-project">Project</Label>
-              <select
-                id="model-project"
-                className="w-full p-2 rounded bg-white/10 border border-white/10"
-                value={metadataProjectId}
-                onChange={(e) => setMetadataProjectId(e.target.value)}
-              >
-                <option value="">Select a project</option>
-                {projects.map((project) => (
-                  <option key={project.id} value={project.id}>{project.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="model-creator">Creator</Label>
-              <Input
-                id="model-creator"
-                value={metadataCreatorLabel}
-                onChange={(e) => setMetadataCreatorLabel(e.target.value)}
-                placeholder="e.g. Dr. Smith / Team A"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="model-collection-type">Collection type</Label>
-              <Input
-                id="model-collection-type"
-                value={metadataCollectionType}
-                onChange={(e) => setMetadataCollectionType(e.target.value)}
-                placeholder="e.g. literature review, workshop, survey"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="model-problem">Problem statement</Label>
-              <textarea
-                id="model-problem"
-                value={metadataProblemStatement}
-                onChange={(e) => setMetadataProblemStatement(e.target.value)}
-                className="w-full min-h-20 p-2 rounded bg-white/10 border border-white/10"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="model-description">Description</Label>
-              <textarea
-                id="model-description"
-                value={metadataDescription}
-                onChange={(e) => setMetadataDescription(e.target.value)}
-                className="w-full min-h-20 p-2 rounded bg-white/10 border border-white/10"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setMetadataDialogOpen(false)}>Cancel</Button>
-            <Button onClick={saveModelMetadata}>Save Metadata</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </header>
   );
 }

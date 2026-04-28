@@ -29,13 +29,6 @@
       "when": 1747502000000,
       "tag": "0003_feature_drop_foundations",
       "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1745967480000,
-      "tag": "0004_add_model_metadata_fields",
-      "breakpoints": true
     }
   ]
 }

@@ -474,9 +474,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const modelData: CreateModelData = {
         name: result.data.name,
         description: result.data.description || null,
-        creatorLabel: result.data.creatorLabel || null,
-        problemStatement: result.data.problemStatement || null,
-        collectionType: result.data.collectionType || null,
         projectId: result.data.projectId,
         nodes: result.data.nodes || [],
         edges: result.data.edges || [],
@@ -519,9 +516,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const modelData: CreateModelData = {
         name: parsed.data.name,
         description: parsed.data.description || null,
-        creatorLabel: parsed.data.creatorLabel || null,
-        problemStatement: parsed.data.problemStatement || null,
-        collectionType: parsed.data.collectionType || null,
         projectId,
         nodes: parsed.data.nodes || [],
         edges: parsed.data.edges || [],
@@ -564,9 +558,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       if (result.data.name) storageData.name = result.data.name;
       if (result.data.description !== undefined) storageData.description = result.data.description || null;
-      if (result.data.creatorLabel !== undefined) storageData.creatorLabel = result.data.creatorLabel || null;
-      if (result.data.problemStatement !== undefined) storageData.problemStatement = result.data.problemStatement || null;
-      if (result.data.collectionType !== undefined) storageData.collectionType = result.data.collectionType || null;
       if (result.data.nodes) storageData.nodes = result.data.nodes;
       if (result.data.edges) storageData.edges = result.data.edges;
       if (result.data.updatedAt) storageData.updatedAt = new Date(result.data.updatedAt);
