@@ -210,8 +210,47 @@ export class ExportService {
     mimeType: string;
   }> {
     try {
-      // Convert data to CSV format
-      const csvData = await parser.json2csv(data);
+      let csvData: string;
+
+      if (type === ExportType.MODEL && Array.isArray(data?.nodes) && Array.isArray(data?.edges)) {
+        // Produce a practical long-form CSV for model exports instead of a deeply flattened object dump.
+        const rows = [
+          ...data.nodes.map((node: any) => ({
+            recordType: "node",
+            id: node.id,
+            label: node.label ?? "",
+            nodeType: node.type ?? "",
+            value: node.value ?? "",
+            source: "",
+            target: "",
+            weight: "",
+            positionX: node.positionX ?? "",
+            positionY: node.positionY ?? "",
+          })),
+          ...data.edges.map((edge: any) => ({
+            recordType: "edge",
+            id: edge.id,
+            label: "",
+            nodeType: "",
+            value: "",
+            source: edge.source ?? "",
+            target: edge.target ?? "",
+            weight: edge.weight ?? "",
+            positionX: "",
+            positionY: "",
+          })),
+        ];
+        csvData = await parser.json2csv(rows);
+      } else if (type === ExportType.ANALYSIS && data && typeof data === "object") {
+        const rows = Object.entries(data).map(([metric, value]) => ({
+          metric,
+          value: typeof value === "object" ? JSON.stringify(value) : value,
+        }));
+        csvData = await parser.json2csv(rows);
+      } else {
+        // Fallback conversion for scenario/comparison payloads.
+        csvData = await parser.json2csv(data);
+      }
       
       return {
         buffer: Buffer.from(csvData),

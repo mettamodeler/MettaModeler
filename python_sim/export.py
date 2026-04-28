@@ -11,6 +11,113 @@ import pandas as pd
 import nbformat as nbf
 from nbformat.v4 import new_notebook, new_markdown_cell, new_code_cell
 
+def _extract_graph_payload(export_type: str, payload: Dict) -> Tuple[List[Dict], List[Dict]]:
+    """Best-effort extraction of graph nodes/edges from model/scenario/comparison payloads."""
+    if export_type == "model":
+        return payload.get("nodes", []) or [], payload.get("edges", []) or []
+
+    if export_type == "scenario":
+        model = payload.get("model", {}) if isinstance(payload.get("model"), dict) else {}
+        nodes = payload.get("nodes") or model.get("nodes") or []
+        edges = payload.get("edges") or model.get("edges") or []
+        return nodes, edges
+
+    if export_type == "comparison":
+        primary = payload.get("scenario", {}) if isinstance(payload.get("scenario"), dict) else {}
+        baseline = payload.get("baselineScenario", {}) if isinstance(payload.get("baselineScenario"), dict) else {}
+        primary_nodes = primary.get("nodes", []) or []
+        baseline_nodes = baseline.get("nodes", []) or []
+        primary_edges = primary.get("edges", []) or []
+        baseline_edges = baseline.get("edges", []) or []
+        # Prefer primary scenario graph; fallback to baseline if empty.
+        return (primary_nodes or baseline_nodes), (primary_edges or baseline_edges)
+
+    # analysis or unknown types
+    return payload.get("nodes", []) or [], payload.get("edges", []) or []
+
+
+def _type_specific_notebook_cells(notebook, export_type: str):
+    """Append export-type specific analysis helpers and visuals."""
+    if export_type == "model":
+        notebook.cells.append(new_markdown_cell(
+            "## Model Analysis\n"
+            "This section builds graph visualizations, computes centrality metrics, and provides quick simulation helpers."
+        ))
+    elif export_type == "scenario":
+        notebook.cells.append(new_markdown_cell(
+            "## Scenario Analysis\n"
+            "This section summarizes scenario parameters/results and compares final values with baseline results when available."
+        ))
+        scenario_code = [
+            "scenario_meta = scenario_data if 'scenario_data' in globals() else {}",
+            "results = scenario_meta.get('results', {}) if isinstance(scenario_meta, dict) else {}",
+            "baseline_results = scenario_meta.get('baselineResults', {}) if isinstance(scenario_meta, dict) else {}",
+            "",
+            "print('Scenario name:', scenario_meta.get('name', 'Unnamed'))",
+            "print('Max iterations:', scenario_meta.get('maxIterations', 'n/a'))",
+            "print('Threshold:', scenario_meta.get('threshold', 'n/a'))",
+            "print('Converged:', results.get('converged', 'unknown'))",
+            "",
+            "final_values = results.get('finalValues', {}) if isinstance(results, dict) else {}",
+            "baseline_final = baseline_results.get('finalValues', {}) if isinstance(baseline_results, dict) else {}",
+            "if final_values:",
+            "    scenario_final_df = pd.DataFrame([{'nodeId': k, 'scenarioValue': v} for k, v in final_values.items()])",
+            "    display(scenario_final_df.sort_values('scenarioValue', ascending=False).head(15))",
+            "",
+            "if final_values and baseline_final:",
+            "    node_ids = sorted(set(final_values.keys()) | set(baseline_final.keys()))",
+            "    rows = []",
+            "    for node_id in node_ids:",
+            "        s_val = float(final_values.get(node_id, 0))",
+            "        b_val = float(baseline_final.get(node_id, 0))",
+            "        rows.append({",
+            "            'nodeId': node_id,",
+            "            'baselineValue': b_val,",
+            "            'scenarioValue': s_val,",
+            "            'delta': s_val - b_val,",
+            "        })",
+            "    scenario_delta_df = pd.DataFrame(rows).sort_values('delta', ascending=False)",
+            "    display(scenario_delta_df.head(20))",
+            "    scenario_delta_df.head(20).plot.bar(x='nodeId', y='delta', title='Top scenario deltas vs baseline')",
+            "    plt.tight_layout()",
+            "    plt.show()",
+        ]
+        notebook.cells.append(new_code_cell("\n".join(scenario_code)))
+    elif export_type == "comparison":
+        notebook.cells.append(new_markdown_cell(
+            "## Comparison Analysis\n"
+            "This section computes node-level deltas between two scenarios and visualizes largest shifts."
+        ))
+        comparison_code = [
+            "comparison_meta = comparison_data if 'comparison_data' in globals() else {}",
+            "left = comparison_meta.get('scenario', {}) if isinstance(comparison_meta, dict) else {}",
+            "right = comparison_meta.get('baselineScenario', {}) if isinstance(comparison_meta, dict) else {}",
+            "",
+            "left_values = left.get('results', {}).get('finalValues', {}) if isinstance(left, dict) else {}",
+            "right_values = right.get('results', {}).get('finalValues', {}) if isinstance(right, dict) else {}",
+            "",
+            "node_ids = sorted(set(left_values.keys()) | set(right_values.keys()))",
+            "comparison_rows = []",
+            "for node_id in node_ids:",
+            "    current_value = float(left_values.get(node_id, 0))",
+            "    baseline_value = float(right_values.get(node_id, 0))",
+            "    delta = current_value - baseline_value",
+            "    comparison_rows.append({",
+            "        'nodeId': node_id,",
+            "        'currentValue': current_value,",
+            "        'baselineValue': baseline_value,",
+            "        'delta': delta,",
+            "        'absDelta': abs(delta),",
+            "    })",
+            "",
+            "comparison_df = pd.DataFrame(comparison_rows).sort_values('absDelta', ascending=False)",
+            "display(comparison_df.head(25))",
+            "comparison_df.head(20).plot.bar(x='nodeId', y='delta', title='Top absolute changes')",
+            "plt.tight_layout()",
+            "plt.show()",
+        ]
+        notebook.cells.append(new_code_cell("\n".join(comparison_code)))
+
 def transform_json_for_python(data):
     """
     Transform JSON data structure so it's compatible with Python.
@@ -83,6 +190,31 @@ def generate_notebook(data: Dict, export_type: str, model_id: Optional[int] = No
                 ]
     
     notebook.cells.append(new_code_cell("\n".join(imports)))
+
+    notebook.cells.append(new_markdown_cell(
+        "## Notebook Workflow\n"
+        "1. Validate and inspect data\n"
+        "2. Build graph objects and summary tables\n"
+        "3. Run/modify simulation helpers\n"
+        "4. Export analysis artifacts"
+    ))
+
+    env_check_code = [
+        "# Environment check",
+        "import importlib",
+        "required_packages = ['pandas', 'numpy', 'matplotlib', 'networkx', 'seaborn']",
+        "missing_packages = []",
+        "for pkg in required_packages:",
+        "    if importlib.util.find_spec(pkg) is None:",
+        "        missing_packages.append(pkg)",
+        "",
+        "if missing_packages:",
+        "    print('Missing packages:', ', '.join(missing_packages))",
+        "    print('Install with: pip install ' + ' '.join(missing_packages))",
+        "else:",
+        "    print('Environment looks ready')",
+    ]
+    notebook.cells.append(new_code_cell("\n".join(env_check_code)))
     
     # Add data cell with properly formatted JSON, but only include necessary model data
     if export_type == 'model':
@@ -107,6 +239,41 @@ def generate_notebook(data: Dict, export_type: str, model_id: Optional[int] = No
     ]
     
     notebook.cells.append(new_code_cell("\n".join(data_cell)))
+
+    extracted_nodes, extracted_edges = _extract_graph_payload(export_type, model_data)
+    validation_and_tables = [
+        "# Validate payload and create analysis tables",
+        f"assert isinstance({export_type}_data, dict), 'Export payload must be a dictionary'",
+        "",
+        f"nodes = {json.dumps(extracted_nodes, indent=2)}",
+        f"edges = {json.dumps(extracted_edges, indent=2)}",
+        "",
+        "if nodes:",
+        "    required_node_keys = {'id', 'label', 'type', 'value'}",
+        "    for node in nodes:",
+        "        missing = required_node_keys.difference(set(node.keys()))",
+        "        if missing:",
+        "            raise ValueError(f\"Node {node.get('id')} missing keys: {missing}\")",
+        "",
+        "if edges:",
+        "    required_edge_keys = {'source', 'target', 'weight'}",
+        "    for edge in edges:",
+        "        missing = required_edge_keys.difference(set(edge.keys()))",
+        "        if missing:",
+        "            raise ValueError(f\"Edge {edge.get('id')} missing keys: {missing}\")",
+        "",
+        "nodes_df = pd.DataFrame(nodes) if nodes else pd.DataFrame()",
+        "edges_df = pd.DataFrame(edges) if edges else pd.DataFrame()",
+        "",
+        "print(f'Nodes: {len(nodes_df)} | Edges: {len(edges_df)}')",
+        "if not nodes_df.empty:",
+        "    display(nodes_df.head())",
+        "if not edges_df.empty:",
+        "    display(edges_df.head())",
+    ]
+    notebook.cells.append(new_code_cell("\n".join(validation_and_tables)))
+
+    _type_specific_notebook_cells(notebook, export_type)
     
     # Add type-specific visualization cells
     if export_type == 'model':
@@ -307,14 +474,57 @@ def generate_notebook(data: Dict, export_type: str, model_id: Optional[int] = No
         ]
         
         notebook.cells.append(new_code_cell("\n".join(viz_code)))
+
+        simulation_helper_code = [
+            "def run_fcm_iteration(node_values, edges_df):",
+            "    next_values = node_values.copy()",
+            "    for _, edge in edges_df.iterrows():",
+            "        src = edge['source']",
+            "        tgt = edge['target']",
+            "        w = float(edge.get('weight', 0))",
+            "        next_values[tgt] = next_values.get(tgt, 0) + node_values.get(src, 0) * w",
+            "    # sigmoid squash",
+            "    for node_id in list(next_values.keys()):",
+            "        x = next_values[node_id]",
+            "        next_values[node_id] = 1.0 / (1.0 + np.exp(-x))",
+            "    return next_values",
+            "",
+            "def simulate_fcm(nodes_df, edges_df, max_iterations=20):",
+            "    values = {row['id']: float(row.get('value', 0)) for _, row in nodes_df.iterrows()}",
+            "    history = [values.copy()]",
+            "    for _ in range(max_iterations):",
+            "        values = run_fcm_iteration(values, edges_df)",
+            "        history.append(values.copy())",
+            "    return pd.DataFrame(history)",
+            "",
+            "if not nodes_df.empty and not edges_df.empty:",
+            "    simulation_df = simulate_fcm(nodes_df, edges_df, max_iterations=20)",
+            "    display(simulation_df.tail())",
+            "    simulation_df.plot(title='Node value trajectories (quick helper simulation)')",
+            "    plt.xlabel('Iteration')",
+            "    plt.ylabel('Activation')",
+            "    plt.show()",
+        ]
+        notebook.cells.append(new_code_cell("\n".join(simulation_helper_code)))
     
     # Add export cell
     export_code = [
-        "# Export data as JSON",
+        "# Export analysis artifacts",
         "with open('export_data.json', 'w') as f:",
         f"    json.dump({export_type}_data, f, indent=2)",
         "",
-        "print('Data exported to export_data.json')"
+        "if 'nodes_df' in globals() and not nodes_df.empty:",
+        "    nodes_df.to_csv('nodes_table.csv', index=False)",
+        "if 'edges_df' in globals() and not edges_df.empty:",
+        "    edges_df.to_csv('edges_table.csv', index=False)",
+        "if 'simulation_df' in globals():",
+        "    simulation_df.to_csv('simulation_timeseries.csv', index=False)",
+        "if 'comparison_df' in globals():",
+        "    comparison_df.to_csv('comparison_deltas.csv', index=False)",
+        "if 'scenario_delta_df' in globals():",
+        "    scenario_delta_df.to_csv('scenario_deltas.csv', index=False)",
+        "",
+        "print('Artifacts written: export_data.json, nodes/edges CSV, plus scenario/comparison CSVs when available')"
     ]
     
     notebook.cells.append(new_code_cell("\n".join(export_code)))

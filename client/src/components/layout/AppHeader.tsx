@@ -199,6 +199,65 @@ export default function AppHeader({ model }: AppHeaderProps) {
     }
   };
 
+  const exportCSV = async () => {
+    if (!model) {
+      toast({
+        variant: "destructive",
+        title: "No Model Selected",
+        description: "Please open a model before exporting",
+      });
+      return;
+    }
+
+    try {
+      toast({
+        title: "Preparing CSV Export",
+        description: "Generating CSV export for model structure...",
+      });
+
+      const filename = `${model.name.toLowerCase().replace(/[^a-zA-Z0-9_-]/g, '_')}.csv`;
+
+      const response = await fetch(`/api/export/model/${model.id}?format=csv`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...model,
+          format: "csv",
+          fileName: model.name.toLowerCase().replace(/[^a-zA-Z0-9_-]/g, "_"),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to export CSV: ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Model Exported",
+        description: "Your model has been exported as a CSV file",
+      });
+    } catch (error) {
+      console.error("CSV export error:", error);
+      toast({
+        variant: "destructive",
+        title: "Export Failed",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+      });
+    }
+  };
+
   const exportJupyter = async () => {
     if (!model) {
       toast({
@@ -325,6 +384,9 @@ export default function AppHeader({ model }: AppHeaderProps) {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={exportExcel}>
                 Excel Format
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportCSV}>
+                CSV Format
               </DropdownMenuItem>
               <DropdownMenuItem onClick={exportJupyter}>
                 Jupyter Notebook
