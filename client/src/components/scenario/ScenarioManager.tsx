@@ -29,6 +29,7 @@ interface Scenario {
   clampedNodes?: string[];
   results: any;
   createdAt: string;
+  includeInPublic?: string | boolean;
 }
 
 interface ScenarioManagerProps {
@@ -283,6 +284,31 @@ export default function ScenarioManager({ model, selectedScenarioIds, setSelecte
     });
   }, []);
 
+  const togglePublicInclusion = async (scenario: Scenario) => {
+    try {
+      const includeInPublic = !(scenario.includeInPublic === true || scenario.includeInPublic === "true");
+      const updated = await apiRequest<any>("PATCH", `/api/scenarios/${scenario.id}/public`, {
+        includeInPublic,
+      });
+      setScenarios((prev) =>
+        prev.map((item) =>
+          item.id === scenario.id
+            ? { ...item, includeInPublic: updated?.includeInPublic ?? (includeInPublic ? "true" : "false") }
+            : item
+        )
+      );
+      toast({
+        title: includeInPublic ? "Scenario exposed publicly" : "Scenario hidden from public page",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update public visibility.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Handle initial value change
   const handleInitialValueChange = (nodeId: string, value: number) => {
     setInitialValues(prev => {
@@ -379,6 +405,20 @@ export default function ScenarioManager({ model, selectedScenarioIds, setSelecte
                           }}
                         >
                           delete
+                        </Button>
+                        <Button
+                          className={`px-3 py-1 rounded text-sm border-none ${
+                            scenario.includeInPublic === true || scenario.includeInPublic === "true"
+                              ? "bg-emerald-600/20 text-emerald-200 hover:bg-emerald-600/30"
+                              : "bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] hover:bg-[hsl(var(--primary))]/10"
+                          }`}
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => togglePublicInclusion(scenario)}
+                        >
+                          {scenario.includeInPublic === true || scenario.includeInPublic === "true"
+                            ? "public on"
+                            : "public off"}
                         </Button>
                       </div>
                     </td>
