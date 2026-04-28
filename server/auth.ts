@@ -10,6 +10,7 @@ import { User as GeneratedUser } from "@shared/generated";
 import { registrationLimiter, loginLimiter } from "./middleware/rateLimit";
 import { registerSchema, loginSchema, passwordResetRequestSchema, passwordResetSchema } from "./validation/auth";
 import { generateTokenWithExpiration } from "./utils/tokens";
+import { sendPasswordResetEmail, sendVerificationEmail, validateEmailConfiguration } from "./services/email";
 
 // Use generated User type for Express.User (API responses)
 // Drizzle User type is still used for database operations
@@ -55,6 +56,8 @@ export function setupAuth(app: Express) {
   if (process.env.NODE_ENV !== "production") {
     console.warn("⚠️  WARNING: Using auto-generated SESSION_SECRET. Set SESSION_SECRET environment variable for production.");
   }
+
+  validateEmailConfiguration();
   
   const sessionSettings: session.SessionOptions = {
     secret: sessionSecret,
@@ -206,11 +209,10 @@ export function setupAuth(app: Express) {
         emailVerificationExpires: expiresAt,
       });
       
-      // TODO: Send verification email
-      // For now, we'll log the token (in production, send via email service)
-      if (process.env.NODE_ENV !== "production") {
-        console.log(`[DEV] Email verification token for ${email}: ${verificationToken}`);
-        console.log(`[DEV] Verification URL: ${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?token=${verificationToken}`);
+      try {
+        await sendVerificationEmail(email, verificationToken);
+      } catch (emailError) {
+        console.error("Failed to send verification email:", emailError);
       }
 
       // Convert DrizzleUser to GeneratedUser for API response
@@ -341,9 +343,11 @@ export function setupAuth(app: Express) {
         emailVerificationExpires: expiresAt,
       });
 
-      // TODO: Send verification email
-      if (process.env.NODE_ENV !== "production") {
-        console.log(`[DEV] Resent verification token for ${email}: ${verificationToken}`);
+      try {
+        await sendVerificationEmail(email, verificationToken);
+      } catch (emailError) {
+        // Preserve enumeration-safe response contract.
+        console.error("Failed to resend verification email:", emailError);
       }
 
       res.status(200).json({ message: "If an account exists with this email, a verification link has been sent" });
@@ -382,10 +386,11 @@ export function setupAuth(app: Express) {
         passwordResetExpires: expiresAt,
       });
 
-      // TODO: Send password reset email
-      if (process.env.NODE_ENV !== "production") {
-        console.log(`[DEV] Password reset token for ${email}: ${resetToken}`);
-        console.log(`[DEV] Reset URL: ${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`);
+      try {
+        await sendPasswordResetEmail(email, resetToken);
+      } catch (emailError) {
+        // Preserve enumeration-safe response contract.
+        console.error("Failed to send password reset email:", emailError);
       }
 
       res.status(200).json({ message: "If an account exists with this email, a password reset link has been sent" });

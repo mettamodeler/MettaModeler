@@ -505,7 +505,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/scenarios", isAuthenticated, async (req: Request, res: Response) => {
-    console.log("REQ.BODY:", JSON.stringify(req.body, null, 2));
     try {
       const userId = getUserIdOrRespond(req, res);
       if (!userId) return;
@@ -514,7 +513,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Validate only the user-supplied fields
       const result = CreateScenarioSchema.safeParse(req.body);
-      console.log("Zod validation result:", JSON.stringify(result, null, 2));
       if (!result.success) {
         return res.status(400).json({
           status: 400,
@@ -535,15 +533,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         simulationParams: result.data.simulationParams,
         results: result.data.results,
       };
-      console.log("Scenario data to be inserted:", JSON.stringify(scenarioData, null, 2));
 
       const ownsModel = await getOwnedModelOrRespond(result.data.modelId, userId, res);
       if (!ownsModel) return;
 
       const scenario = await storage.createScenario(scenarioData);
-      console.log("Scenario from DB:", scenario);
       const safeScenario = ScenarioSchema.parse(scenario);
-      console.log("Scenario after Zod validation:", safeScenario);
       res.status(201).json(safeScenario);
     } catch (error) {
       res.status(500).json({ message: "Failed to create scenario", error: error instanceof Error ? error.message : String(error) });
@@ -576,9 +571,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!scenario) {
         return res.status(404).json({ message: "Scenario not found" });
       }
-      console.log("Scenario from DB:", scenario);
       const safeScenario = ScenarioSchema.parse(scenario);
-      console.log("Scenario after Zod validation:", safeScenario);
       res.json(safeScenario);
     } catch (error) {
       res.status(500).json({ message: "Failed to update scenario", error: error instanceof Error ? error.message : String(error) });
@@ -612,9 +605,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Python Simulation API Proxy
   app.post("/api/simulate", async (req: Request, res: Response) => {
     try {
-      // Log the incoming request payload for debugging
-      console.log('Received simulation request:', JSON.stringify(req.body, null, 2));
-
       // Validate required fields
       if (!req.body.nodes || !Array.isArray(req.body.nodes)) {
         return res.status(400).json({
@@ -637,15 +627,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       // Forward to Python backend
-      console.log('Forwarding to Python backend:', JSON.stringify(payload, null, 2));
       const response = await axios.post(`${PYTHON_SIM_URL}/api/simulate`, payload, {
         headers: {
           'Content-Type': 'application/json'
         }
       });
-
-      // Log the response for debugging
-      console.log('Python simulation response:', JSON.stringify(response.data, null, 2));
 
       // Return the response data directly
       return res.json(response.data);
@@ -791,11 +777,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (req.body && Object.keys(req.body).length > 0) {
         // Use the enhanced model data from the request body if available
-        console.log("Using enhanced model data from request body");
         model = req.body;
       } else {
         // Fallback to database model if no request body provided
-        console.log("Using model data from database");
         model = await storage.getModel(id);
         if (!model) {
           return res.status(404).json({ message: "Model not found" });

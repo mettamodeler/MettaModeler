@@ -1,7 +1,7 @@
 # Security Phase 2 Implementation Summary
 
-**Date:** 2025-01-15  
-**Status:** ✅ Complete
+**Date:** 2026-04-28  
+**Status:** ✅ Complete (including production email delivery wiring)
 
 ---
 
@@ -48,7 +48,7 @@
 - Added `email_verification_expires` (timestamp, nullable)
 - Created indexes on email and verification token
 
-**Note:** Email sending is currently logged in development. In production, integrate with an email service (SendGrid, AWS SES, etc.)
+**Note:** Email sending is integrated through a provider abstraction (`server/services/email.ts`) and currently configured for Resend.
 
 ---
 
@@ -142,7 +142,7 @@ npm run migrate
 1. **POST `/api/register`**
    - Now requires `email` field
    - Generates verification token
-   - Logs token in development (for testing)
+   - Sends verification email via provider integration
 
 2. **POST `/api/login`**
    - Checks for account lockout
@@ -185,12 +185,11 @@ npm run migrate
 
 ## Next Steps (Future Phases)
 
-### Phase 3: Email Service Integration
-- [ ] Integrate email service (SendGrid, AWS SES, etc.)
-- [ ] Create email templates
-- [ ] Send verification emails
-- [ ] Send password reset emails
-- [ ] Send security notifications
+### Phase 3: Email Enhancements
+- [ ] Add branded HTML templates and localization
+- [ ] Add delivery retries and dead-letter handling
+- [ ] Add provider failover support
+- [ ] Add security notification emails (new login/device/activity)
 
 ### Phase 4: Additional Security
 - [ ] Two-factor authentication (2FA)
@@ -228,13 +227,12 @@ npm run migrate
 ## Development vs Production
 
 **Development:**
-- Verification/reset tokens are logged to console
-- Email sending is simulated (console logs)
+- If email env vars are absent, delivery is skipped (non-fatal)
+- Verification/reset tokens are never logged in auth routes
 
 **Production:**
-- Must integrate email service
-- Tokens should only be sent via email
-- Never log tokens in production logs
+- Requires `EMAIL_FROM`, `FRONTEND_URL`, and `RESEND_API_KEY`
+- Tokens are delivered via provider and never logged
 
 ---
 
