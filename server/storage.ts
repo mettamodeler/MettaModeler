@@ -361,12 +361,16 @@ export class PostgresStorage implements IStorage {
   }
   
   async updateScenario(id: number, data: Partial<DrizzleScenario>): Promise<DrizzleScenario> {
+    const updateData: Partial<DrizzleScenario> = {
+      ...data,
+      updatedAt: new Date(),
+    };
+    if (data.clampedNodes !== undefined) {
+      updateData.clampedNodes = data.clampedNodes;
+    }
+
     const [scenario] = await this.db.update(scenarios)
-      .set({
-        ...data,
-        clampedNodes: data.clampedNodes || [],
-        updatedAt: new Date()
-      })
+      .set(updateData)
       .where(eq(scenarios.id, id))
       .returning({
         id: scenarios.id,

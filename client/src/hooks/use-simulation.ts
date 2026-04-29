@@ -46,18 +46,24 @@ export function useSimulation(model: FCMModel) {
   }, [model.nodes]);
 
   // Run simulation
-  const runSimulation = useCallback(async (options?: { clampedNodes?: string[] }): Promise<ExtendedSimulationResult | null> => {
+  const runSimulation = useCallback(async (options?: {
+    clampedNodes?: string[];
+    initialValues?: Record<string, number>;
+    activation?: SimulationParameters["activation"];
+    threshold?: number;
+    maxIterations?: number;
+  }): Promise<ExtendedSimulationResult | null> => {
     if (isRunning) return null;
     setIsRunning(true);
 
     try {
       const result = await runSimulationApi(
         model,
-        simulationParams.initialValues,
+        options?.initialValues ?? simulationParams.initialValues,
         {
-          activation: simulationParams.activation,
-          threshold: simulationParams.threshold,
-          maxIterations: simulationParams.maxIterations,
+          activation: options?.activation ?? simulationParams.activation,
+          threshold: options?.threshold ?? simulationParams.threshold,
+          maxIterations: options?.maxIterations ?? simulationParams.maxIterations,
           clampedNodes: options?.clampedNodes || simulationParams.clampedNodes
         }
       );

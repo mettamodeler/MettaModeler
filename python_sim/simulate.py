@@ -299,16 +299,35 @@ def run_simulation(
         
         logging.info("Simulation completed successfully")
         logging.debug(f"Time series data structure: {len(results.get('timeSeries', {}).get(list(results['timeSeries'].keys())[0], []))} iterations")
+
+        def _extract_node_value(node_state: Any) -> float:
+            if isinstance(node_state, dict):
+                raw_value = node_state.get('value', 0.0)
+                if isinstance(raw_value, dict):
+                    raw_value = raw_value.get('value', 0.0)
+                try:
+                    return float(raw_value)
+                except (TypeError, ValueError):
+                    return 0.0
+            try:
+                return float(node_state)
+            except (TypeError, ValueError):
+                return 0.0
+
+        def _extract_node_label(node_id: str, node_state: Any) -> str:
+            if isinstance(node_state, dict) and isinstance(node_state.get('label'), str):
+                return node_state['label']
+            return next((n.get('label', '') for n in nodes if n.get('id') == node_id), '')
         
         # Return results in the correct format
         return {
             'finalState': {
                 node_id: {
                     'id': node_id,
-                    'label': next((n['label'] for n in nodes if n['id'] == node_id), None),
-                    'value': value
+                    'label': _extract_node_label(node_id, node_state),
+                    'value': _extract_node_value(node_state)
                 }
-                for node_id, value in results.get('finalState', {}).items()
+                for node_id, node_state in results.get('finalState', {}).items()
             },
             'timeSeries': results.get('timeSeries', {}),
             'iterations': results.get('iterations', 0),

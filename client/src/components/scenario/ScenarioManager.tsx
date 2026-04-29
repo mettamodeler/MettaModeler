@@ -135,7 +135,13 @@ export default function ScenarioManager({ model, selectedScenarioIds, setSelecte
         maxIterations: 20
       });
       // Run the simulation with clampedNodes
-      const results = await runSimulation({ clampedNodes });
+      const results = await runSimulation({
+        clampedNodes,
+        initialValues,
+        activation: 'sigmoid',
+        threshold: 0.001,
+        maxIterations: 20,
+      });
       if (!results) {
         throw new Error("Simulation failed to complete");
       }

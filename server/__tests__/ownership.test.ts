@@ -218,6 +218,54 @@ describe("ownership access control", () => {
     expect(modelAfterScenario.body.edges.map((edge: any) => edge.id)).toEqual(["e1"]);
   });
 
+  it("preserves clampedNodes when patching scenario results only", async () => {
+    const owner = request.agent(app);
+    await registerUser(owner, "clamp-owner", "clamp-owner@example.com");
+    await loginUser(owner, "clamp-owner");
+
+    const project = await createProject(owner, "Clamp Persistence Project");
+    const model = await owner.post("/api/models").send({
+      name: "Clamp Model",
+      description: "Model for clamped node persistence",
+      projectId: project.id,
+      nodes: [
+        { id: "n1", label: "Node 1", type: "regular", value: 0.5, positionX: 0, positionY: 0, color: "#000000" },
+      ],
+      edges: [],
+    });
+    expect(model.status).toBe(201);
+
+    const scenario = await owner.post("/api/scenarios").send({
+      name: "Clamp Scenario",
+      modelId: model.body.id,
+      description: "",
+      nodes: [{ id: "n1", label: "Node 1", value: 0.8 }],
+      initialValues: { n1: 0.8 },
+      clampedNodes: ["n1"],
+      simulationParams: { activation: "sigmoid", threshold: 0.001, maxIterations: 20 },
+      results: {
+        finalState: { n1: { id: "n1", label: "Node 1", value: 0.8 } },
+        timeSeries: { n1: [0.8, 0.8] },
+        iterations: 1,
+        converged: true,
+        initialValues: { n1: 0.8 },
+      },
+    });
+    expect(scenario.status).toBe(201);
+
+    const patchResponse = await owner.patch(`/api/scenarios/${scenario.body.id}`).send({
+      results: {
+        finalState: { n1: { id: "n1", label: "Node 1", value: 0.7 } },
+        timeSeries: { n1: [0.8, 0.7] },
+        iterations: 2,
+        converged: true,
+        initialValues: { n1: 0.8 },
+      },
+    });
+    expect(patchResponse.status).toBe(200);
+    expect(patchResponse.body.clampedNodes).toEqual(["n1"]);
+  });
+
   it("allows invited editors to edit project models and blocks outsiders", async () => {
     const owner = request.agent(app);
     const editor = request.agent(app);

@@ -1246,8 +1246,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const ownsScenario = await getOwnedScenarioOrRespond(id, userId, res);
       if (!ownsScenario) return;
 
-      if (req.body?.modelId !== undefined) {
-        const targetModelId = Number(req.body.modelId);
+      const patchSchema = CreateScenarioSchema.partial();
+      const parsedPatch = patchSchema.safeParse(req.body);
+      if (!parsedPatch.success) {
+        return res.status(400).json({
+          status: 400,
+          code: 'INVALID_PAYLOAD',
+          fieldErrors: parsedPatch.error.errors
+        });
+      }
+
+      if (parsedPatch.data?.modelId !== undefined) {
+        const targetModelId = Number(parsedPatch.data.modelId);
         if (Number.isNaN(targetModelId)) {
           return res.status(400).json({ message: "Invalid model ID" });
         }
@@ -1255,7 +1265,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!ownsModel) return;
       }
 
-      const scenario = await storage.updateScenario(id, req.body);
+      const scenario = await storage.updateScenario(id, parsedPatch.data as any);
       if (!scenario) {
         return res.status(404).json({ message: "Scenario not found" });
       }
