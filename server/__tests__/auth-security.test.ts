@@ -2,6 +2,7 @@ import express from "express";
 import request from "supertest";
 import { beforeAll, describe, expect, it } from "vitest";
 import { storage } from "../storage";
+import { hashPassword } from "../auth";
 
 type RegisterRoutes = (app: express.Express) => Promise<import("http").Server>;
 
@@ -140,5 +141,30 @@ describe("auth security flows", () => {
     });
     expect(unknownResponse.status).toBe(200);
     expect(unknownResponse.body?.message).toMatch(/if an account exists/i);
+  });
+
+  it("allows login for legacy mixed-case usernames", async () => {
+    const mixedCaseUsername = `JennyCase_${Date.now()}`;
+    const loginUsername = mixedCaseUsername.toLowerCase();
+    const password = "Legacy!Case1234";
+    const hashedPassword = await hashPassword(password);
+    const email = `${loginUsername}@example.com`;
+
+    await storage.createUser({
+      username: mixedCaseUsername,
+      email,
+      password: hashedPassword,
+      displayName: mixedCaseUsername,
+      role: "user",
+      emailVerified: "true",
+    });
+
+    const response = await request(app).post("/api/login").send({
+      username: loginUsername,
+      password,
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body?.username).toBe(mixedCaseUsername);
   });
 });

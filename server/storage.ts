@@ -19,7 +19,7 @@ import {
 } from "@shared/generated";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { eq, and, or } from 'drizzle-orm';
+import { eq, and, or, sql } from 'drizzle-orm';
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import createMemoryStore from "memorystore";
@@ -147,7 +147,10 @@ export class PostgresStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<DrizzleUser | undefined> {
-    const result = await this.db.select().from(users).where(eq(users.username, username));
+    const result = await this.db
+      .select()
+      .from(users)
+      .where(sql`lower(${users.username}) = lower(${username})`);
     return result[0];
   }
 
@@ -525,8 +528,9 @@ export class MemStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<DrizzleUser | undefined> {
+    const normalized = username.toLowerCase();
     return Array.from(this.users.values()).find(
-      (user) => user.username === username,
+      (user) => user.username.toLowerCase() === normalized,
     );
   }
 
